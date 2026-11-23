@@ -1100,12 +1100,13 @@ function tagWall(){
 }
 function interact(){
  if(gameMode!=='play')return;
- if(inCar&&nearCustoms()){openGarage();return}
  if(collectEquipment())return;
- if(interactMission()){gestureTime=.65;return;}
+ if(interactMission()){gestureTime=.65;return}
+ if(inCar&&nearCustoms()){openGarage();return}
  if(streetSideActivity())return;
  const p=inCar?carPos:playerPos;
- if(Math.hypot(p.x-184,p.z)<16){setNotice('SOLARA CUSTOMS · Drive inside the bay, stop, and press F to customise your ride.');return}
+ if(!inCar&&Math.hypot(p.x-customsNico.x,p.z-customsNico.z)<6){setNotice('NICO: Get your vehicle into my bay. Engine, paint, spoilers – we do it all.');gestureTime=.5;return}
+ if(Math.hypot(p.x-184,p.z)<16){setNotice('SOLARA CUSTOMS · Drive into the service bay, stop, and press F.');return}
  if(!inCar&&interactShop(p.x,p.z))return;
  if(cityLife.interact()){gestureTime=.65;return;}
  setNotice(mission?'Collect the parcel or speak to the receiving NPC.':'Talk to Rae near the starting pavement to find work.');
