@@ -12,6 +12,33 @@
 .overlay{position:fixed;inset:0;background:linear-gradient(125deg,#091328ed,#080b17ef),radial-gradient(circle at 80% 30%,#0f9663aa,transparent 55%);display:flex;align-items:center;justify-content:center;padding:25px;z-index:20}.panel{width:min(650px,94vw);padding:40px;border:1px solid #8ea4bc3f;background:#0d1829e8;border-radius:24px;box-shadow:0 25px 100px #000b}.eyebrow{color:#60e1ad;letter-spacing:4px;font-weight:850;font-size:12px}h1{font-size:clamp(46px,8vw,93px);line-height:.95;margin:12px 0 6px;letter-spacing:-5px}h1 span{color:#56dda5}h2{margin-top:0;font-size:27px}p{color:#bfd0e5;line-height:1.7}button{pointer-events:auto;border:0;background:#5ce2ab;color:#061626;font:900 15px inherit;letter-spacing:.6px;border-radius:10px;padding:14px 22px;cursor:pointer;margin:7px 8px 2px 0}button:hover{filter:brightness(1.13)}button.secondary{background:#1d3148;color:#d4e9ff;border:1px solid #ffffff24}.muted{font-size:12px;color:#8a9bb3}.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:20px 0}.tile{padding:13px;background:#16243a;border:1px solid #ffffff12;border-radius:11px;font-size:13px}.tile b{color:#67e6bd}#paused,#garage{display:none}#touch{display:none;position:absolute;bottom:20px;width:100%;padding:0 20px;justify-content:space-between;pointer-events:none}#touch button{pointer-events:auto;opacity:.75;padding:16px;margin:2px;background:#10243ddc;color:white;border:1px solid #ffffff55}#touch .cross{max-width:160px}#touch .actions{max-width:140px;text-align:right}#fps{position:absolute;top:22px;right:24px;color:#b0c4d5;font-size:12px}#garage .upg{display:flex;justify-content:space-between;align-items:center;margin:12px 0;padding:12px;background:#16243a;border-radius:10px;gap:15px}#garage .upg button{margin:0}#garage .upg span{color:#b8cde0;font-size:13px}
 @media(max-width:700px){#objective{top:74px;max-width:235px}#help{display:none}#mapWrap{width:145px;height:145px;bottom:13px;right:13px}#speed{bottom:169px;right:17px;font-size:30px}.panel{padding:25px}#touch{display:flex}#top{top:9px;left:9px}.pill{padding:7px 9px}}
 #networkPanel{position:fixed;right:20px;top:55px;z-index:8;background:#091b2be8;padding:10px 14px;border:1px solid #6ae0bb55;border-radius:12px;color:#cfe9f5;font-size:12px;pointer-events:auto}#networkPanel button{font-size:12px;padding:7px 9px;margin:0 0 0 8px}#authPanel{display:none;position:fixed;z-index:50;top:110px;right:20px;width:min(335px,90vw);padding:20px;border-radius:15px;border:1px solid #8cabc26b;background:#0b1b2ff4;box-shadow:0 15px 45px #0009}#authPanel input{display:block;width:100%;padding:12px;margin:9px 0;background:#17283c;color:white;border:1px solid #6b8dad66;border-radius:7px}#authPanel button{font-size:12px;padding:10px 11px}#authInfo{font-size:12px;color:#bad7e3}.remoteLabel{position:fixed;pointer-events:none;z-index:5;color:white;background:#132538b8;border:1px solid #71cde7a0;border-radius:5px;padding:3px 7px;transform:translate(-50%,-50%);font:600 11px system-ui}#networkPanel{max-width:300px}@media(max-width:700px){#networkPanel{top:auto;bottom:165px;right:12px;font-size:10px}}
+/* Original cinematic loading and title sequence */
+#boot{position:fixed;inset:0;background:#081421;z-index:100;display:grid;place-items:center;color:white;overflow:hidden;transition:opacity .7s,visibility .7s}
+#boot.bootDone{opacity:0;visibility:hidden;pointer-events:none}
+.bootSky,.menuCity{position:absolute;inset:0;pointer-events:none;background:linear-gradient(0deg,#08121f 0%,#10273d55 65%),radial-gradient(circle at 77% 27%,#f6a26d77,transparent 42%),linear-gradient(115deg,#081725,#304d63 70%,#71586c)}
+.bootSky:before,.menuCity:before{content:"";position:absolute;bottom:0;left:0;width:100%;height:44%;background:#0c1a2b;clip-path:polygon(0 65%,4% 65%,4% 36%,9% 36%,9% 58%,13% 58%,13% 10%,20% 10%,20% 60%,26% 60%,26% 43%,31% 43%,31% 2%,36% 2%,36% 60%,41% 60%,41% 25%,46% 25%,46% 70%,50% 70%,50% 10%,56% 10%,56% 58%,63% 58%,63% 37%,69% 37%,69% 8%,76% 8%,76% 45%,83% 45%,83% 24%,91% 24%,91% 53%,97% 53%,97% 30%,100% 30%,100% 100%,0 100%)}
+.bootInside{position:relative;width:min(720px,87vw);filter:drop-shadow(0 12px 30px #0005)}
+.kicker{letter-spacing:4px;color:#72e5c4;font-weight:850;font-size:12px}
+.bootLogo{font-size:clamp(90px,18vw,190px);font-weight:1000;line-height:1;letter-spacing:-.11em;margin:22px 0 5px}.bootLogo span,.movieLogo span{color:#ffb27c}
+.bootSubtitle{font-size:clamp(11px,2vw,19px);letter-spacing:6px;font-weight:850}
+.loadingInfo{display:flex;justify-content:space-between;border-top:1px solid #ffffff55;padding-top:19px;margin-top:60px;letter-spacing:1px;font-size:12px;font-weight:750}
+.loadingTrack{height:5px;background:#ffffff31;border-radius:5px;margin-top:13px;overflow:hidden}
+#loadingFill{height:100%;width:0;background:linear-gradient(90deg,#5ee5bc,#f5bc83);transition:width .28s}
+#bootError{font-size:12px;color:#b7cddd;margin:20px 0 0}
+.movieMenu{background:#0a1924e8;padding:0;overflow:hidden}
+.movieMenu .menuCity{opacity:.4}
+.menuContent{position:relative;width:min(1150px,90vw);z-index:1}
+.movieLogo{font-size:clamp(95px,16vw,180px);letter-spacing:-.12em;line-height:1;margin:15px 0 0;text-shadow:0 10px 30px #0009}
+.movieSubtitle{letter-spacing:6px;font-weight:850}
+.movieMenu h2{margin:48px 0 4px;font-size:clamp(20px,3vw,35px)}
+.movieMenu p{max-width:540px;font-size:16px}
+.menuActions{margin-top:25px}
+.menuActions button:first-child{background:#ffc08a}
+.movieControls{margin-top:30px;color:#b7c7d7;font-size:11px;letter-spacing:2px}
+.menuDecor{z-index:1;position:absolute;right:7vw;top:44%;border-left:1px solid #ffffff4a;padding-left:28px;font-size:11px;letter-spacing:2px;color:#e0c2a5}
+.menuDecor div{padding:14px 0}
+@media(max-width:900px){.menuDecor{display:none}.movieMenu .menuContent{padding:4vh 0}.movieMenu p{max-width:440px}}
+
 </style>
 </head>
 <body>
@@ -27,9 +54,28 @@
 </div>
 <div id="networkPanel"><span id="onlineStatus">CONNECTING</span> · <span id="playerCount">1 ONLINE</span><button id="authToggle">ACCOUNT</button></div>
 <div id="authPanel"><h2>Online account</h2><p id="authInfo">You can drive as a guest.</p><div id="authActions"><input id="username" maxlength="20" autocomplete="username" placeholder="Username"><input id="password" type="password" maxlength="128" autocomplete="current-password" placeholder="Password (10+ characters)"><button id="authLogin">SIGN IN</button><button id="authRegister" class="secondary">REGISTER</button></div><button id="logout" class="secondary" style="display:none">SIGN OUT</button><button class="secondary" onclick="document.getElementById('authPanel').style.display='none'">CLOSE</button></div>
-<div id="menu" class="overlay"><div class="panel"><div class="eyebrow">AN OPEN-WORLD DRIVING ADVENTURE</div><h1>MVT <span>6</span></h1><div style="letter-spacing:5px;color:#9faec8;font-size:14px;font-weight:800">MOTOR VEHICLE THEFT</div><p>Welcome to <b>Solara City</b>. Explore upgraded streets, meet pedestrians, take on deliveries, earn cash, tune your car and drive with friends. Your city. Your route.</p><div class="grid"><div class="tile"><b>OPEN CITY</b><br>Detailed streets, benches and pedestrian life</div><div class="tile"><b>CONTRACTS</b><br>Deliveries, NPC conversations and pursuits</div><div class="tile"><b>YOUR CAR</b><br>Upgrade speed, handling and nitro</div><div class="tile"><b>SAVE GAME</b><br>Guest saves in browser; accounts can use cloud saves</div></div><button id="play">START EXPLORING</button><button id="resetSave" class="secondary">RESET SAVE</button><div class="muted" style="margin-top:14px">MVT 6 City Life Update · WASD to drive or walk, drag mouse to look, F to talk. Internet required for 3D and multiplayer.</div></div></div>
+<div id="boot" role="status" aria-live="polite"><div class="bootSky"></div><div class="bootInside">
+<div class="kicker">SOLARA CITY STUDIOS PRESENTS</div><div class="bootLogo">MVT <span>6</span></div><div class="bootSubtitle">MOTOR VEHICLE THEFT</div>
+<div class="loadingInfo"><span id="bootStatus">Preparing Solara City...</span><span id="bootPct">0%</span></div>
+<div class="loadingTrack"><div id="loadingFill"></div></div><p id="bootError">An original open-world experience</p>
+<button id="bootRetry" style="display:none" onclick="location.reload()">RETRY</button></div></div>
+<div id="menu" class="overlay movieMenu"><div class="menuCity"></div><div class="menuContent">
+<div class="kicker">WELCOME TO SOLARA CITY</div><h1 class="movieLogo">MVT <span>6</span></h1>
+<div class="movieSubtitle">MOTOR VEHICLE THEFT</div><h2>YOUR CITY. YOUR STORY.</h2>
+<p>Hit the boulevard. Meet the locals. Take on contracts, build your garage, and drive with friends in this original online world.</p>
+<div class="menuActions"><button id="play">ENTER SOLARA CITY ➜</button><button id="resetSave" class="secondary">RESET SAVE</button></div>
+<div class="movieControls">WASD · MOVE &nbsp;&nbsp; MOUSE · CAMERA &nbsp;&nbsp; F · INTERACT</div></div>
+<div class="menuDecor"><div>01 / EXPLORE THE CITY</div><div>02 / MEET THE LOCALS</div><div>03 / DRIVE WITH FRIENDS</div><div>04 / BUILD YOUR GARAGE</div></div></div>
 <div id="paused" class="overlay"><div class="panel"><div class="eyebrow">SOLARA CITY</div><h2>PAUSED</h2><p>Explore at your own pace. Your cash, upgrades and completed contracts are automatically saved.</p><button id="resume">RESUME</button><button id="openGarage" class="secondary">UPGRADES</button><button id="toMenu" class="secondary">MAIN MENU</button></div></div>
 <div id="garage" class="overlay"><div class="panel"><div class="eyebrow">SOLARA AUTO WORKS</div><h2>Vehicle upgrades</h2><p>Money available: <b id="garageMoney" style="color:#66e2ad"></b></p><div id="upgradeList"></div><button id="closeGarage">BACK TO GAME</button></div></div>
+<script>
+(function(){const root=document.getElementById('boot'),fill=document.getElementById('loadingFill'),pct=document.getElementById('bootPct'),label=document.getElementById('bootStatus'),error=document.getElementById('bootError'),retry=document.getElementById('bootRetry');let value=3,complete=false;
+const timer=setInterval(()=>{if(complete)return;value=Math.min(92,value+(value<50?5:2));pct.textContent=value+'%';fill.style.width=value+'%';label.textContent=value<50?'Loading city geometry...':value<80?'Preparing traffic and residents...':'Starting multiplayer world...'},350);
+window.__mvtLoaded=()=>{complete=true;clearInterval(timer);fill.style.width='100%';pct.textContent='100%';label.textContent='Welcome to Solara City';setTimeout(()=>root.classList.add('bootDone'),550)};
+function fail(msg){if(complete)return;complete=true;clearInterval(timer);label.textContent='Unable to start MVT 6';pct.textContent='ERROR';error.textContent=String(msg).slice(0,160);retry.style.display='inline-block'}
+window.addEventListener('error',e=>fail(e.message||'Game asset could not load'));window.addEventListener('unhandledrejection',e=>fail(e.reason?.message||'Game module could not load'));setTimeout(()=>fail('Game startup timed out. Check your connection, then retry.'),30000);
+})();
+</script>
 <script type="module">
 import {multiplayer} from './client.js';
 import {createCityLife} from './city-life.js';
@@ -208,7 +254,7 @@ isPlaying:()=>gameMode==='play',onNotice:setNotice,
 onReward:amount=>{save.money+=amount;persist();updateHUD()}});
 let network=multiplayer({THREE,scene,makeCar,box,mat,mesh,getState:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,angle:inCar?angle:person.rotation.y,inCar}),onAccount:progress=>{if(progress){save={...defaultSave(),...progress};updateHUD()}},onMessage:message=>setNotice(message)});
 let last=performance.now(),fpsCounter=0,fpsTime=0;function frame(now){requestAnimationFrame(frame);const dt=Math.min(.04,(now-last)/1000);last=now;if(gameMode==='play'){clockTime+=dt;if(inCar)moveCar(dt);else movePerson(dt);advanceTraffic(dt);advancePolice(dt);if(mission){missionTime-=dt;const p=inCar?carPos:playerPos;if(Math.hypot(p.x-mission.place.x,p.z-mission.place.z)<14){if(mission.title!=='Evasive Driving'||heat<1.1)finishMission();else if(clockTime%3<dt)setNotice('Lose your wanted level before arriving!')}else if(missionTime<=0)failMission()}cityLife.update(dt,now);updateHUD();updateCamera(dt);drawMap()}else if(gameMode==='menu'){cityLife.update(dt,now);const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;fpsTime+=dt;if(fpsTime>1){const fps=Math.round(fpsCounter/fpsTime);$('fps').textContent=fps+' FPS';if(gameMode==='play'&&fps<37&&qualityPixelRatio>.8){qualityPixelRatio=Math.max(.8,qualityPixelRatio-.1);renderer.setPixelRatio(qualityPixelRatio)}fpsTime=0;fpsCounter=0}}
-person.visible=false;playerCar.position.copy(carPos);$('hud').style.display='none';requestAnimationFrame(frame);addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
+person.visible=false;playerCar.position.copy(carPos);$('hud').style.display='none';requestAnimationFrame(frame);if(window.__mvtLoaded)window.__mvtLoaded();addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
 </script>
 </body>
 </html>
