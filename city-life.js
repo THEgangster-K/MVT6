@@ -57,7 +57,7 @@ function human(i,x,z){
   box(.32,.18,.52,0,-1.14,.13,soleMat,leg);
  box(.35,.055,.54,0,-1.23,.16,mat('#a5a39e'),leg);legs.push(leg);
  }
- return {root,arms,legs,head,x,z,baseX:x,baseZ:z,phase:i*1.63,angle:i*.91,walk:0,name:npcNames[i%npcNames.length],id:i,chatIndex:0,pathAxis:i%3===0?'x':'z',direction:(i%2?1:-1),pace:.8+rnd(i*21)*.7,gesture:0};
+ return {root,arms,legs,head,torso,x,z,baseX:x,baseZ:z,phase:i*1.63,angle:i*.91,walk:0,name:npcNames[i%npcNames.length],id:i,chatIndex:0,pathAxis:i%3===0?'x':'z',direction:(i%2?1:-1),pace:.8+rnd(i*21)*.7,gesture:0,dodgeUntil:0,chatUntil:0,panic:0};
 }
 function streetPoint(i){
  const road=roadPositions[Math.floor(rnd(i*7+1)*roadPositions.length)],horizontal=rnd(i*9+2)>.5;
@@ -91,7 +91,7 @@ let active=null,dialogUntil=0;
 const pop=document.createElement('div');pop.id='citizenPrompt';pop.style.cssText='display:none;position:fixed;bottom:160px;left:50%;transform:translateX(-50%);z-index:7;background:#0b1d2fe8;border:1px solid #75e6bfaa;border-radius:12px;padding:11px 17px;color:white;font:700 13px system-ui;pointer-events:none;box-shadow:0 8px 24px #0008';document.body.appendChild(pop);
 const dialog=document.createElement('div');dialog.id='citizenDialog';dialog.style.cssText='display:none;position:fixed;bottom:205px;left:50%;transform:translateX(-50%);z-index:8;max-width:min(480px,90vw);background:#112439f2;border:1px solid #73e6b7b0;border-radius:14px;padding:15px 19px;color:#f5fbff;box-shadow:0 14px 50px #0009;font:14px/1.55 system-ui';document.body.appendChild(dialog);
 function nearest(){const p=getPlayer();if(p.inCar)return null;let best=null,d=5.2;for(const n of [fixer,...citizens]){const distance=Math.hypot(p.x-n.root.position.x,p.z-n.root.position.z);if(distance<d){best=n;d=distance}}return best}
-function interact(){const n=nearest();if(!n)return false;if(n.role==='fixer'){onStoryContact?.();return true}active=n;const story=stories[n.id%stories.length];const first=n.chatIndex++===0;dialog.innerHTML='<b style="color:#6ee8ba">'+n.name+'</b><div style="margin-top:5px">'+(first?story[0]:story[1])+'</div><small style="color:#a7c4cf">Press F to talk again · Walk away to close</small>';dialog.style.display='block';dialogUntil=performance.now()+6500;if(first){onReward(story[2]);onNotice(n.name+' gave you $'+story[2]+' for helping around town')}return true}
+function interact(){const n=nearest();if(!n)return false;if(n.role==='fixer'){onStoryContact?.();return true}active=n;n.chatUntil=performance.now()+2200;const story=stories[n.id%stories.length];const first=n.chatIndex++===0;dialog.innerHTML='<b style="color:#6ee8ba">'+n.name+'</b><div style="margin-top:5px">'+(first?story[0]:story[1])+'</div><small style="color:#a7c4cf">Press F to talk again · Walk away to close</small>';dialog.style.display='block';dialogUntil=performance.now()+6500;if(first){onReward(story[2]);onNotice(n.name+' gave you $'+story[2]+' for helping around town')}return true}
 let lastNpc=0;
 function update(dt,now){
  if(now-lastNpc>33){
@@ -101,21 +101,37 @@ function update(dt,now){
      const px=n.root.position.x,pz=n.root.position.z;
      const nearby=Math.hypot(px-player.x,pz-player.z)<115;
      n.root.visible=nearby;if(!nearby)continue;
-     const speed=n.pace*step*n.direction,axis=n.pathAxis;
-     const nx=axis==='x'?px+speed:px,nz=axis==='z'?pz+speed:pz;
-     const dFromBase=Math.abs((axis==='x'?nx-n.baseX:nz-n.baseZ));
-     let walking=false;
-     if(dFromBase>26||collision(nx,nz,.25)){n.direction*=-1}
-     else{n.root.position.x=nx;n.root.position.z=nz;walking=Math.abs(speed)>.0001}
-     // Rotate to match ACTUAL direction of travel, with natural turning.
-     const heading=axis==='x'?(n.direction>0?Math.PI/2:-Math.PI/2):(n.direction>0?0:Math.PI);
+     const dxFromCar=px-player.x,dzFromCar=pz-player.z;
+     const dist=Math.hypot(dxFromCar,dzFromCar);
+     const incoming=player.inCar&&Math.abs(player.speed||0)>3&&dist<11;
+     if(incoming)n.dodgeUntil=Math.max(n.dodgeUntil,now+550);
+     const dodging=now<n.dodgeUntil&&dist<15;
+     const chatting=now<n.chatUntil;
+     let nx=px,nz=pz,walking=false;
+     if(dodging){
+       const len=Math.max(1,dist),side=(n.id%2?1:-1),speed=step*7.3;
+       nx=px+(dxFromCar/len*1.5-dzFromCar/len*.35*side)*speed;
+       nz=pz+(dzFromCar/len*1.5+dxFromCar/len*.35*side)*speed;
+       if(!collision(nx,nz,.3)){n.root.position.set(nx,0,nz);walking=true}
+     }else if(!chatting){
+       const speed=n.pace*step*n.direction,axis=n.pathAxis;
+       nx=axis==='x'?px+speed:px;nz=axis==='z'?pz+speed:pz;
+       const dFromBase=Math.abs((axis==='x'?nx-n.baseX:nz-n.baseZ));
+       if(dFromBase>26||collision(nx,nz,.25)){n.direction*=-1}
+       else{n.root.position.x=nx;n.root.position.z=nz;walking=Math.abs(speed)>.0001}
+     }
+     const movedX=n.root.position.x-px,movedZ=n.root.position.z-pz;
+     const heading=walking?Math.atan2(movedX,movedZ):(n.pathAxis==='x'?(n.direction>0?Math.PI/2:-Math.PI/2):(n.direction>0?0:Math.PI));
      const turn=Math.atan2(Math.sin(heading-n.root.rotation.y),Math.cos(heading-n.root.rotation.y));
-     n.root.rotation.y+=turn*Math.min(1,step*7);
-     const stride=Math.sin(now*.009*n.pace+n.phase)*(walking?.48:0);
+     n.root.rotation.y+=turn*Math.min(1,step*(dodging?12:7));
+     const stride=Math.sin(now*.01*(dodging?1.5:n.pace)+n.phase)*(walking?(dodging?.7:.44):0);
      n.legs[0].rotation.x=stride;n.legs[1].rotation.x=-stride;
-     n.arms[0].rotation.x=-stride*.67;n.arms[1].rotation.x=stride*.67;
-     n.head.rotation.y=Math.sin(now*.00065+n.phase)*.12;
-     n.root.position.y=walking?Math.abs(stride)*.03:0;
+     const wave=chatting?Math.sin(now*.014)*.2:0;
+     n.arms[0].rotation.x=dodging?-.45:-stride*.7;
+     n.arms[1].rotation.x=chatting?-1.15+wave:dodging?-.55:stride*.7;
+     n.head.rotation.y=chatting?.12*Math.sin(now*.003):dodging?-.22:Math.sin(now*.00065+n.phase)*.12;
+     n.root.position.y=walking?Math.abs(stride)*.029:Math.sin(now*.002+n.phase)*.009;
+     n.torso?.rotation.set(0,0,0);
    }
  }
  if(!isPlaying()){pop.style.display='none';dialog.style.display='none';return}
