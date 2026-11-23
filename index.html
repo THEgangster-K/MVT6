@@ -205,6 +205,17 @@ body:has(#hud[style*="block"]) #lockHint{display:block}
 #briefingReward{font:850 12px system-ui;color:#f2d39f;letter-spacing:1.4px;margin-bottom:21px}
 .briefingButtons{display:flex;gap:12px;flex-wrap:wrap}
 .briefingButtons button:first-child{background:linear-gradient(130deg,#e6c090,#c4a578);color:#142633}
+.customsService{margin:20px 0;background:#102a3ac9;border:1px solid #75b8ad88;border-radius:13px;padding:15px}
+.customsService h3{font:900 12px system-ui;color:#e5c28f;letter-spacing:1.4px;margin:4px 0 12px}
+.customsCondition{display:flex;justify-content:space-between;gap:10px;font:800 12px system-ui;color:#cee3df;margin-bottom:8px}
+.conditionTrack{height:8px;border-radius:9px;background:#293844;overflow:hidden}
+#customsConditionBar{width:100%;height:100%;background:linear-gradient(90deg,#ea906c,#edce8e,#66dec2);border-radius:9px;transition:width .25s}
+.customsServiceButtons{display:flex;gap:10px;margin-top:13px}
+.customsServiceButtons button{flex:1;font-size:11px;border:1px solid #82c7b6;background:#356778;color:#f2f9f7}
+.vehicleConditionMini{font:800 9px system-ui;letter-spacing:1.3px;color:#a9ece0;margin-top:3px;text-shadow:0 2px 5px #000}
+#garage.overlay{background:linear-gradient(90deg,#05101a8a,#06121cf5 62%)!important;align-items:center!important;justify-content:flex-end!important}
+#garage .customsPanel{margin-right:min(5vw,72px);width:min(590px,91vw)!important}
+@media(max-width:700px){#garage .customsPanel{margin:0 auto;width:95vw!important}.customsServiceButtons{flex-direction:column}.vehicleConditionMini{font-size:8px}}
 </style>
 </head>
 <body>
@@ -286,7 +297,7 @@ body:has(#hud[style*="block"]) #lockHint{display:block}
  <div class="customsMeta"><span>AVAILABLE BALANCE <b id="garageMoney"></b></span><span id="customsVehicle">PERSONAL VEHICLE</span></div>
  <div class="customsTabs"><button id="tabPerformance">PERFORMANCE</button><button id="tabAppearance" class="secondary">CUSTOMISE</button></div>
  <div id="upgradeList"></div>
- <div id="customPaintPanel" style="display:none"><h3>BODY PAINT</h3><div id="customPaintOptions"></div><h3>BODY AND STYLE</h3><div id="customExtraOptions"></div></div>
+ <div id="customPaintPanel" style="display:none"><h3>BODY PAINT</h3><div id="customPaintOptions"></div><h3>BODY AND STYLE</h3><div id="customExtraOptions"></div></div><div class="customsService"><h3>VEHICLE CONDITION & SERVICES</h3><div class="customsCondition"><span>BODYWORK CONDITION</span><b id="customsConditionNumber">100%</b></div><div class="conditionTrack"><div id="customsConditionBar"></div></div><div class="customsServiceButtons"><button id="customsRepair">REPAIR VEHICLE</button><button id="customsWash" class="secondary">DETAIL & POLISH</button></div></div>
  <button id="closeGarage">LEAVE SOLARA CUSTOMS</button>
  </div></div>
 <script>
@@ -884,7 +895,7 @@ function safeWalkingPosition(){
 
 function setNotice(t){$('notice').textContent=t;$('notice').style.opacity='1';clearTimeout(setNotice.timer);setNotice.timer=setTimeout(()=>$('notice').style.opacity='0',2800)}
 function getRank(){if(save.lifeTier>=4)return 'CITY LEGEND';if(save.lifeTier>=3)return 'HIGH SOCIETY';if(save.lifeTier>=2)return 'CREW LEADER';if(save.lifeTier>=1||save.completed>=2)return 'STREET RUNNER';return 'NEW TO THE STREETS'}
-function updateHUD(){ $('streetRank').textContent=getRank();$('money').textContent='$'+Math.floor(save.money).toLocaleString();$('heat').textContent='★'.repeat(Math.ceil(heat))+'☆'.repeat(5-Math.ceil(heat));$('speed').innerHTML=(inCar?Math.round(Math.abs(velocity)*3.6):0)+' <small>KM/H</small>';const p=inCar?carPos:playerPos;$('district').textContent=p.x<-185?'WEST HAVEN':p.x>185?'EAST SOLARA':p.z>185?'SOUTH PIER':p.z< -185?'NORTH QUARTER':'DOWNTOWN';if(mission){$('missionTitle').textContent=mission.title;$('missionText').textContent=({
+function updateHUD(){ $('streetRank').textContent=getRank();$('money').textContent='$'+Math.floor(save.money).toLocaleString();$('heat').textContent='★'.repeat(Math.ceil(heat))+'☆'.repeat(5-Math.ceil(heat));$('speed').innerHTML=(inCar?Math.round(Math.abs(velocity)*3.6):0)+' <small>KM/H</small>'+(inCar?'<div class="vehicleConditionMini">'+Math.round(vehicleCondition)+'% CONDITION · J HORN · L LIGHTS</div>':'');const p=inCar?carPos:playerPos;$('district').textContent=p.x<-185?'WEST HAVEN':p.x>185?'EAST SOLARA':p.z>185?'SOUTH PIER':p.z< -185?'NORTH QUARTER':'DOWNTOWN';if(mission){$('missionTitle').textContent=mission.title;$('missionText').textContent=({
  pickup:'Find the package and press F to collect.',
  deliver:'Meet your contact and press F.',
  terminal:'Find the terminal and press F for the decoder puzzle.',
@@ -1099,6 +1110,8 @@ function openGarage(){
  if(document.pointerLockElement)document.exitPointerLock();
  for(const k in keys)keys[k]=false;velocity=0;
  gameMode='garage';$('paused').style.display='none';$('garage').style.display='flex';
+ camera.fov=51;camera.updateProjectionMatrix();
+ camera.position.set(carPos.x+14,6.2,carPos.z+17);camera.lookAt(carPos.x,2.0,carPos.z);
  showCustomsTab('performance');renderGarage();
 }
 const upgrades=[{id:'speed',name:'Performance engine',desc:'Raise top speed and acceleration',cost:l=>450*(l+1)},{id:'handling',name:'Sport suspension',desc:'Sharpen steering control',cost:l=>350*(l+1)},{id:'nitro',name:'Boost system',desc:'Increase boost strength',cost:l=>500*(l+1)}];
@@ -1150,7 +1163,19 @@ function renderCustomsAppearance(){
 }
 $('tabPerformance').onclick=()=>showCustomsTab('performance');
 $('tabAppearance').onclick=()=>showCustomsTab('appearance');
-function renderGarage(){$('garageMoney').textContent='$'+save.money.toLocaleString();$('upgradeList').innerHTML='';for(const u of upgrades){const level=save[u.id],cost=u.cost(level),div=document.createElement('div');div.className='upg';const desc=document.createElement('span');desc.innerHTML='<b>'+u.name+'</b> <span style="color:#68e2ae">Lv '+level+'/5</span><br>'+u.desc;const b=document.createElement('button');b.textContent=level>=5?'MAXED':'$'+cost;b.disabled=level>=5||save.money<cost;b.onclick=()=>{if(save.money>=cost&&save[u.id]<5){save.money-=cost;save[u.id]++;persist();renderGarage();updateHUD()}};div.append(desc,b);$('upgradeList').append(div)}renderLifestyle()}
+function renderGarage(){$('garageMoney').textContent='$'+save.money.toLocaleString();$('customsConditionNumber').textContent=Math.round(vehicleCondition)+'%';$('customsConditionBar').style.width=vehicleCondition+'%';$('customsRepair').textContent=vehicleCondition>=99?'VEHICLE REPAIRED':'REPAIR · $'+Math.ceil((100-vehicleCondition)*6);$('customsRepair').disabled=vehicleCondition>=99||save.money<Math.ceil((100-vehicleCondition)*6);$('upgradeList').innerHTML='';for(const u of upgrades){const level=save[u.id],cost=u.cost(level),div=document.createElement('div');div.className='upg';const desc=document.createElement('span');desc.innerHTML='<b>'+u.name+'</b> <span style="color:#68e2ae">Lv '+level+'/5</span><br>'+u.desc;const b=document.createElement('button');b.textContent=level>=5?'MAXED':'$'+cost;b.disabled=level>=5||save.money<cost;b.onclick=()=>{if(save.money>=cost&&save[u.id]<5){save.money-=cost;save[u.id]++;persist();renderGarage();updateHUD()}};div.append(desc,b);$('upgradeList').append(div)}renderLifestyle()}
+// Workshop services restore car condition and shine without navigating the pause menu.
+let detailingShine=0;
+$('customsRepair').onclick=()=>{
+ const price=Math.ceil((100-vehicleCondition)*6);
+ if(gameMode!=='garage'||vehicleCondition>=99||save.money<price)return;
+ save.money-=price;vehicleCondition=100;saveVehicleCondition();persist();
+ detailingShine=3;renderGarage();updateHUD();setNotice('SOLARA CUSTOMS · VEHICLE REPAIRED');
+};
+$('customsWash').onclick=()=>{
+ if(gameMode!=='garage'||save.money<75){setNotice('Vehicle detailing costs $75');return}
+ save.money-=75;persist();detailingShine=4;renderGarage();updateHUD();setNotice('SOLARA CUSTOMS · SHOWROOM FINISH APPLIED');
+};
 const lifestyle=[
 {name:'A ROOM OF YOUR OWN',cost:1200,desc:'Your first step off the streets'},
 {name:'TUNED GARAGE',cost:3500,desc:'More driving power and a better car'},
@@ -1457,7 +1482,7 @@ if(k==='escape'&&on){if(gameMode==='briefing'){closeBriefing();return}if(tutoria
 if(k==='p'&&on&&!e.repeat){if(phoneOpen)closePhone();else if(gameMode==='play')openPhone();return}
 if(gameMode!=='play'&&k!=='escape')return;keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(document.pointerLockElement)document.exitPointerLock();else if(gameMode==='play')pause();else if(gameMode==='pause')resume();}if((k===' '||k==='spacebar')&&!inCar)beginJump();if(k==='e')enterExit();if(k==='f')interact();if(k==='t')tagWall();if(k==='g')activateGadget();if(k==='j')drivingHorn();if(k==='l'&&inCar)setHeadlights(!headlightsOn);if(k==='c'){camMode=(camMode+1)%3;orbitOffset=0};if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;playerCar.position.copy(carPos);playerCar.rotation.y=angle;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
 addEventListener('keydown',e=>keyState(e,true));addEventListener('keyup',e=>keyState(e,false));addEventListener('blur',()=>{for(let k in keys)keys[k]=false});
-function pause(){if(document.pointerLockElement)document.exitPointerLock();gameMode='pause';$('paused').style.display='flex'}function resume(){gameMode='play';$('paused').style.display='none';$('garage').style.display='none'}function closeGarage(){gameMode='play';$('garage').style.display='none';setNotice('Thanks for visiting Solara Customs!')}
+function pause(){if(document.pointerLockElement)document.exitPointerLock();gameMode='pause';$('paused').style.display='flex'}function resume(){gameMode='play';$('paused').style.display='none';$('garage').style.display='none'}function closeGarage(){gameMode='play';$('garage').style.display='none';camera.fov=65;camera.updateProjectionMatrix();setNotice('Thanks for visiting Solara Customs!')}
 $('play').onclick=()=>{startIntro()};$('resetSave').onclick=()=>{if(confirm('Reset all MVT 6 money, chapters, gear and upgrades?')){save=defaultSave();cosmetics={paint:'#e96e5d',spoiler:false,lightKit:false,rims:false};try{localStorage.removeItem('mvt6-customs')}catch{}applyCustoms();collectedGear=[];selectedGadget=0;try{localStorage.removeItem('mvt6-gear-v2')}catch{};updateGadgetWheel();persist();setNotice('New campaign started · Equipment wheel cleared')}};$('resume').onclick=resume;$('pauseMap').onclick=()=>{ $('paused').style.display='none';gameMode='play';openPhone() };$('closeGarage').onclick=closeGarage;$('toMenu').onclick=()=>{gameMode='menu';$('paused').style.display='none';$('hud').style.display='none';$('menu').style.display='flex'};
 const touchJump=document.createElement('button');touchJump.id='touchJump';touchJump.textContent='JUMP';touchJump.setAttribute('aria-label','Jump');
 touchJump.style.cssText='position:fixed;right:18px;bottom:445px;z-index:14;background:#3d7e84;color:white;border:1px solid #ade0cf;border-radius:12px;padding:12px;font:900 12px system-ui;display:none';
@@ -1525,6 +1550,9 @@ function moveCar(dt){
  playerCar.position.copy(carPos);playerCar.rotation.y=angle;
  playerCar.rotation.z=THREE.MathUtils.lerp(playerCar.rotation.z,-turning*Math.min(Math.abs(velocity)/38,1)*.045,Math.min(1,dt*5));
  playerCar.rotation.x=THREE.MathUtils.lerp(playerCar.rotation.x,throttle*-.012,Math.min(1,dt*4));
+ if(detailingShine>0&&playerCar.children[0]?.material){
+  playerCar.children[0].material.roughness=THREE.MathUtils.lerp(playerCar.children[0].material.roughness,.15,Math.min(1,dt*2));
+ }else if(playerCar.children[0]?.material)playerCar.children[0].material.roughness=THREE.MathUtils.lerp(playerCar.children[0].material.roughness,.26,Math.min(1,dt));
  for(const wheel of playerCar.userData.wheels||[]){
   wheel.spin.rotation.x+=velocity*dt/.87;
   if(wheel.front)wheel.steering.rotation.y=THREE.MathUtils.lerp(wheel.steering.rotation.y,turning*.27,Math.min(1,dt*8));
@@ -1854,7 +1882,7 @@ getPlayer:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,inCar,
 isPlaying:()=>gameMode==='play',onNotice:setNotice,
 onReward:amount=>{save.money+=amount;persist();updateHUD()}});
 let network=multiplayer({THREE,scene,makeCar,box,mat,mesh,getState:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,angle:inCar?angle:person.rotation.y,inCar}),onAccount:progress=>{if(progress){save={...defaultSave(),...progress};updateHUD()}},onMessage:message=>setNotice(message)});
-let last=performance.now(),fpsCounter=0,fpsTime=0,lastShopUpdate=0;function frame(now){requestAnimationFrame(frame);if(now-lastShopUpdate>600){lastShopUpdate=now;touchJump.style.display=gameMode==='play'&&!inCar&&matchMedia('(pointer:coarse)').matches?'block':'none';const gearNear=gameMode==='play'&&!inCar?nearestEquipment():null;$('pickupPrompt').style.display=gearNear?'block':'none';if(gearNear)$('pickupPrompt').textContent='F · COLLECT '+gadgetNames[gearNear.id];carHint.style.display=(gameMode==='play'&&!inCar&&nearestTrafficCar())?'block':'none';const px=inCar?carPos.x:playerPos.x,pz=inCar?carPos.z:playerPos.z;for(const sh of shopBuildings){sh.root.visible=gameMode==='intro'||gameMode==='menu'||Math.hypot(px-sh.x,pz-sh.z)<155}}const dt=Math.min(.04,(now-last)/1000);last=now;if(gameMode==='play'){clockTime+=dt;if(chapterBannerTime>0){chapterBannerTime-=dt;if(chapterBannerTime<=0)chapterScreen.classList.remove('show')}updateEquipmentWorld(dt);if(inCar)moveCar(dt);else movePerson(dt);advanceTraffic(dt);advancePolice(dt);updatePatrolAgents(dt);if(mission){missionTime-=dt;updateMissionActivity(dt);if(missionTime<=0)failMission()}cityLife.update(dt,now);updateHUD();updateCamera(dt);drawMap()}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='takeover'){clockTime+=dt;updateTakeover(dt);advanceTraffic(dt);cityLife.update(dt,now);updateCamera(dt);drawMap()}else if(gameMode==='menu'){cityLife.update(dt,now);const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;fpsTime+=dt;if(fpsTime>1){const fps=Math.round(fpsCounter/fpsTime);$('fps').textContent=fps+' FPS';if(gameMode==='play'&&fps<37&&qualityPixelRatio>.8){qualityPixelRatio=Math.max(.8,qualityPixelRatio-.1);renderer.setPixelRatio(qualityPixelRatio)}fpsTime=0;fpsCounter=0}}
+let last=performance.now(),fpsCounter=0,fpsTime=0,lastShopUpdate=0;function frame(now){requestAnimationFrame(frame);if(now-lastShopUpdate>600){lastShopUpdate=now;touchJump.style.display=gameMode==='play'&&!inCar&&matchMedia('(pointer:coarse)').matches?'block':'none';const gearNear=gameMode==='play'&&!inCar?nearestEquipment():null;$('pickupPrompt').style.display=gearNear?'block':'none';if(gearNear)$('pickupPrompt').textContent='F · COLLECT '+gadgetNames[gearNear.id];carHint.style.display=(gameMode==='play'&&!inCar&&nearestTrafficCar())?'block':'none';const px=inCar?carPos.x:playerPos.x,pz=inCar?carPos.z:playerPos.z;for(const sh of shopBuildings){sh.root.visible=gameMode==='intro'||gameMode==='menu'||Math.hypot(px-sh.x,pz-sh.z)<155}}const dt=Math.min(.04,(now-last)/1000);last=now;if(gameMode==='play'){clockTime+=dt;if(detailingShine>0)detailingShine=Math.max(0,detailingShine-dt);if(chapterBannerTime>0){chapterBannerTime-=dt;if(chapterBannerTime<=0)chapterScreen.classList.remove('show')}updateEquipmentWorld(dt);if(inCar)moveCar(dt);else movePerson(dt);advanceTraffic(dt);advancePolice(dt);updatePatrolAgents(dt);if(mission){missionTime-=dt;updateMissionActivity(dt);if(missionTime<=0)failMission()}cityLife.update(dt,now);updateHUD();updateCamera(dt);drawMap()}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='takeover'){clockTime+=dt;updateTakeover(dt);advanceTraffic(dt);cityLife.update(dt,now);updateCamera(dt);drawMap()}else if(gameMode==='menu'){cityLife.update(dt,now);const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;fpsTime+=dt;if(fpsTime>1){const fps=Math.round(fpsCounter/fpsTime);$('fps').textContent=fps+' FPS';if(gameMode==='play'&&fps<37&&qualityPixelRatio>.8){qualityPixelRatio=Math.max(.8,qualityPixelRatio-.1);renderer.setPixelRatio(qualityPixelRatio)}fpsTime=0;fpsCounter=0}}
 person.visible=true;setSeatPose(save.completed===0?1:0);playerCar.visible=save.completed>=2;playerCar.position.copy(carPos);$('hud').style.display='none';requestAnimationFrame(frame);if(window.__mvtLoaded)window.__mvtLoaded();addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
 </script>
 </body>
