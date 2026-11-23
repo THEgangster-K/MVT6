@@ -58,6 +58,16 @@
 .bootLogo{letter-spacing:-.095em}
 .artDots{display:flex;gap:8px;margin-top:24px}.artDots i{width:21px;height:4px;border-radius:6px;background:#fff6}.artDots i:first-child{background:#eeb884}
 @media(max-width:720px){.bootArtwork{inset:0;opacity:.52}.bootArtwork:after{background:linear-gradient(90deg,#081421ee,#0814218c),linear-gradient(0deg,#081421bb,transparent)}.bootInside{margin:0;width:85vw}.bootLogo{font-size:clamp(96px,23vw,145px)}}
+/* Four real 3D cinematic tracking shots with film-style titles */
+#storyIntro:before,#storyIntro:after{content:"";position:absolute;left:0;right:0;height:clamp(22px,5vh,60px);background:#05070b;z-index:1}
+#storyIntro:before{top:0}#storyIntro:after{bottom:0}
+#storyIntro #introContent{bottom:14%;left:7%;max-width:800px}
+#storyIntro #introChapter{color:#efc692;letter-spacing:6px;font-size:11px}
+#storyIntro #introTitle{font-size:clamp(34px,6.6vw,88px);line-height:.97;letter-spacing:-.06em}
+#storyIntro #introCopy{max-width:540px;line-height:1.5}
+#storyIntro.introTransition #introContent{animation:chapterReveal 1.05s cubic-bezier(.22,.8,.27,1) both}
+@keyframes chapterReveal{0%{opacity:0;transform:translateY(22px);filter:blur(12px)}100%{opacity:1;transform:translateY(0);filter:blur(0)}}
+#storyIntro #introSkip{z-index:4;bottom:8%}
 </style>
 </head>
 <body>
@@ -301,18 +311,52 @@ function renderLifestyle(){
 function interact(){if(gameMode!=='play')return;const p=inCar?carPos:playerPos;if(Math.hypot(p.x-depot.x,p.z-depot.z)<14){startMission();return}if(Math.hypot(p.x-184,p.z)<16){openGarage();return}if(cityLife.interact())return;setNotice('Find the green contact ring or walk up to a resident to talk')}
 function enterExit(){if(gameMode!=='play')return;if(inCar){if(Math.abs(velocity)>3){setNotice('Slow down before exiting');return}inCar=false;person.visible=true;playerPos.set(carPos.x+4,0,carPos.z+2);person.position.copy(playerPos);setNotice('On foot — E to enter car')}else if(save.completed<2){setNotice('Start on the streets: finish two jobs to unlock your first ride')}else if(playerPos.distanceTo(carPos)<12){inCar=true;person.visible=false;playerCar.visible=true;setNotice('Vehicle entered')}else{setNotice('Walk closer to your car')}}
 let introTime=0;
-function startIntro(){gameMode='intro';introTime=0;$('menu').style.display='none';$('hud').style.display='none';$('storyIntro').style.display='block';person.visible=true;playerCar.visible=save.completed>=2;camera.position.set(54,20,40);camera.lookAt(playerPos.x,1.9,playerPos.z)}
-function endIntro(){if(gameMode!=='intro')return;orbitOffset=0;for(const k in keys)keys[k]=false;gameMode='play';$('storyIntro').style.display='none';$('hud').style.display='block';camYaw=0;camera.position.set(playerPos.x,6,playerPos.z-9);camTarget.set(playerPos.x,1.8,playerPos.z);setNotice(save.completed?'Welcome back to the streets of Solara':'You have $45. Find the green ring and press F to start your first job.')}
+const introCameraLook=new THREE.Vector3();
+const introShots=[
+ {duration:4.1,from:[-437,30,-178],to:[-430,19,-35],lookFrom:[-280,35,-76],lookTo:[-215,34,0],title:'SOLARA CITY',copy:'A coast of glass towers, quiet streets and restless ambition.'},
+ {duration:4.2,from:[0,11,-194],to:[0,8,-55],lookFrom:[0,7,-60],lookTo:[0,6,55],title:'CHAPTER ONE',copy:'Everyone starts somewhere. Tonight, you begin with nothing.'},
+ {duration:4.0,from:[-42,8,-1],to:[-10,5,4],lookFrom:[36,4,1],lookTo:[0,2,0],title:'NO SHORTCUTS',copy:'Take the small jobs. Meet the right people. Make a name for yourself.'},
+ {duration:4.2,from:[18,8,-8],to:[4,4,-9],lookFrom:[0,3,0],lookTo:[0,2,0],title:'YOUR STORY BEGINS',copy:'A few dollars in your pocket. The entire city ahead.'}
+];
+const introDuration=introShots.reduce((a,x)=>a+x.duration,0);
+function startIntro(){
+ gameMode='intro';introTime=0;introStage=-1;
+ $('menu').style.display='none';$('hud').style.display='none';$('storyIntro').style.display='block';
+ person.visible=true;person.position.copy(playerPos);
+ playerCar.visible=save.completed>=2;cinematicCamera(0);
+}
+function endIntro(){
+ if(gameMode!=='intro')return;
+ for(const k in keys)keys[k]=false;
+ gameMode='play';$('storyIntro').style.display='none';$('hud').style.display='block';
+ orbitOffset=0;camYaw=0;camTarget.set(playerPos.x,2,playerPos.z);
+ camera.position.set(playerPos.x,5,playerPos.z-9);
+ setNotice(save.completed?'Welcome back to Solara City':'Start with $45. Walk to the green contact marker and press F.');
+}
 $('introSkip').onclick=endIntro;
+let introStage=-1;
+function cubicEase(t){return t*t*(3-2*t)}
+function cinematicCamera(time){
+ let rest=time,index=0;
+ while(index<introShots.length-1&&rest>introShots[index].duration){rest-=introShots[index].duration;index++}
+ const shot=introShots[index],p=cubicEase(Math.min(1,rest/shot.duration));
+ const at=(a,b)=>a+(b-a)*p;
+ camera.position.set(at(shot.from[0],shot.to[0]),at(shot.from[1],shot.to[1]),at(shot.from[2],shot.to[2]));
+ introCameraLook.set(at(shot.lookFrom[0],shot.lookTo[0]),at(shot.lookFrom[1],shot.lookTo[1]),at(shot.lookFrom[2],shot.lookTo[2]));
+ camera.lookAt(introCameraLook);
+ if(introStage!==index){
+    introStage=index;
+    $('introTitle').textContent=shot.title;
+    $('introCopy').textContent=shot.copy;
+    $('introChapter').textContent='SOLARA CITY / '+String(index+1).padStart(2,'0')+' OF 04';
+    $('storyIntro').classList.remove('introTransition');
+    void $('storyIntro').offsetWidth;
+    $('storyIntro').classList.add('introTransition');
+ }
+}
 function updateIntroCamera(dt){
- const t=Math.min(1,introTime/9),ease=t*t*(3-2*t),theta=-.7+ease*2.2;
- const distance=32-ease*22;
- const aim=new THREE.Vector3(playerPos.x,2.2,playerPos.z);
- camera.position.set(aim.x+Math.cos(theta)*distance,14-ease*9,aim.z+Math.sin(theta)*distance);
- camera.lookAt(aim);
- $('introTitle').textContent=introTime<3?'A CITY OF OPPORTUNITY.':introTime<6?'EMPTY POCKETS. BIG DREAMS.':'YOUR STORY STARTS HERE.';
- $('introCopy').textContent=introTime<3?'The skyline shines. The streets tell another story.':introTime<6?'No car. No reputation. One chance to make it.':'Build your crew, choose your jobs, and rise through Solara.';
- if(introTime>=9)endIntro();
+ cinematicCamera(introTime);
+ if(introTime>=introDuration)endIntro();
 }
 const keys={};let orbitOffset=0,orbitPitch=.06,mouseDown=false,camYaw=0,walkMotion=0,qualityPixelRatio=Math.min(devicePixelRatio,1.25);
 renderer.domElement.addEventListener('pointerdown',e=>{if(e.button===0||e.pointerType==='touch'){mouseDown=true;renderer.domElement.setPointerCapture(e.pointerId)}});
