@@ -39,12 +39,20 @@
 .menuDecor div{padding:14px 0}
 @media(max-width:900px){.menuDecor{display:none}.movieMenu .menuContent{padding:4vh 0}.movieMenu p{max-width:440px}}
 
+#storyIntro{position:fixed;inset:0;z-index:21;pointer-events:none;color:white}
+#introShade{position:absolute;inset:0;background:linear-gradient(0deg,#050a13e9,transparent 50%,#07132366);animation:fadeInIntro 1s ease}
+#introContent{position:absolute;bottom:11%;left:7%;max-width:720px;text-shadow:0 4px 30px #000e}
+#introChapter{font-size:12px;letter-spacing:5px;color:#edbc85;font-weight:850}
+#introTitle{font-size:clamp(26px,5vw,62px);font-weight:1000;letter-spacing:-.035em;line-height:1.1;margin:12px 0}
+#introCopy{font-size:clamp(13px,1.7vw,20px);color:#e0ecf3}
+#introSkip{position:absolute;bottom:6%;right:5%;pointer-events:auto;background:#ffffff27;color:white;border:1px solid #fff7;font-size:12px;letter-spacing:2px}
+@keyframes fadeInIntro{from{opacity:0}to{opacity:1}}
 </style>
 </head>
 <body>
 <div id="game"></div>
 <div id="hud">
- <div id="top"><div class="pill"><small>BANK ACCOUNT</small><span class="money" id="money">$0</span></div><div class="pill"><small>HEAT LEVEL</small><span class="stars" id="heat">☆☆☆☆☆</span></div><div class="pill"><small>DISTRICT</small><span id="district">DOWNTOWN</span></div></div>
+ <div id="top"><div class="pill"><small>BANK ACCOUNT</small><span class="money" id="money">$0</span></div><div class="pill"><small>HEAT LEVEL</small><span class="stars" id="heat">☆☆☆☆☆</span></div><div class="pill"><small>DISTRICT</small><span id="district">DOWNTOWN</span></div><div class="pill"><small>STREET STATUS</small><span id="streetRank">UNKNOWN</span></div></div>
  <div id="fps"></div>
  <div id="objective"><b>ACTIVE CONTRACT</b><strong id="missionTitle">—</strong><p id="missionText">—</p></div>
  <div id="notice"></div><div id="speed">0 <small>KM/H</small></div>
@@ -63,9 +71,10 @@
 <div class="kicker">WELCOME TO SOLARA CITY</div><h1 class="movieLogo">MVT <span>6</span></h1>
 <div class="movieSubtitle">MOTOR VEHICLE THEFT</div><h2>YOUR CITY. YOUR STORY.</h2>
 <p>Hit the boulevard. Meet the locals. Take on contracts, build your garage, and drive with friends in this original online world.</p>
-<div class="menuActions"><button id="play">ENTER SOLARA CITY ➜</button><button id="resetSave" class="secondary">RESET SAVE</button></div>
+<div class="menuActions"><button id="play">BEGIN YOUR STORY ➜</button><button id="resetSave" class="secondary">START OVER</button></div>
 <div class="movieControls">WASD · MOVE &nbsp;&nbsp; MOUSE · CAMERA &nbsp;&nbsp; F · INTERACT</div></div>
 <div class="menuDecor"><div>01 / EXPLORE THE CITY</div><div>02 / MEET THE LOCALS</div><div>03 / DRIVE WITH FRIENDS</div><div>04 / BUILD YOUR GARAGE</div></div></div>
+<div id="storyIntro" aria-live="polite" style="display:none"><div id="introShade"></div><div id="introContent"><div id="introChapter">SOLARA CITY · CHAPTER ONE</div><h2 id="introTitle">START WITH NOTHING.</h2><p id="introCopy">New city. Empty pockets. Every choice counts.</p></div><button id="introSkip">SKIP INTRO →</button></div>
 <div id="paused" class="overlay"><div class="panel"><div class="eyebrow">SOLARA CITY</div><h2>PAUSED</h2><p>Explore at your own pace. Your cash, upgrades and completed contracts are automatically saved.</p><button id="resume">RESUME</button><button id="openGarage" class="secondary">UPGRADES</button><button id="toMenu" class="secondary">MAIN MENU</button></div></div>
 <div id="garage" class="overlay"><div class="panel"><div class="eyebrow">SOLARA AUTO WORKS</div><h2>Vehicle upgrades</h2><p>Money available: <b id="garageMoney" style="color:#66e2ad"></b></p><div id="upgradeList"></div><button id="closeGarage">BACK TO GAME</button></div></div>
 <script>
@@ -177,7 +186,7 @@ function makeCar(color='#ed636a',police=false){const group=new THREE.Group();sce
  box(1.16,.31,.08,0,.92,3.96,mat('#e8e2d3'),group);
  if(police){box(2,.22,.55,0,2.7,-.4,mat('#e8f0f9'),group);box(.75,.25,.55,-.54,2.86,-.4,mat('#ec394a'),group);box(.75,.25,.55,.54,2.86,-.4,mat('#418bff'),group)}
  return group}
-let save;const defaultSave=()=>({money:500,completed:0,speed:0,handling:0,nitro:0});try{save={...defaultSave(),...JSON.parse(localStorage.getItem('mvt6-save')||'{}')}}catch{save=defaultSave()}
+let save;const defaultSave=()=>({money:45,completed:0,speed:0,handling:0,nitro:0});try{save={...defaultSave(),...JSON.parse(localStorage.getItem('mvt6-save')||'{}')}}catch{save=defaultSave()}
 function persist(){try{localStorage.setItem('mvt6-save',JSON.stringify(save))}catch{};if(network)network.save(save)}
 const playerCar=makeCar('#e96e5d');
 const person=new THREE.Group();scene.add(person);
@@ -190,22 +199,59 @@ for(const side of [-1,1]){
  const arm=new THREE.Group();arm.position.set(side*.62,2.14,0);person.add(arm);box(.26,.96,.32,0,-.48,0,jacket,arm);box(.26,.24,.32,0,-1.01,0,skin,arm);limbs.arms.push(arm);
  const leg=new THREE.Group();leg.position.set(side*.26,1.25,0);person.add(leg);box(.34,1.12,.36,0,-.55,0,jeans,leg);box(.38,.23,.65,0,-1.17,.13,mat('#1e2935'),leg);limbs.legs.push(leg);
 }
-let carPos=new THREE.Vector3(0,0,0),playerPos=new THREE.Vector3(0,0,0),angle=0,walkAngle=0,velocity=0,inCar=true,gameMode='menu',camMode=0,clockTime=0,heat=0,heatTimer=0,mission=null,missionCount=0,missionTime=0,missionCooldown=0,nearGarage=false;
+let carPos=new THREE.Vector3(4,0,27),playerPos=new THREE.Vector3(6,0,5),angle=0,walkAngle=0,velocity=0,inCar=false,gameMode='menu',camMode=0,clockTime=0,heat=0,heatTimer=0,mission=null,missionCount=0,missionTime=0,missionCooldown=0,nearGarage=false;
 const traffic=[],police=[];for(let i=0;i<14;i++){const car=makeCar(['#5f9ac9','#eab76e','#94beb5','#e2e4e4','#657489'][i%5]);let q=roadPositions[Math.floor(rnd(i+10)*roadPositions.length)];const east=i%2===0;const pos=east?new THREE.Vector3((rnd(i+71)-.5)*950,0,q+(i%4===0?5:-5)):new THREE.Vector3(q+(i%3===0?5:-5),0,(rnd(i+88)-.5)*950);traffic.push({car,pos,east,dir:i%4<2?1:-1,speed:7+rnd(i+94)*8});car.position.copy(pos)}
 for(let i=0;i<4;i++){const c=makeCar('#e4edf2',true);c.visible=false;police.push({car:c,pos:new THREE.Vector3(),angle:0,active:false})}
-const depot={x:-184,z:0};const depotMark=cyl(6,6,.3,depot.x,.26,depot.z,mat('#65e2ac',.35));const garageMarker=cyl(7,7,.28,184,.28,0,mat('#edc66f'));const depotBeacon=mesh(new THREE.TorusGeometry(4.8,.37,8,32),new THREE.MeshBasicMaterial({color:0x6df5b5}));depotBeacon.rotation.x=Math.PI/2;depotBeacon.position.set(depot.x,.72,depot.z);const garageBeacon=depotBeacon.clone();garageBeacon.material=new THREE.MeshBasicMaterial({color:0xf5cb72});garageBeacon.position.set(184,.72,0);scene.add(depotBeacon,garageBeacon);
+const depot={x:0,z:0};const depotMark=cyl(6,6,.3,depot.x,.26,depot.z,mat('#65e2ac',.35));const garageMarker=cyl(7,7,.28,184,.28,0,mat('#edc66f'));const depotBeacon=mesh(new THREE.TorusGeometry(4.8,.37,8,32),new THREE.MeshBasicMaterial({color:0x6df5b5}));depotBeacon.rotation.x=Math.PI/2;depotBeacon.position.set(depot.x,.72,depot.z);const garageBeacon=depotBeacon.clone();garageBeacon.material=new THREE.MeshBasicMaterial({color:0xf5cb72});garageBeacon.position.set(184,.72,0);scene.add(depotBeacon,garageBeacon);
 const destinations=[{x:370,z:0,name:'Sunset Marina'},{x:-370,z:276,name:'West Haven'},{x:0,z:-370,name:'Old Quarter'},{x:276,z:276,name:'Emerald Heights'},{x:-276,z:-276,name:'Industrial Point'},{x:0,z:370,name:'South Pier'}];const targetRing=mesh(new THREE.TorusGeometry(7,.7,8,40),new THREE.MeshBasicMaterial({color:0xffdc77}));targetRing.rotation.x=Math.PI/2;targetRing.position.y=.8;targetRing.visible=false;scene.add(targetRing);
 function collision(x,z){if(Math.abs(x)>489||Math.abs(z)>489)return true;for(const b of footprint)if(Math.abs(x-b.x)<b.w+1.4&&Math.abs(z-b.z)<b.d+1.4)return true;return false}
 function setNotice(t){$('notice').textContent=t;$('notice').style.opacity='1';clearTimeout(setNotice.timer);setNotice.timer=setTimeout(()=>$('notice').style.opacity='0',2800)}
-function updateHUD(){ $('money').textContent='$'+Math.floor(save.money).toLocaleString();$('heat').textContent='★'.repeat(Math.ceil(heat))+'☆'.repeat(5-Math.ceil(heat));$('speed').innerHTML=(inCar?Math.round(Math.abs(velocity)*3.6):0)+' <small>KM/H</small>';const p=inCar?carPos:playerPos;$('district').textContent=p.x<-185?'WEST HAVEN':p.x>185?'EAST SOLARA':p.z>185?'SOUTH PIER':p.z< -185?'NORTH QUARTER':'DOWNTOWN';if(mission){$('missionTitle').textContent=mission.title;$('missionText').textContent=mission.description+' · '+Math.max(0,Math.ceil(missionTime))+'s remaining'}else{$('missionTitle').textContent='The city is yours';$('missionText').textContent='Drive to the green CONTRACT ring (west) and press F. Yellow ring (east) opens car upgrades.'}}
-function startMission(){if(mission){setNotice('Finish your current contract first');return}const place=destinations[missionCount%destinations.length],kind=missionCount%3;mission={title:kind===2?'Evasive Driving':kind===1?'Rapid Courier':'Express Delivery',description:kind===2?'Shake the patrol and reach '+place.name:'Reach '+place.name,place,reward:kind===2?1400:kind===1?950:700};missionTime=kind===1?95:kind===2?120:150;targetRing.visible=true;targetRing.position.set(place.x,1,place.z);if(kind===2)heat=Math.max(heat,2);setNotice('New contract: '+mission.title)}
-function finishMission(){save.money+=mission.reward;save.completed++;missionCount++;persist();setNotice('CONTRACT COMPLETE   +$'+mission.reward);mission=null;targetRing.visible=false;heat=Math.max(0,heat-1.5)}
+function getRank(){if(save.completed>=14&&save.money>=12000)return 'CITY LEGEND';if(save.completed>=9)return 'UNDERGROUND BOSS';if(save.completed>=5)return 'CREW LEADER';if(save.completed>=2)return 'STREET RUNNER';return 'NEW TO THE STREETS'}
+function updateHUD(){ $('streetRank').textContent=getRank();$('money').textContent='$'+Math.floor(save.money).toLocaleString();$('heat').textContent='★'.repeat(Math.ceil(heat))+'☆'.repeat(5-Math.ceil(heat));$('speed').innerHTML=(inCar?Math.round(Math.abs(velocity)*3.6):0)+' <small>KM/H</small>';const p=inCar?carPos:playerPos;$('district').textContent=p.x<-185?'WEST HAVEN':p.x>185?'EAST SOLARA':p.z>185?'SOUTH PIER':p.z< -185?'NORTH QUARTER':'DOWNTOWN';if(mission){$('missionTitle').textContent=mission.title;$('missionText').textContent=mission.description+' · '+Math.max(0,Math.ceil(missionTime))+'s remaining'}else{$('missionTitle').textContent='The city is yours';$('missionText').textContent='Walk to the green STREET CONTACT ring and press F for your next job. Two jobs unlock your first car.'}}
+const storyJobs=[
+ {title:'First Hustle',description:'Take a street delivery to North Row',place:{x:0,z:82,name:'North Row'},reward:140,time:165,heat:0},
+ {title:'Backstreet Drop',description:'Deliver the mystery package to Dock Street',place:{x:92,z:0,name:'Dock Street'},reward:250,time:165,heat:.3},
+ {title:'Hot Wheels',description:'Your crew needs a ride at East Solara',place:{x:184,z:0,name:'East Solara'},reward:530,time:130,heat:1},
+ {title:'Underground Delivery',description:'Take a risky shipment across town',place:{x:-184,z:92,name:'West Market'},reward:780,time:140,heat:1.5},
+ {title:'Midnight Run',description:'Cross the city before the clock runs out',place:{x:276,z:276,name:'Emerald Heights'},reward:1100,time:130,heat:2},
+ {title:'High Stakes Score',description:'Make the drop at Sunset Marina',place:{x:370,z:0,name:'Sunset Marina'},reward:1700,time:150,heat:2.5},
+ {title:'Shadow Cargo',description:'Reach the South Pier exchange',place:{x:0,z:370,name:'South Pier'},reward:2400,time:160,heat:3},
+ {title:'Last Escape',description:'Lose your heat and reach the northern exit',place:{x:0,z:-370,name:'North Quarter'},reward:3200,time:175,heat:3.8}
+];
+function startMission(){
+ if(mission){setNotice('Finish your active job first');return}
+ const n=save.completed,base=storyJobs[Math.min(n,storyJobs.length-1)];
+ const place=n>=storyJobs.length?destinations[n%destinations.length]:base.place;
+ mission={title:base.title,description:base.description,place,reward:base.reward+(n>=storyJobs.length?(n-storyJobs.length)*140:0),needEscape:n>=5};
+ missionTime=base.time;targetRing.visible=true;targetRing.position.set(place.x,1,place.z);heat=Math.max(heat,base.heat);heatTimer=0;
+ setNotice('NEW STREET JOB: '+mission.title+' · $'+mission.reward);
+}
+function finishMission(){
+ const wasLocked=save.completed<2;save.money+=mission.reward;save.completed++;missionCount=save.completed;persist();
+ setNotice('JOB COMPLETE · +$'+mission.reward+' · '+getRank());
+ mission=null;targetRing.visible=false;heat=Math.max(0,heat-.9);
+ if(wasLocked&&save.completed===2){playerCar.visible=true;setTimeout(()=>setNotice('YOUR FIRST RIDE IS READY! Find the blue car on the road and press E.'),600)}
+}
 function failMission(){setNotice('Contract expired — return to the contract ring');mission=null;targetRing.visible=false}
 function openGarage(){if(gameMode==='menu')return;gameMode='garage';$('paused').style.display='none';$('garage').style.display='flex';renderGarage()}
 const upgrades=[{id:'speed',name:'Performance engine',desc:'Raise top speed and acceleration',cost:l=>450*(l+1)},{id:'handling',name:'Sport suspension',desc:'Sharpen steering control',cost:l=>350*(l+1)},{id:'nitro',name:'Boost system',desc:'Increase boost strength',cost:l=>500*(l+1)}];
 function renderGarage(){$('garageMoney').textContent='$'+save.money.toLocaleString();$('upgradeList').innerHTML='';for(const u of upgrades){const level=save[u.id],cost=u.cost(level),div=document.createElement('div');div.className='upg';const desc=document.createElement('span');desc.innerHTML='<b>'+u.name+'</b> <span style="color:#68e2ae">Lv '+level+'/5</span><br>'+u.desc;const b=document.createElement('button');b.textContent=level>=5?'MAXED':'$'+cost;b.disabled=level>=5||save.money<cost;b.onclick=()=>{if(save.money>=cost&&save[u.id]<5){save.money-=cost;save[u.id]++;persist();renderGarage();updateHUD()}};div.append(desc,b);$('upgradeList').append(div)}}
-function interact(){if(gameMode!=='play')return;if(cityLife.interact())return;const p=inCar?carPos:playerPos;if(Math.hypot(p.x-depot.x,p.z-depot.z)<16){startMission();return}if(Math.hypot(p.x-184,p.z)<16){openGarage();return}setNotice('Go to a colored ring to interact')}
-function enterExit(){if(gameMode!=='play')return;if(inCar){if(Math.abs(velocity)>3){setNotice('Slow down before exiting');return}inCar=false;person.visible=true;playerPos.set(carPos.x+4,0,carPos.z+2);person.position.copy(playerPos);setNotice('On foot — E to enter car')}else if(playerPos.distanceTo(carPos)<12){inCar=true;person.visible=false;setNotice('Vehicle entered')}else{setNotice('Walk closer to your car')}}
+function interact(){if(gameMode!=='play')return;const p=inCar?carPos:playerPos;if(Math.hypot(p.x-depot.x,p.z-depot.z)<14){startMission();return}if(Math.hypot(p.x-184,p.z)<16){openGarage();return}if(cityLife.interact())return;setNotice('Find the green contact ring or walk up to a resident to talk')}
+function enterExit(){if(gameMode!=='play')return;if(inCar){if(Math.abs(velocity)>3){setNotice('Slow down before exiting');return}inCar=false;person.visible=true;playerPos.set(carPos.x+4,0,carPos.z+2);person.position.copy(playerPos);setNotice('On foot — E to enter car')}else if(save.completed<2){setNotice('Start on the streets: finish two jobs to unlock your first ride')}else if(playerPos.distanceTo(carPos)<12){inCar=true;person.visible=false;playerCar.visible=true;setNotice('Vehicle entered')}else{setNotice('Walk closer to your car')}}
+let introTime=0;
+function startIntro(){gameMode='intro';introTime=0;$('menu').style.display='none';$('hud').style.display='none';$('storyIntro').style.display='block';person.visible=true;playerCar.visible=save.completed>=2;camera.position.set(54,20,40);camera.lookAt(playerPos.x,1.9,playerPos.z)}
+function endIntro(){if(gameMode!=='intro')return;gameMode='play';$('storyIntro').style.display='none';$('hud').style.display='block';camYaw=0;camera.position.set(playerPos.x,6,playerPos.z-9);camTarget.set(playerPos.x,1.8,playerPos.z);setNotice(save.completed?'Welcome back to the streets of Solara':'You have $45. Find the green ring and press F to start your first job.')}
+$('introSkip').onclick=endIntro;
+function updateIntroCamera(dt){
+ const t=Math.min(1,introTime/9),ease=t*t*(3-2*t),theta=-.7+ease*2.2;
+ const distance=32-ease*22;
+ const aim=new THREE.Vector3(playerPos.x,2.2,playerPos.z);
+ camera.position.set(aim.x+Math.cos(theta)*distance,14-ease*9,aim.z+Math.sin(theta)*distance);
+ camera.lookAt(aim);
+ $('introTitle').textContent=introTime<3?'A CITY OF OPPORTUNITY.':introTime<6?'EMPTY POCKETS. BIG DREAMS.':'YOUR STORY STARTS HERE.';
+ $('introCopy').textContent=introTime<3?'The skyline shines. The streets tell another story.':introTime<6?'No car. No reputation. One chance to make it.':'Build your crew, choose your jobs, and rise through Solara.';
+ if(introTime>=9)endIntro();
+}
 const keys={};let orbitOffset=0,orbitPitch=.06,mouseDown=false,camYaw=0,walkMotion=0,qualityPixelRatio=Math.min(devicePixelRatio,1.25);
 renderer.domElement.addEventListener('pointerdown',e=>{if(e.button===0||e.pointerType==='touch'){mouseDown=true;renderer.domElement.setPointerCapture(e.pointerId)}});
 renderer.domElement.addEventListener('pointermove',e=>{if(!mouseDown||gameMode!=='play')return;orbitOffset=THREE.MathUtils.clamp(orbitOffset-e.movementX*.0045,-1.5,1.5);orbitPitch=THREE.MathUtils.clamp(orbitPitch+e.movementY*.0025,-.18,.55)});
@@ -214,7 +260,7 @@ renderer.domElement.addEventListener('pointercancel',()=>mouseDown=false);
 function keyState(e,on){let k=e.key.toLowerCase();if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(gameMode==='play')pause();else if(gameMode==='pause')resume();else if(gameMode==='garage'){closeGarage()}}if(k==='e')enterExit();if(k==='f')interact();if(k==='c'){camMode=(camMode+1)%3;orbitOffset=0};if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
 addEventListener('keydown',e=>keyState(e,true));addEventListener('keyup',e=>keyState(e,false));addEventListener('blur',()=>{for(let k in keys)keys[k]=false});
 function pause(){gameMode='pause';$('paused').style.display='flex'}function resume(){gameMode='play';$('paused').style.display='none';$('garage').style.display='none'}function closeGarage(){gameMode='play';$('garage').style.display='none'}
-$('play').onclick=()=>{$('menu').style.display='none';$('hud').style.display='block';gameMode='play';setNotice('Welcome to Solara City — drive west to begin a contract')};$('resetSave').onclick=()=>{if(confirm('Reset your MVT 6 cash, upgrades and contracts?')){save=defaultSave();persist();setNotice('Save reset')}};$('resume').onclick=resume;$('openGarage').onclick=openGarage;$('closeGarage').onclick=closeGarage;$('toMenu').onclick=()=>{gameMode='menu';$('paused').style.display='none';$('hud').style.display='none';$('menu').style.display='flex'};
+$('play').onclick=()=>{startIntro()};$('resetSave').onclick=()=>{if(confirm('Reset your MVT 6 cash, upgrades and contracts?')){save=defaultSave();persist();setNotice('Save reset')}};$('resume').onclick=resume;$('openGarage').onclick=openGarage;$('closeGarage').onclick=closeGarage;$('toMenu').onclick=()=>{gameMode='menu';$('paused').style.display='none';$('hud').style.display='none';$('menu').style.display='flex'};
 for(const b of document.querySelectorAll('#touch button')){b.addEventListener('pointerdown',e=>{e.preventDefault();if(b.dataset.key){keys[b.dataset.key.toLowerCase()]=true}else if(b.dataset.action==='e')enterExit();else if(b.dataset.action==='f')interact()});for(const event of ['pointerup','pointercancel','pointerleave'])b.addEventListener(event,()=>{if(b.dataset.key)keys[b.dataset.key.toLowerCase()]=false})}
 function moveCar(dt){
  const accel=26+save.speed*4,maxSpeed=31+save.speed*5.2,boost=keys.shift?1.32+save.nitro*.08:1;
@@ -276,8 +322,8 @@ getPlayer:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,inCar}
 isPlaying:()=>gameMode==='play',onNotice:setNotice,
 onReward:amount=>{save.money+=amount;persist();updateHUD()}});
 let network=multiplayer({THREE,scene,makeCar,box,mat,mesh,getState:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,angle:inCar?angle:person.rotation.y,inCar}),onAccount:progress=>{if(progress){save={...defaultSave(),...progress};updateHUD()}},onMessage:message=>setNotice(message)});
-let last=performance.now(),fpsCounter=0,fpsTime=0;function frame(now){requestAnimationFrame(frame);const dt=Math.min(.04,(now-last)/1000);last=now;if(gameMode==='play'){clockTime+=dt;if(inCar)moveCar(dt);else movePerson(dt);advanceTraffic(dt);advancePolice(dt);if(mission){missionTime-=dt;const p=inCar?carPos:playerPos;if(Math.hypot(p.x-mission.place.x,p.z-mission.place.z)<14){if(mission.title!=='Evasive Driving'||heat<1.1)finishMission();else if(clockTime%3<dt)setNotice('Lose your wanted level before arriving!')}else if(missionTime<=0)failMission()}cityLife.update(dt,now);updateHUD();updateCamera(dt);drawMap()}else if(gameMode==='menu'){cityLife.update(dt,now);const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;fpsTime+=dt;if(fpsTime>1){const fps=Math.round(fpsCounter/fpsTime);$('fps').textContent=fps+' FPS';if(gameMode==='play'&&fps<37&&qualityPixelRatio>.8){qualityPixelRatio=Math.max(.8,qualityPixelRatio-.1);renderer.setPixelRatio(qualityPixelRatio)}fpsTime=0;fpsCounter=0}}
-person.visible=false;playerCar.position.copy(carPos);$('hud').style.display='none';requestAnimationFrame(frame);if(window.__mvtLoaded)window.__mvtLoaded();addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
+let last=performance.now(),fpsCounter=0,fpsTime=0;function frame(now){requestAnimationFrame(frame);const dt=Math.min(.04,(now-last)/1000);last=now;if(gameMode==='play'){clockTime+=dt;if(inCar)moveCar(dt);else movePerson(dt);advanceTraffic(dt);advancePolice(dt);if(mission){missionTime-=dt;const p=inCar?carPos:playerPos;if(Math.hypot(p.x-mission.place.x,p.z-mission.place.z)<14){if(mission.title!=='Evasive Driving'||heat<1.1)finishMission();else if(clockTime%3<dt)setNotice('Lose your wanted level before arriving!')}else if(missionTime<=0)failMission()}cityLife.update(dt,now);updateHUD();updateCamera(dt);drawMap()}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='menu'){cityLife.update(dt,now);const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;fpsTime+=dt;if(fpsTime>1){const fps=Math.round(fpsCounter/fpsTime);$('fps').textContent=fps+' FPS';if(gameMode==='play'&&fps<37&&qualityPixelRatio>.8){qualityPixelRatio=Math.max(.8,qualityPixelRatio-.1);renderer.setPixelRatio(qualityPixelRatio)}fpsTime=0;fpsCounter=0}}
+person.visible=true;playerCar.visible=save.completed>=2;playerCar.position.copy(carPos);$('hud').style.display='none';requestAnimationFrame(frame);if(window.__mvtLoaded)window.__mvtLoaded();addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
 </script>
 </body>
 </html>
