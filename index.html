@@ -356,6 +356,7 @@ window.addEventListener('error',e=>fail(e.message||'Game asset could not load'))
 <script type="module">
 import {multiplayer} from './client.js';
 import {createCityLife} from './city-life.js';
+import {movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase} from './game-core.js';
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';
 // MVT 6: an original browser game and city, not GTA assets or source.
 const $=id=>document.getElementById(id), world=$('game');
@@ -1177,7 +1178,7 @@ for(let value=1;value<=3;value++){
  if(gameMode!=='puzzle'||!mission)return;
  if(value!==hackSequence[hackStep]){hackStep=0;document.getElementById('hackProgress').textContent='Incorrect sequence. Try again.';return}
  hackStep++;document.getElementById('hackProgress').textContent=hackStep+'/3 decoded';
- if(hackStep>=3){closeHack();mission.stage=mission.kind==='finale'?'escape':'deliver';mission.puzzleDone=true;refreshMissionProps();setNotice('TERMINAL UNLOCKED · Find your next contact.');updateHUD()}
+ if(hackStep>=3){closeHack();mission.stage=nextMissionPhase(mission,true);mission.puzzleDone=true;refreshMissionProps();setNotice('TERMINAL UNLOCKED · Find your next contact.');updateHUD()}
  };symbolButtons.append(btn);
 }
 document.getElementById('hackCancel').onclick=closeHack;
@@ -1206,7 +1207,7 @@ function interactMission(){
  const current=inCar?carPos:playerPos,near=(q,dist)=>Math.hypot(current.x-q.x,current.z-q.z)<dist;
  if(mission.stage==='terminal'&&near({x:-12.5,z:-94},7)){showHack();return true}
  if(mission.stage==='pickup'&&near(mission.pickup,6)){
-   mission.stage=mission.kind==='escape'?'escape':'deliver';refreshMissionProps();
+   mission.stage=nextMissionPhase(mission,true);refreshMissionProps();
    setNotice(mission.kind==='escape'?'ITEM COLLECTED · Drive clear of the pursuing patrol!':'ITEM COLLECTED · Deliver it to the contact.');updateHUD();return true;
  }
  if(mission.stage==='scout'&&near(missionPhotos[mission.photoIndex],8)){
@@ -1833,13 +1834,12 @@ function movePerson(dt){
  const forward=Number(!!(keys.w||keys.arrowup))-Number(!!(keys.s||keys.arrowdown)),sideways=Number(!!(keys.d||keys.arrowright))-Number(!!(keys.a||keys.arrowleft));
  walkMotion=0;
  if(forward||sideways){
- const length=Math.hypot(forward,sideways),speed=(keys.shift?8.6:5.7)*dt;
- const dx=(Math.sin(camYaw)*forward-Math.cos(camYaw)*sideways)/length*speed;
- const dz=(Math.cos(camYaw)*forward+Math.sin(camYaw)*sideways)/length*speed;
- // Separate axis collision enables movement alongside walls.
+ const speed=(keys.shift?8.6:5.7)*dt;
+ const dir=movementVector(camYaw,forward,sideways);
+ const dx=dir.x*speed,dz=dir.z*speed;
  if(collision(playerPos.x,playerPos.z,.35))safeWalkingPosition();
- if(!collision(playerPos.x+dx,playerPos.z,.35)){playerPos.x+=dx;walkMotion=1}
- if(!collision(playerPos.x,playerPos.z+dz,.35)){playerPos.z+=dz;walkMotion=1}
+ const next=slideMove(playerPos,{x:dx,z:dz},collision,.35);
+ playerPos.x=next.x;playerPos.z=next.z;walkMotion=Number(next.moved);
  // This fallback stops the character being trapped by any malformed block.
  if(!walkMotion&&collision(playerPos.x,playerPos.z,.35))safeWalkingPosition();
  if(walkMotion){const desired=Math.atan2(dx,dz);person.rotation.y+=Math.atan2(Math.sin(desired-person.rotation.y),Math.cos(desired-person.rotation.y))*(1-Math.exp(-15*dt));walkAngle=person.rotation.y}
@@ -1971,7 +1971,7 @@ const jailLocation=new THREE.Vector3(-92,0,92);
 function arrestPlayer(officer){
  if(gameMode!=='play'||clockTime<arrestCooldown)return;
  arrestWanted=Math.min(5,Math.max(1,Math.ceil(heat)));
- arrestBail=arrestWanted*175;
+ arrestBail=bailAmount(arrestWanted);
  arrestTarget=officer||null;arrestElapsed=0;gameMode='arrest';
  velocity=0;for(const key in keys)keys[key]=false;
  if(document.pointerLockElement)document.exitPointerLock();
@@ -2043,17 +2043,10 @@ function advancePolice(dt){
   p.car.visible=true;
   const dx=target.x-p.pos.x,dz=target.z-p.pos.z,dist=Math.hypot(dx,dz);
   const roadX=road(p.pos.x),roadZ=road(p.pos.z),goalX=road(target.x),goalZ=road(target.z);
-  // Use grid intersections as intermediate destinations instead of cutting through buildings.
-  let waypointX=target.x,waypointZ=target.z;
-  if(dist>12){
-   if(Math.abs(p.pos.z-roadZ)<8&&Math.abs(target.x-p.pos.x)>10){waypointX=target.x;waypointZ=roadZ+5}
-   else if(Math.abs(p.pos.x-roadX)<8){waypointX=roadX+5;waypointZ=target.z}
-   else if(Math.abs(p.pos.z-roadZ)>8){waypointX=p.pos.x;waypointZ=roadZ+5}
-   else{waypointX=roadX+5;waypointZ=target.z}
-  }
-  const desired=Math.atan2(waypointX-p.pos.x,waypointZ-p.pos.z);
-  const delta=Math.atan2(Math.sin(desired-p.angle),Math.cos(desired-p.angle));
-  p.angle+=THREE.MathUtils.clamp(delta,-dt*2.0,dt*2.0);
+  // Shared, testable grid navigation; turn-rate limited pursuit prevents orbiting.
+  const waypoint=dist>12?policeRoadWaypoint(p.pos,target,BLOCK):target;
+  const desired=Math.atan2(waypoint.x-p.pos.x,waypoint.z-p.pos.z);
+  p.angle=approachAngle(p.angle,desired,dt*2);
   const arrestRange=inCar?7:4.1;
   const targetSpeed=dist<arrestRange?0:dist<16?6:Math.min(25,13+i*2.3);
   p.speed=THREE.MathUtils.lerp(p.speed,targetSpeed,Math.min(1,dt*2.4));
