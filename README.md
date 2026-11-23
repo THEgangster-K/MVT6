@@ -2,6 +2,19 @@
 
 An original 3D open-world browser driving game. This is an independent GTA-style prototype, not GTA 6.
 
+## Controls and world presentation repair (v0.5)
+
+- **Fixed the trapped on-foot start:** the old starting location was inside building collision geometry. Player now starts on an open road at (0, 0).
+- **Camera-relative WASD walking:** W/S move in the direction of the camera and A/D strafe; movement slides along walls instead of stopping altogether.
+- **Vehicle collision improvements:** a blocked turn no longer always stops forward movement entirely.
+- **Keyboard input focus:** account form typing does not accidentally trigger game controls.
+- **New actual 3D opening:** four timed camera moves through the playable coastal district, central boulevard and your street-level starting point. All scenes are generated from the existing 3D environment, not 2D title cards.
+- **Procedural materials:** concrete, brick-inspired patterning, asphalt, paving, grass and four architectural window/facade looks.
+- **Greater architectural variety:** rooftop structures, ventilation ducts, tiered building crowns, shopfronts, awnings and balconies.
+- **GPU instancing preserved:** the large amounts of repeated geometry share GPU draw calls to reduce slowdown.
+
+This is still a lightweight original Three.js browser game rather than photorealistic AAA graphics. Source syntax and code consistency were checked; actual FPS and interaction still require browser testing on the target device.
+
 ## Street-to-success campaign (v0.4)
 
 **You now begin on foot** in Solara City rather than driving immediately. New saves begin with **$45**, no reputation and no unlocked vehicle. The original intro shows a short cinematic flyover; select **SKIP INTRO** to play right away.
