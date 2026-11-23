@@ -599,6 +599,44 @@ for(const [kind,list] of Object.entries(pavementProps)){
  for(let i=0;i<list.length;i++){const [x,y,z,w,h,d]=list[i];ob.position.set(x,y,z);ob.scale.set(w,h,d);ob.updateMatrix();batch.setMatrixAt(i,ob.matrix)}
  batch.instanceMatrix.needsUpdate=true;batch.frustumCulled=false;scene.add(batch);
 }
+// Real-world scale street furniture and neighborhood landmarks in batches.
+const streetscape={lampPost:[],lampHead:[],bollard:[],bench:[],busGlass:[],busRoof:[],kiosk:[],kioskRoof:[],trash:[]};
+const addStreet=(kind,x,y,z,w,h,d)=>streetscape[kind].push([x,y,z,w,h,d]);
+const transitStops=[[-13,-108],[107,13],[-108,105],[200,-13],[-199,-13],[13,199],[107,-106],[-13,-199]];
+for(const [idx,pos] of transitStops.entries()){
+ const [x,z]=pos;
+ addStreet('busGlass',x,2.15,z,5.8,3.6,.10);addStreet('busRoof',x,4.02,z,7.7,.22,3.0);
+ addStreet('bench',x,1.18,z+.47,4.4,.22,.9);
+ for(const side of [-1,1]){addStreet('lampPost',x+side*3.8,2.5,z,.18,5,.18);addStreet('lampHead',x+side*3.8,5,z,.8,.2,.8)}
+ addStreet('kiosk',x+9,1.35,z+4,3.5,2.7,2.7);
+ addStreet('kioskRoof',x+9,2.84,z+4,4.3,.2,3.3);
+ for(let j=0;j<5;j++)addStreet('bollard',x+(j-2)*2.3,.53,z-3,.22,1.06,.22);
+}
+for(let i=-HALF;i<=HALF;i++){
+ for(let j=-HALF;j<=HALF;j++){
+  if((i+j)%3!==0)continue;
+  const x=i*BLOCK+12.5,z=j*BLOCK+11.8;
+  addStreet('lampPost',x,3.45,z,.15,6.9,.15);
+  addStreet('lampHead',x,6.89,z,1.2,.23,.6);
+  if((i+j)%2===0){addStreet('trash',x+2,.55,z,1,1.1,.82);addStreet('bench',x-2,.64,z,3.4,.25,1.05)}
+ }
+}
+const streetscapeMats={
+ lampPost:mat('#627d88',.35,.75),lampHead:new THREE.MeshBasicMaterial({color:0xf5dcaa}),
+ bollard:mat('#728990',.42,.66),bench:mat('#916e55',.8),busGlass:mat('#689da8',.19,.28),
+ busRoof:mat('#254b59',.43,.3),kiosk:mat('#a77e5b',.7),kioskRoof:mat('#bf9679',.63),trash:mat('#526b71',.72)
+};
+for(const [kind,parts] of Object.entries(streetscape)){
+ if(!parts.length)continue;
+ const im=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),streetscapeMats[kind],parts.length),ob=new THREE.Object3D();
+ for(let i=0;i<parts.length;i++){const [x,y,z,w,h,d]=parts[i];ob.position.set(x,y,z);ob.scale.set(w,h,d);ob.updateMatrix();im.setMatrixAt(i,ob.matrix)}
+ im.instanceMatrix.needsUpdate=true;im.frustumCulled=false;scene.add(im);
+}
+const cityAdvertTexture=textTexture('SOLARA TRANSIT','#163b4a','#edc995');
+for(const [x,z] of transitStops){
+ const sign=mesh(new THREE.PlaneGeometry(3.8,1.2),new THREE.MeshBasicMaterial({map:cityAdvertTexture,side:THREE.DoubleSide}));
+ sign.position.set(x,3.55,z+.15);
+}
 // Low-cost alley canopies, suspended signs and environmental clutter.
 const alleySteel=mat('#304347',.52,.38),alleyLamp=new THREE.MeshBasicMaterial({color:0xf6d8aa});
 const canopyBars=[],hangingLamps=[],alleyBins=[],alleyBunting=[];
