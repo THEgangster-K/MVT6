@@ -127,10 +127,41 @@ for(let i=-HALF;i<=HALF;i++){
  }
 }
 // City blocks: footprint, varied skyline, windows, awnings, small parks.
-function facadeTexture(){const c=document.createElement('canvas');c.width=256;c.height=512;const q=c.getContext('2d');q.fillStyle='#6e8898';q.fillRect(0,0,256,512);for(let y=7;y<512;y+=32)for(let x=6;x<256;x+=30){q.fillStyle=((x*7+y*11)%5===0)?'#ecdca4':'#304e65';q.fillRect(x,y,19,20);q.fillStyle='#a9bacc';q.fillRect(x,y,19,2)}const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t}
-const windowTex=facadeTexture();const windowMats=[new THREE.MeshStandardMaterial({map:windowTex,side:THREE.DoubleSide,roughness:.48,metalness:.12}),new THREE.MeshStandardMaterial({map:windowTex,color:0xc7d9ed,side:THREE.DoubleSide,roughness:.48,metalness:.12})];
+// Shared procedural material maps add architectural variety without external assets.
+function patternTexture(kind,seed=0){
+ const c=document.createElement('canvas');c.width=256;c.height=256;const ctx=c.getContext('2d');
+ const drawNoise=(base,scale)=>{ctx.fillStyle=base;ctx.fillRect(0,0,256,256);
+   for(let i=0;i<1400;i++){const x=Math.floor(rnd(i*5+seed*71)*256),y=Math.floor(rnd(i*13+seed*23)*256),v=Math.floor(30+rnd(i*7+seed*9)*40);
+     ctx.fillStyle='rgba('+v+','+v+','+v+','+(scale*.13)+')';ctx.fillRect(x,y,1+rnd(i)*3,1+rnd(i+3)*3)}};
+ if(kind==='brick'){drawNoise('#b19b87',.5);ctx.strokeStyle='#675d5577';ctx.lineWidth=2;
+   for(let y=0;y<256;y+=22){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(256,y);ctx.stroke();
+     for(let x=(y/22%2)*22;x<256;x+=44){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+22);ctx.stroke()}}}
+ else if(kind==='concrete'){drawNoise('#b9bdba',.7);ctx.strokeStyle='#73818b4d';for(let q=0;q<=256;q+=64){ctx.beginPath();ctx.moveTo(q,0);ctx.lineTo(q,256);ctx.moveTo(0,q);ctx.lineTo(256,q);ctx.stroke()}}
+ else if(kind==='asphalt'){drawNoise('#49545b',1.4)}
+ else if(kind==='pavement'){drawNoise('#aeb3ad',.6);ctx.strokeStyle='#7d868488';ctx.lineWidth=2;for(let q=0;q<256;q+=50){ctx.beginPath();ctx.moveTo(q,0);ctx.lineTo(q,256);ctx.moveTo(0,q);ctx.lineTo(256,q);ctx.stroke()}}
+ else if(kind==='grass'){drawNoise('#4b856c',.9);for(let i=0;i<160;i++){const x=rnd(seed*19+i)*256,y=rnd(seed*22+i)*256;ctx.strokeStyle=i%2?'#a8b37388':'#305e4677';ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+3,y-5);ctx.stroke()}}
+ else if(kind==='shopfront'){drawNoise('#638da1',.3)}
+ else {drawNoise(['#6e8b97','#988e85','#687e87','#9796a0'][seed%4],.42);
+   const rows=kind==='tower'?9:kind==='old'?6:kind==='loft'?7:8;
+   const gap=256/rows;
+   for(let y=6;y<250;y+=gap)for(let x=7;x<252;x+=kind==='old'?37:30){
+      const warm=rnd(x*7+y*13+seed*50)>.83;ctx.fillStyle=warm?'#f2d19a':'#1e3d51';ctx.fillRect(x,y,kind==='old'?25:20,gap*.62);
+      ctx.fillStyle='#c7d4d8';ctx.fillRect(x,y,kind==='old'?25:20,2);
+      ctx.fillStyle='#729ca777';ctx.fillRect(x+3,y+3,6,gap*.5);
+      if(kind==='old'){ctx.fillStyle='#d3c4ac';ctx.fillRect(x-2,y-2,29,3)}
+      if(kind==='loft'){ctx.fillStyle='#c1b0a0';ctx.fillRect(x+9,y,2,gap*.62)}
+   }}
+ const tx=new THREE.CanvasTexture(c);tx.colorSpace=THREE.SRGBColorSpace;
+ tx.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),4);return tx;
+}
+const materialsTexture={asphalt:patternTexture('asphalt'),pavement:patternTexture('pavement'),grass:patternTexture('grass'),brick:patternTexture('brick'),concrete:patternTexture('concrete')};
+materials.asphalt.map=materialsTexture.asphalt;materials.sidewalk.map=materialsTexture.pavement;materials.grass.map=materialsTexture.grass;
+for(const m of [materials.asphalt,materials.sidewalk,materials.grass])m.needsUpdate=true;
+const windowMats=['tower','old','loft','modern'].map((type,i)=>new THREE.MeshStandardMaterial({
+ map:patternTexture(type,i),side:THREE.DoubleSide,roughness:i===1?.85:.37,metalness:i===1?0:.15
+}));
 // GPU instancing renders many static skyline elements in four draw calls.
-const footprint=[],buildingMatrices=[],buildingTints=[],roofMatrices=[],facadeMatrices=[[],[]],treeTrunks=[],treeCanopies=[];
+const footprint=[],buildingMatrices=[],buildingTints=[],roofMatrices=[],facadeMatrices=[[],[],[],[]],treeTrunks=[],treeCanopies=[];
 const facadeDummy=new THREE.Object3D();
 function facadeMatrix(x,y,z,w,h,rot){facadeDummy.position.set(x,y,z);facadeDummy.rotation.set(0,rot,0);facadeDummy.scale.set(w,h,1);facadeDummy.updateMatrix();return facadeDummy.matrix.clone()}
 for(let ix=-HALF;ix<HALF;ix++)for(let iz=-HALF;iz<HALF;iz++){
@@ -145,7 +176,7 @@ for(let ix=-HALF;ix<HALF;ix++)for(let iz=-HALF;iz<HALF;iz++){
   buildingTints.push(new THREE.Color(colors[Math.floor(rnd(n*19+bi)*colors.length)]));
   footprint.push({x:bx,z:bz,w:bw/2+.6,d:depth/2+.6});
   roofMatrices.push(new THREE.Matrix4().compose(new THREE.Vector3(bx,height+.18,bz),new THREE.Quaternion(),new THREE.Vector3(bw+1,.65,depth+1)));
-  const glassIndex=(n+bi)%windowMats.length;
+  const glassIndex=(n+bi+Math.floor(Math.abs(cx+cz)/100))%windowMats.length;
   for(const side of [-1,1]){
    facadeMatrices[glassIndex].push(facadeMatrix(bx,height*.50,bz+side*(depth/2+.09),bw*.89,height*.86,side<0?Math.PI:0));
    facadeMatrices[glassIndex].push(facadeMatrix(bx+side*(bw/2+.09),height*.50,bz,depth*.89,height*.86,side*Math.PI/2));
@@ -154,7 +185,8 @@ for(let ix=-HALF;ix<HALF;ix++)for(let iz=-HALF;iz<HALF;iz++){
  }
  for(let t=0;t<3;t++){let v=t%2?29:-29;addTree(cx+v,cz-30+t*28,2.5)}
 }
-const buildingBatch=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),mat('#ffffff',.83),buildingMatrices.length);
+const buildingMaterial=mat('#ffffff',.88);buildingMaterial.map=materialsTexture.concrete;buildingMaterial.needsUpdate=true;
+const buildingBatch=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),buildingMaterial,buildingMatrices.length);
 for(let i=0;i<buildingMatrices.length;i++){buildingBatch.setMatrixAt(i,buildingMatrices[i]);buildingBatch.setColorAt(i,buildingTints[i])}
 buildingBatch.instanceMatrix.needsUpdate=true;buildingBatch.instanceColor.needsUpdate=true;buildingBatch.frustumCulled=false;scene.add(buildingBatch);
 const roofBatch=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),mat('#e8e5df'),roofMatrices.length);
