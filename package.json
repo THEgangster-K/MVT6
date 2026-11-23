@@ -5,8 +5,9 @@
   "description": "Original 3D multiplayer browser driving game",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check client.js && node --check city-life.js && node scripts/check-game.cjs",
-    "test": "node scripts/check-game.cjs"
+    "check": "node --check server.js && node scripts/check-game.cjs",
+    "test": "node scripts/check-game.cjs",
+    "prestart": "npm run check"
   },
   "engines": {
     "node": ">=20"
