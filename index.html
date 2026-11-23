@@ -288,7 +288,9 @@ for(const side of [-1,1]){
 const prologueProps=new THREE.Group();scene.add(prologueProps);prologueProps.position.set(11.5,0,-6);
 const blanket=box(2.3,.075,2.9,.2,.13,.25,mat('#516e70',.98),prologueProps);
 const paper=box(2.1,.13,.07,.05,1.16,-2.05,mat('#79604b',.96),prologueProps);
+paper.rotation.y=-Math.PI/2;
 const backing=box(2.48,1.19,.11,.05,1.03,-2.1,mat('#ab8c62',.96),prologueProps);
+backing.rotation.y=-Math.PI/2;
 const signCanvas=document.createElement('canvas');signCanvas.width=512;signCanvas.height=256;
 const signCtx=signCanvas.getContext('2d');signCtx.fillStyle='#d5b389';signCtx.fillRect(0,0,512,256);
 signCtx.strokeStyle='#92704b';signCtx.lineWidth=12;signCtx.strokeRect(8,8,496,240);
@@ -296,7 +298,7 @@ signCtx.fillStyle='#302a26';signCtx.textAlign='center';signCtx.font='bold 61px G
 signCtx.fillText('Please',256,105);signCtx.fillText('donate',256,187);
 const signTx=new THREE.CanvasTexture(signCanvas);signTx.colorSpace=THREE.SRGBColorSpace;
 const writing=mesh(new THREE.PlaneGeometry(2.35,1.12),new THREE.MeshBasicMaterial({map:signTx,side:THREE.DoubleSide}),prologueProps);
-writing.position.set(.05,1.04,-2.18);
+writing.position.set(-.06,1.04,-2.1);writing.rotation.y=-Math.PI/2;
 const cup=cyl(.18,.13,.36,-.83,.31,-1.35,mat('#bf9e7d',.83),prologueProps,12);
 const cupTop=mesh(new THREE.TorusGeometry(.18,.033,6,16),mat('#e8d7b4'),prologueProps);cupTop.rotation.x=Math.PI/2;cupTop.position.set(-.83,.52,-1.35);
 function setSeatPose(amount){
@@ -425,7 +427,6 @@ function cinematicCamera(time){
 }
 function updateIntroCamera(dt){
  cinematicCamera(introTime);
- if(save.completed===0&&introTime>introDuration-2){const t=(introTime-(introDuration-2))/2;setSeatPose(1-THREE.MathUtils.smoothstep(t,0,1))}
  if(introTime>=introDuration)endIntro();
 }
 const keys={};let orbitOffset=0,orbitPitch=.06,camYaw=0,walkMotion=0,qualityPixelRatio=Math.min(devicePixelRatio,1.25),mouseLocked=false;
