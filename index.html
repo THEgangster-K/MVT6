@@ -109,6 +109,36 @@ body:has(#hud[style*="block"]) #lockHint{display:block}
 .phoneCard.locked{opacity:.57}.phoneLocations{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .phoneClose{width:100%;background:#7a4a5a;margin-top:18px}
 @media(max-width:700px){#phoneToggle{bottom:268px;right:12px}#mapWrap{right:7px!important;bottom:11px!important}}
+
+/* Clean bottom HUD: full controls moved to a dedicated tutorial */
+#help{position:absolute;bottom:22px;left:20px;display:flex;align-items:center;gap:7px;max-width:350px;padding:7px 8px!important;font-size:10px!important;background:linear-gradient(130deg,#142a37e0,#1a3340b9);border:1px solid #6a9c99a0;border-radius:10px!important}
+#help span{white-space:nowrap;color:#cce3dd;font-weight:800;letter-spacing:.7px}
+#help button{font:800 10px system-ui;padding:8px 10px;border-radius:8px;background:#356674;color:#effaf7;white-space:nowrap}
+#tutorialScreen{position:fixed;inset:0;background:#07131cef;backdrop-filter:blur(14px);display:none;align-items:center;justify-content:center;z-index:91;padding:14px;box-sizing:border-box}
+#tutorialScreen.visible{display:flex}
+.tutorialBody{width:min(890px,96vw);max-height:92vh;overflow:auto;background:linear-gradient(130deg,#1b3541,#132334 48%,#282b45);border:1px solid #7cc5b4a0;border-radius:21px;box-shadow:0 24px 100px #000d;padding:26px 30px;color:#f4f6ef}
+.tutorialTop{display:flex;align-items:center;justify-content:space-between;color:#eac99c;font:850 11px system-ui;letter-spacing:3px}
+.tutorialTop button{background:#ffffff22;border:1px solid #ffffff4a;color:white}
+.tutorialBody h1{font-size:clamp(35px,6vw,65px);margin:10px 0 4px;letter-spacing:-2px}.tutorialLead{max-width:680px;color:#b8d7d5}
+.tutorialGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+.tutorialGrid>div{background:linear-gradient(130deg,#214451c7,#182a3bad);border:1px solid #8bc4b04e;border-radius:12px;padding:15px}
+.tutorialGrid h3{font-size:13px;letter-spacing:1.5px;color:#f1c38c;margin:0 0 11px}.tutorialGrid p{font-size:13px;line-height:2;margin:0}
+.tutorialGrid kbd{display:inline-block;background:#081a27;border:1px solid #709c9c;border-radius:5px;min-width:17px;padding:1px 4px;text-align:center;font-weight:800;color:#fff}
+.tutorialMission{border-left:3px solid #f0c18b;padding:11px 13px;background:#ffffff0d;margin:16px 0;color:#d8e6e0;font-size:12px}
+.tutorialRemember{font:12px system-ui;color:#bfcecf;display:flex;align-items:center;gap:7px;margin:12px 0}.tutorialRemember input{accent-color:#74d8ba}
+#tutorialStart{background:linear-gradient(120deg,#71dcc1,#3e9388);color:#0b2029;font-weight:900;letter-spacing:1px;padding:12px 19px}
+#wheelToggle{position:fixed;z-index:12;bottom:320px;right:17px;background:linear-gradient(135deg,#3c5768,#1b354b);font:850 11px system-ui;letter-spacing:1.2px;border:1px solid #8bafba;color:#eff8fc;border-radius:10px;padding:9px 14px}
+#gadgetWheel{position:fixed;inset:0;z-index:68;background:#07111dc4;display:none;align-items:center;justify-content:center;flex-direction:column;color:#ecf6f3;backdrop-filter:blur(6px)}
+#gadgetWheel.visible{display:flex}
+#gadgetRing{width:min(380px,88vw);height:min(380px,88vw);position:relative;border-radius:50%;background:conic-gradient(#244459 0deg 80deg,#122c3c 80deg 90deg,#31556c 90deg 170deg,#122c3c 170deg 180deg,#244a55 180deg 260deg,#122c3c 260deg 270deg,#345b67 270deg 350deg,#122c3c 350deg);border:5px solid #80baaeb3;box-shadow:0 16px 70px #000a,inset 0 0 50px #031321}
+.gadgetSlot{position:absolute;width:32%;height:27%;background:transparent;border:0;color:#d9f4f0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11px;transform:translate(-50%,-50%)}
+.gadgetSlot[data-gadget="0"]{left:50%;top:15%}.gadgetSlot[data-gadget="1"]{left:84%;top:50%}.gadgetSlot[data-gadget="2"]{left:50%;top:86%}.gadgetSlot[data-gadget="3"]{left:16%;top:50%}
+.gadgetSlot span{font-size:29px}.gadgetSlot b{letter-spacing:1px;font-size:11px}.gadgetSlot small{font-size:9px;color:#abcac7}
+.gadgetSlot.selected{color:#ffddab;text-shadow:0 0 15px #ffd19a}.gadgetSlot:hover{background:#ffffff1a}
+.gadgetHub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:32%;height:32%;border-radius:50%;background:linear-gradient(140deg,#0b202d,#1e4150);border:2px solid #8abeb7;display:flex;align-items:center;justify-content:center;flex-direction:column;font:900 14px system-ui;letter-spacing:1px}
+.gadgetHub small{font:800 10px system-ui;color:#f4c994;margin-top:5px}
+#gadgetWheel>p{font:700 12px system-ui;letter-spacing:1px;color:#d1e2dd}
+@media(max-width:650px){.tutorialBody{padding:17px}.tutorialGrid{grid-template-columns:1fr}.tutorialGrid>div{padding:11px}.tutorialGrid p{font-size:12px}#help{bottom:170px;max-width:240px;flex-wrap:wrap}#wheelToggle{bottom:300px}}
 </style>
 </head>
 <body>
@@ -118,8 +148,35 @@ body:has(#hud[style*="block"]) #lockHint{display:block}
  <div id="fps"></div>
  <div id="objective"><b>ACTIVE CONTRACT</b><strong id="missionTitle">—</strong><p id="missionText">—</p></div>
  <div id="notice"></div><div id="speed">0 <small>KM/H</small></div>
- <div id="help"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Drive / walk &nbsp; <kbd>Shift</kbd> Sprint / boost &nbsp; <kbd>Space</kbd> Brake<br><kbd>E</kbd> Enter / exit / take vehicle &nbsp; <kbd>F</kbd> Talk / collect / interact &nbsp; <kbd>T</kbd> Street art &nbsp; <kbd>P</kbd> Mission phone &nbsp; <kbd>G</kbd> Signal tagger &nbsp; <kbd>C</kbd> Camera &nbsp; <kbd>Esc</kbd> Pause &nbsp; <kbd>R</kbd> Reset car &nbsp; <kbd>Click</kbd> Lock mouse <kbd>Esc</kbd> Unlock &nbsp; <kbd>F</kbd> Talk to NPCs</div>
- <div id="mapWrap"><div id="mapCompass">N 000°</div><canvas id="minimap" width="320" height="320"></canvas><div id="mapLegend">◆ MISSION　● CONTACT　■ LOOT</div></div>
+ <div id="help"><span>WASD · MOVE</span><span>CLICK · CAMERA</span><button id="helpTutorial">? CONTROLS</button></div>
+ <button id="wheelToggle" title="Open gadget wheel (Q)">◉ GADGETS · Q</button>
+<div id="gadgetWheel" aria-label="Gadget selection">
+ <div id="gadgetRing">
+  <button class="gadgetSlot" data-gadget="0" style="--angle:0deg"><span>✋</span><b>HANDS</b><small>Interact</small></button>
+  <button class="gadgetSlot" data-gadget="1" style="--angle:90deg"><span>◉</span><b>SIGNAL</b><small>Disable patrol</small></button>
+  <button class="gadgetSlot" data-gadget="2" style="--angle:180deg"><span>▣</span><b>SCANNER</b><small>Find loot</small></button>
+  <button class="gadgetSlot" data-gadget="3" style="--angle:270deg"><span>✦</span><b>FLASH</b><small>Distract patrol</small></button>
+  <div class="gadgetHub">LOADOUT<small id="gadgetSelected">HANDS</small></div>
+ </div>
+ <p>Q closes wheel · Select gadget · G to use</p>
+</div>
+<div id="tutorialScreen" aria-label="Game tutorial">
+ <div class="tutorialBody">
+  <div class="tutorialTop"><span>WELCOME TO SOLARA CITY</span><button id="tutorialCloseTop">✕</button></div>
+  <h1>YOUR FIRST NIGHT</h1>
+  <p class="tutorialLead">Start on the sidewalk with nothing. Explore, meet locals, complete chapters and build a life in the city.</p>
+  <div class="tutorialGrid">
+   <div><h3>WALK & CAMERA</h3><p><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move around<br><kbd>Shift</kbd> Sprint<br><kbd>Click</kbd> Lock mouse camera<br><kbd>Esc</kbd> Release mouse</p></div>
+   <div><h3>EXPLORE & INTERACT</h3><p><kbd>F</kbd> Talk, collect, use<br><kbd>E</kbd> Enter / exit a vehicle<br><kbd>P</kbd> Mission phone<br><kbd>C</kbd> Change camera</p></div>
+   <div><h3>VEHICLES</h3><p><kbd>W</kbd><kbd>S</kbd> Accelerate / reverse<br><kbd>A</kbd><kbd>D</kbd> Steer<br><kbd>Space</kbd> Brake<br><kbd>R</kbd> Recover vehicle</p></div>
+   <div><h3>GADGETS & MAP</h3><p><kbd>Q</kbd> Gadget wheel<br><kbd>G</kbd> Use selected gadget<br><kbd>T</kbd> Street art<br><kbd>Tab</kbd> Tutorial<br><b>Yellow diamond</b> Mission objective</p></div>
+  </div>
+  <p class="tutorialMission"><b>FIRST JOB:</b> Talk to Rae near the starting sidewalk, then follow your mission phone and the map.</p>
+  <label class="tutorialRemember"><input id="tutorialRemember" type="checkbox" checked> Show tutorial when I begin a new session</label>
+  <button id="tutorialStart">CONTINUE TO GAME ➜</button>
+ </div>
+</div>
+<div id="mapWrap"><div id="mapCompass">N 000°</div><canvas id="minimap" width="320" height="320"></canvas><div id="mapLegend">◆ MISSION　● CONTACT　■ LOOT</div></div>
  <button id="phoneToggle" title="Open your mission phone (P)">▣ PHONE · P</button>
  <div id="gamePhone" aria-label="Solara mission phone">
   <div class="phoneSpeaker"></div>
