@@ -344,6 +344,33 @@ function interactShop(x,z){
  else setNotice(chosen.name+' is open · Visit other shops and talk to locals for more opportunities.');
  gestureTime=.7;return true;
 }
+// Street furniture, markets and traffic detail remain GPU-instanced for smoothness.
+const pavementProps={post:[],table:[],stool:[],umbrella:[],planter:[],bin:[],lantern:[],sign:[]};
+const shopDistrict=[[-74,-14],[14,-74],[106,12],[194,14],[14,105],[-76,106],[-165,-74],[105,-167]];
+const addStreetPart=(type,x,y,z,w,h,d)=>pavementProps[type].push([x,y,z,w,h,d]);
+for(let i=0;i<shopDistrict.length;i++){
+ const [x,z]=shopDistrict[i],side=(i%2?1:-1);
+ for(let j=0;j<4;j++){
+  const offset=(j-1.5)*6.4,px=x+offset,pz=z+side*(1+j%2);
+  addStreetPart('table',px,1,pz,2.4,.16,2.4);
+  addStreetPart('post',px,0.57,pz,.14,1.14,.14);
+  addStreetPart('umbrella',px,2.95,pz,4.3,.15,4.3);
+  for(let seat of [-1,1])addStreetPart('stool',px+seat*1.5,.51,pz,.8,1.02,.7);
+  addStreetPart('planter',px-2.6,.5,pz-2.1,1,1,1);
+ }
+ for(let j=0;j<5;j++){
+  const p=shopDistrict[i],zz=p[1]+(j-2)*6;
+  addStreetPart('bin',p[0]+8,.7,zz,.78,1.4,.78);
+  addStreetPart('lantern',p[0]-4,3.6,zz,.8,.3,.45);
+ }
+}
+const streetFurnitureColors={post:'#6b6869',table:'#a98972',stool:'#504d53',umbrella:'#b98a65',planter:'#738d61',bin:'#536c75',lantern:'#f4d8a0',sign:'#527a84'};
+for(const [kind,list] of Object.entries(pavementProps)){
+ if(!list.length)continue;
+ const batch=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),kind==='lantern'?new THREE.MeshBasicMaterial({color:0xf8d4a4}):mat(streetFurnitureColors[kind],.79),list.length),ob=new THREE.Object3D();
+ for(let i=0;i<list.length;i++){const [x,y,z,w,h,d]=list[i];ob.position.set(x,y,z);ob.scale.set(w,h,d);ob.updateMatrix();batch.setMatrixAt(i,ob.matrix)}
+ batch.instanceMatrix.needsUpdate=true;batch.frustumCulled=false;scene.add(batch);
+}
 // Low-cost alley canopies, suspended signs and environmental clutter.
 const alleySteel=mat('#304347',.52,.38),alleyLamp=new THREE.MeshBasicMaterial({color:0xf6d8aa});
 const canopyBars=[],hangingLamps=[],alleyBins=[],alleyBunting=[];
@@ -594,8 +621,8 @@ function interactMission(){
  const current=inCar?carPos:playerPos,near=(q,dist)=>Math.hypot(current.x-q.x,current.z-q.z)<dist;
  if(mission.stage==='terminal'&&near({x:-12.5,z:-94},7)){showHack();return true}
  if(mission.stage==='pickup'&&near(mission.pickup,6)){
-   mission.stage='deliver';refreshMissionProps();
-   setNotice('ITEM COLLECTED · Deliver it to the contact.');updateHUD();return true;
+   mission.stage=mission.kind==='escape'?'escape':'deliver';refreshMissionProps();
+   setNotice(mission.kind==='escape'?'ITEM COLLECTED · Drive clear of the pursuing patrol!':'ITEM COLLECTED · Deliver it to the contact.');updateHUD();return true;
  }
  if(mission.stage==='scout'&&near(missionPhotos[mission.photoIndex],8)){
    mission.photoIndex++;gestureTime=1.1;
