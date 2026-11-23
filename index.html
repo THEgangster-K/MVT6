@@ -209,9 +209,12 @@ for(let ix=-HALF;ix<HALF;ix++)for(let iz=-HALF;iz<HALF;iz++){
  }
  if(n%13===2||n%17===4){plane(59,58,cx,cz,materials.grass,.16);for(let t=0;t<10;t++){let dx=(rnd(n*13+t)-.5)*52,dz=(rnd(n*21+t)-.5)*50;addTree(cx+dx,cz+dz,rnd(n+t)*2+3)}continue}
  for(let bi=0;bi<4;bi++){
-  const bx=cx+(bi%2?17:-17),bz=cz+(bi>1?17:-17),height=15+rnd(n*13+bi*17)*78*(Math.abs(cx)<200&&Math.abs(cz)<200?1.45:.7);
+  const bx=cx+(bi%2?17:-17),bz=cz+(bi>1?17:-17);
+  const styleSeed=rnd(n*13+bi*17),central=Math.abs(cx)<200&&Math.abs(cz)<200;
+  // Low-rise shops, old warehouse flats, mid-rise apartments and downtown towers.
+  const height=styleSeed<.30?10+styleSeed*43:styleSeed<.65?19+styleSeed*38:30+styleSeed*66*(central?1.3:.54);
   const bw=22+rnd(n+bi)*6,depth=21+rnd(n*3+bi)*7;
-  const colors=['#d6c6b0','#8da9b5','#d5b5a6','#6d909e','#e6ddcb','#b48d7f','#a6a9a4'];
+  const colors=['#d6c6b0','#8da9b5','#b26953','#6d909e','#e6ddcb','#b48d7f','#a6a9a4','#8b6956','#a2a7ae','#e0c0a2','#567a83'];
   buildingMatrices.push(new THREE.Matrix4().compose(new THREE.Vector3(bx,height/2+.17,bz),new THREE.Quaternion(),new THREE.Vector3(bw,height,depth)));
   buildingTints.push(new THREE.Color(colors[Math.floor(rnd(n*19+bi)*colors.length)]));
   footprint.push({x:bx,z:bz,w:bw/2+.6,d:depth/2+.6});
@@ -326,7 +329,7 @@ function persist(){try{localStorage.setItem('mvt6-save',JSON.stringify(save))}ca
 const playerCar=makeCar('#e96e5d');
 const person=new THREE.Group();scene.add(person);
 const skin=mat('#d79a72'),jacket=mat('#1c4f72'),jeans=mat('#273548');
-box(.95,1.1,.48,0,1.77,0,jacket,person);
+const torso=box(.95,1.1,.48,0,1.77,0,jacket,person);
 const head=mesh(new THREE.SphereGeometry(.39,14,10),skin,person);head.position.y=2.71;
 const hair=mesh(new THREE.SphereGeometry(.4,14,8,0,Math.PI*2,0,1.15),mat('#24252a'),person);hair.position.y=2.79;
 const limbs={arms:[],legs:[]};
@@ -451,20 +454,21 @@ function renderLifestyle(){
 }
 function interact(){
  if(gameMode!=='play')return;
- if(interactMission())return;
+ if(interactMission()){gestureTime=.65;return;}
  const p=inCar?carPos:playerPos;
  if(Math.hypot(p.x-184,p.z)<16){openGarage();return}
- if(cityLife.interact())return;
+ if(cityLife.interact()){gestureTime=.65;return;}
  setNotice(mission?'Collect the parcel or speak to the receiving NPC.':'Talk to Rae near the starting pavement to find work.');
 }
 function enterExit(){if(gameMode!=='play')return;if(inCar){if(Math.abs(velocity)>3){setNotice('Slow down before exiting');return}inCar=false;person.visible=true;playerPos.set(carPos.x+4,0,carPos.z+2);person.position.copy(playerPos);setNotice('On foot — E to enter car')}else if(save.completed<2){setNotice('Start on the streets: finish two jobs to unlock your first ride')}else if(playerPos.distanceTo(carPos)<12){inCar=true;person.visible=false;playerCar.visible=true;setNotice('Vehicle entered')}else{setNotice('Walk closer to your car')}}
 let introTime=0;
 const introCameraLook=new THREE.Vector3();
 const introShots=[
- {duration:4.1,from:[-437,30,-178],to:[-430,19,-35],lookFrom:[-280,35,-76],lookTo:[-215,34,0],title:'SOLARA CITY',copy:'A coast of glass towers, quiet streets and restless ambition.'},
- {duration:4.2,from:[0,11,-194],to:[0,8,-55],lookFrom:[0,7,-60],lookTo:[0,6,55],title:'CHAPTER ONE',copy:'Everyone starts somewhere. Tonight, you begin with nothing.'},
- {duration:4.0,from:[-42,8,-1],to:[-10,5,4],lookFrom:[36,4,1],lookTo:[0,2,0],title:'NO SHORTCUTS',copy:'Take the small jobs. Meet the right people. Make a name for yourself.'},
- {duration:5.0,from:[27,7,-18],to:[15,3.7,-13],lookFrom:[11.5,1.7,-6],lookTo:[11.5,1.4,-6],title:'YOUR STORY BEGINS',copy:'A cold pavement. A small sign. One decision to get up and begin again.'}
+ // Camera travels only along open road centre-lines and clear sidewalk paths.
+ {duration:4.1,from:[-92,17,-290],to:[-92,11,-137],lookFrom:[-92,11,-154],lookTo:[-92,6,-61],title:'SOLARA CITY',copy:'A maze of storefronts, old brick alleys, and modern towers.'},
+ {duration:4.2,from:[0,12,-190],to:[0,8,-64],lookFrom:[0,8,-104],lookTo:[0,5,26],title:'CHAPTER ONE',copy:'Some arrive with everything. You arrive with almost nothing.'},
+ {duration:4.0,from:[0,8,-44],to:[0,5,-18],lookFrom:[0,5,-4],lookTo:[12.4,2,-6],title:'NO SHORTCUTS',copy:'The next opportunity is just down the street.'},
+ {duration:5.0,from:[12,6,-27],to:[12.8,3.5,-12],lookFrom:[12.4,2,-6],lookTo:[12.4,1.3,-6],title:'YOUR STORY BEGINS',copy:'One small sign on the pavement. An entire city ahead.'}
 ];
 const introDuration=introShots.reduce((a,x)=>a+x.duration,0);
 function startIntro(){
@@ -523,6 +527,7 @@ function updateIntroCamera(dt){
  cinematicCamera(introTime);
  if(introTime>=introDuration)endIntro();
 }
+let gestureTime=0;
 const keys={};let orbitOffset=0,orbitPitch=.06,camYaw=0,walkMotion=0,qualityPixelRatio=Math.min(devicePixelRatio,1.25),mouseLocked=false;
 const lockHint=document.createElement('div');lockHint.id='lockHint';lockHint.textContent='CLICK TO LOCK CAMERA · ESC TO RELEASE';document.body.append(lockHint);
 function lockMouse(){if(gameMode!=='play'||document.pointerLockElement===renderer.domElement)return;renderer.domElement.requestPointerLock?.()}
@@ -570,9 +575,13 @@ function movePerson(dt){
  }
  person.position.copy(playerPos);
  const gait=Math.sin(clockTime*(keys.shift?14:9))*walkMotion*(keys.shift?1.3:1);
- person.position.y=Math.abs(gait)*.035;
- limbs.legs[0].rotation.x=gait*.5;limbs.legs[1].rotation.x=-gait*.5;
- limbs.arms[0].rotation.x=-gait*.33;limbs.arms[1].rotation.x=gait*.33;
+ person.position.y=Math.abs(gait)*.037;
+ torso.rotation.x=THREE.MathUtils.lerp(torso.rotation.x,walkMotion?(keys.shift?-.13:-.035):.015*Math.sin(clockTime*2),1-Math.exp(-7*dt));
+ torso.scale.y=1+.012*Math.sin(clockTime*2.3);
+ head.rotation.y=Math.atan2(Math.sin(camYaw-person.rotation.y),Math.cos(camYaw-person.rotation.y))*.14;
+ limbs.legs[0].rotation.x=gait*.55;limbs.legs[1].rotation.x=-gait*.55;
+ limbs.arms[0].rotation.x=-gait*.4;limbs.arms[1].rotation.x=gait*.4;
+ if(gestureTime>0){gestureTime=Math.max(0,gestureTime-dt);limbs.arms[1].rotation.x=-1.1;limbs.arms[1].rotation.z=.25*Math.sin(gestureTime*13)}
 }
 function advanceTraffic(dt){for(const t of traffic){const v=t.dir*t.speed*dt;if(t.east)t.pos.x+=v;else t.pos.z+=v;if(t.east&&Math.abs(t.pos.x)>505)t.pos.x=-Math.sign(t.pos.x)*503;if(!t.east&&Math.abs(t.pos.z)>505)t.pos.z=-Math.sign(t.pos.z)*503;t.car.position.copy(t.pos);t.car.rotation.y=t.east?(t.dir>0?Math.PI/2:-Math.PI/2):(t.dir>0?0:Math.PI);if(inCar&&t.pos.distanceTo(carPos)<5.3&&Math.abs(velocity)>7){velocity*=-.31;heat=Math.min(5,heat+.34);heatTimer=0}}}
 function advancePolice(dt){heatTimer+=dt;if(heatTimer>17&&heat>0){heat=Math.max(0,heat-dt*.05)}for(let i=0;i<police.length;i++){const p=police[i],active=heat>i*.9+.25;p.car.visible=active;if(!active){p.active=false;continue}if(!p.active){p.pos.copy(carPos);p.pos.x+=120+i*31;p.pos.z+=-120+i*24;p.active=true}const target=inCar?carPos:playerPos;const dx=target.x-p.pos.x,dz=target.z-p.pos.z,dist=Math.hypot(dx,dz);p.angle=Math.atan2(dx,dz);const speed=17+i*2;p.pos.x+=Math.sin(p.angle)*speed*dt;p.pos.z+=Math.cos(p.angle)*speed*dt;p.car.position.copy(p.pos);p.car.rotation.y=p.angle;if(dist<7){heat=Math.min(5,heat+.006);if(mission&&mission.title==='Evasive Driving')missionTime-=dt*.6}}}
