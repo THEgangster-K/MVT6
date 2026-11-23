@@ -1,6 +1,6 @@
 // MVT 6 City Life Update — low-poly detailed props, street residents and dialogue.
 // No copyrighted assets. All geometry is procedural.
-export function createCityLife({THREE,scene,box,mesh,mat,roadPositions,rnd,collision,getPlayer,isPlaying,onNotice,onReward}){
+export function createCityLife({THREE,scene,box,mesh,mat,roadPositions,rnd,collision,getPlayer,isPlaying,onNotice,onReward,onStoryContact}){
 const citizens=[],props=[],clock=new THREE.Clock(),npcNames=['Ava','Mason','Nia','Kai','Sofia','Jordan','Riley','Sam','Aria','Luca','Noah','Maya','Zoe','Max','Ellie','Leo','Ivy','Finn','Nova','Alex','Charlie','Harper','Jules','Jamie'];
 const stories=[
  ['The city looks great from the waterfront after sunset.','Thanks for showing me around. Here is a small tip!',75],
@@ -37,6 +37,8 @@ function streetPoint(i){
  const travel=(rnd(i*9+4)-.5)*865;
  return horizontal?{x:travel,z:road+offset}:{x:road+offset,z:travel};
 }
+// Named contact for story jobs, stays by the start-of-game sidewalk.
+const fixer=human(29,12.5,-18);fixer.name='Rae';fixer.role='fixer';fixer.root.rotation.y=Math.PI/2;
 for(let i=0;i<28;i++){
  let p=streetPoint(i+12);
  if(collision(p.x,p.z)){p=streetPoint(i+101)}
@@ -60,8 +62,8 @@ for(let i=0;i<16;i++){
 let active=null,dialogUntil=0;
 const pop=document.createElement('div');pop.id='citizenPrompt';pop.style.cssText='display:none;position:fixed;bottom:160px;left:50%;transform:translateX(-50%);z-index:7;background:#0b1d2fe8;border:1px solid #75e6bfaa;border-radius:12px;padding:11px 17px;color:white;font:700 13px system-ui;pointer-events:none;box-shadow:0 8px 24px #0008';document.body.appendChild(pop);
 const dialog=document.createElement('div');dialog.id='citizenDialog';dialog.style.cssText='display:none;position:fixed;bottom:205px;left:50%;transform:translateX(-50%);z-index:8;max-width:min(480px,90vw);background:#112439f2;border:1px solid #73e6b7b0;border-radius:14px;padding:15px 19px;color:#f5fbff;box-shadow:0 14px 50px #0009;font:14px/1.55 system-ui';document.body.appendChild(dialog);
-function nearest(){const p=getPlayer();if(p.inCar)return null;let best=null,d=5.2;for(const n of citizens){const distance=Math.hypot(p.x-n.root.position.x,p.z-n.root.position.z);if(distance<d){best=n;d=distance}}return best}
-function interact(){const n=nearest();if(!n)return false;active=n;const story=stories[n.id%stories.length];const first=n.chatIndex++===0;dialog.innerHTML='<b style="color:#6ee8ba">'+n.name+'</b><div style="margin-top:5px">'+(first?story[0]:story[1])+'</div><small style="color:#a7c4cf">Press F to talk again · Walk away to close</small>';dialog.style.display='block';dialogUntil=performance.now()+6500;if(first){onReward(story[2]);onNotice(n.name+' gave you $'+story[2]+' for helping around town')}return true}
+function nearest(){const p=getPlayer();if(p.inCar)return null;let best=null,d=5.2;for(const n of [fixer,...citizens]){const distance=Math.hypot(p.x-n.root.position.x,p.z-n.root.position.z);if(distance<d){best=n;d=distance}}return best}
+function interact(){const n=nearest();if(!n)return false;if(n.role==='fixer'){onStoryContact?.();return true}active=n;const story=stories[n.id%stories.length];const first=n.chatIndex++===0;dialog.innerHTML='<b style="color:#6ee8ba">'+n.name+'</b><div style="margin-top:5px">'+(first?story[0]:story[1])+'</div><small style="color:#a7c4cf">Press F to talk again · Walk away to close</small>';dialog.style.display='block';dialogUntil=performance.now()+6500;if(first){onReward(story[2]);onNotice(n.name+' gave you $'+story[2]+' for helping around town')}return true}
 let lastNpc=0;
 function update(dt,now){
  // NPC movement update at 30fps; animation and camera interaction run every frame.
@@ -78,8 +80,8 @@ function update(dt,now){
  }}
  if(!isPlaying()){pop.style.display='none';dialog.style.display='none';return}
  const n=nearest();
- pop.style.display=n?'block':'none';if(n)pop.textContent='F  ·  Talk to '+n.name;
+ pop.style.display=n?'block':'none';if(n)pop.textContent=n.role==='fixer'?'F  ·  Talk to Rae (street jobs)':'F  ·  Talk to '+n.name;
  if(!n||now>dialogUntil)dialog.style.display='none';
 }
-return {update,interact,citizens};
+return {update,interact,citizens,fixer};
 }
