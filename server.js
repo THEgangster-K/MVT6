@@ -20,8 +20,8 @@ function setCookie(res,value){res.setHeader('Set-Cookie','mvt6_session='+value+'
 async function body(req){return new Promise((resolve,reject)=>{let text='';req.on('data',chunk=>{text+=chunk;if(text.length>8192){reject(Error('Request too large'));req.destroy()}});req.on('end',()=>{try{resolve(JSON.parse(text||'{}'))}catch{reject(Error('Invalid JSON'))}});req.on('error',reject)})}
 function hash(password,salt=crypto.randomBytes(16).toString('hex')){return salt+':'+crypto.scryptSync(password,salt,64).toString('hex')}
 function matches(password,stored){try{const [salt]=stored.split(':');const candidate=hash(password,salt);return crypto.timingSafeEqual(Buffer.from(stored),Buffer.from(candidate))}catch{return false}}
-function cleanProgress(v){const limit=(x,max)=>Math.max(0,Math.min(max,Math.floor(Number(x)||0)));return {money:limit(v?.money,100000000),completed:limit(v?.completed,1000000),speed:limit(v?.speed,5),handling:limit(v?.handling,5),nitro:limit(v?.nitro,5)}}
-async function initDb(){if(!db){console.warn('DATABASE_URL not set: guest multiplayer enabled; player accounts unavailable');return}await db.query('CREATE TABLE IF NOT EXISTS mvt_players (id BIGSERIAL PRIMARY KEY, username VARCHAR(20) UNIQUE NOT NULL, password_hash TEXT NOT NULL, progress JSONB NOT NULL DEFAULT \'{"money":500,"completed":0,"speed":0,"handling":0,"nitro":0}\'::jsonb, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())');console.log('Account database ready')}
+function cleanProgress(v){const limit=(x,max)=>Math.max(0,Math.min(max,Math.floor(Number(x)||0)));return {money:limit(v?.money,100000000),completed:limit(v?.completed,1000000),speed:limit(v?.speed,5),handling:limit(v?.handling,5),nitro:limit(v?.nitro,5),lifeTier:limit(v?.lifeTier,4)}}
+async function initDb(){if(!db){console.warn('DATABASE_URL not set: guest multiplayer enabled; player accounts unavailable');return}await db.query('CREATE TABLE IF NOT EXISTS mvt_players (id BIGSERIAL PRIMARY KEY, username VARCHAR(20) UNIQUE NOT NULL, password_hash TEXT NOT NULL, progress JSONB NOT NULL DEFAULT \'{"money":45,"completed":0,"speed":0,"handling":0,"nitro":0,"lifeTier":0}\'::jsonb, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())');console.log('Account database ready')}
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.ico':'image/x-icon'};
 async function route(req,res){
 const url=new URL(req.url,'http://localhost');
@@ -33,7 +33,7 @@ if(req.method==='POST'&&['/api/register','/api/login'].includes(url.pathname)){
 const input=await body(req),username=String(input.username||'').trim(),password=String(input.password||'');
 if(!/^[a-zA-Z0-9_]{3,20}$/.test(username)||password.length<10||password.length>128)return json(res,400,{error:'Username: 3–20 letters/numbers/underscores. Password: 10–128 characters.'});
 let found;
-if(url.pathname==='/api/register'){try{found=await db.query('INSERT INTO mvt_players(username,password_hash) VALUES($1,$2) RETURNING id,username,progress',[username,hash(password)])}catch(e){if(e.code==='23505')return json(res,409,{error:'Username is already taken'});throw e}}
+if(url.pathname==='/api/register'){try{found=await db.query('INSERT INTO mvt_players(username,password_hash,progress) VALUES($1,$2,$3::jsonb) RETURNING id,username,progress',[username,hash(password),JSON.stringify({money:45,completed:0,speed:0,handling:0,nitro:0,lifeTier:0})])}catch(e){if(e.code==='23505')return json(res,409,{error:'Username is already taken'});throw e}}
 else{found=await db.query('SELECT id,username,password_hash,progress FROM mvt_players WHERE lower(username)=lower($1)',[username]);if(!found.rows[0]||!matches(password,found.rows[0].password_hash))return json(res,401,{error:'Invalid username or password'})}
 setCookie(res,token(found.rows[0].id));return json(res,200,{user:{username:found.rows[0].username,progress:found.rows[0].progress}})
 }
