@@ -453,7 +453,7 @@ function moveCar(dt){
  if(keys[' '])velocity*=Math.exp(-9*dt);
  velocity=THREE.MathUtils.clamp(velocity,-maxSpeed*.42,maxSpeed*boost);
  if(Math.abs(velocity)<.06)velocity=0;
- const turning=Number(!!(keys.d||keys.arrowright))-Number(!!(keys.a||keys.arrowleft));
+ const turning=Number(!!(keys.a||keys.arrowleft))-Number(!!(keys.d||keys.arrowright));
  const steerResponse=Math.min(1,Math.abs(velocity)/8);
  angle+=turning*(1.55+save.handling*.13)*steerResponse*Math.sign(velocity)*dt;
  const nx=carPos.x+Math.sin(angle)*velocity*dt,nz=carPos.z+Math.cos(angle)*velocity*dt;
@@ -467,8 +467,8 @@ function movePerson(dt){
  walkMotion=0;
  if(forward||sideways){
  const length=Math.hypot(forward,sideways),speed=(keys.shift?8.6:5.7)*dt;
- const dx=(Math.sin(camYaw)*forward+Math.cos(camYaw)*sideways)/length*speed;
- const dz=(Math.cos(camYaw)*forward-Math.sin(camYaw)*sideways)/length*speed;
+ const dx=(Math.sin(camYaw)*forward-Math.cos(camYaw)*sideways)/length*speed;
+ const dz=(Math.cos(camYaw)*forward+Math.sin(camYaw)*sideways)/length*speed;
  // Separate axis collision enables movement alongside walls.
  if(!collision(playerPos.x+dx,playerPos.z)){playerPos.x+=dx;walkMotion=1}
  if(!collision(playerPos.x,playerPos.z+dz)){playerPos.z+=dz;walkMotion=1}
