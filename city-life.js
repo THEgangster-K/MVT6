@@ -32,8 +32,13 @@ function human(i,x,z){
  const color=mat(shirts[i%shirts.length]),pant=mat(trousers[i%trousers.length]),face=mat(skin[i%skin.length]),hair=mat(['#32241e','#d4a05f','#141c24','#76573c'][i%4]);
  color.map=textile[i%textile.length];color.needsUpdate=true;
  pant.map=textile[(i+2)%textile.length];pant.needsUpdate=true;
- const torso=box(.8,1.04,.4,0,1.75,0,color,root);
- box(.36,.68,.038,0,1.74,.235,mat(['#f0e8dc','#253e58','#f2cf9a'][i%3]),root);
+ // Anatomical silhouette uses rounded shoulders, curved torso, layered fabric and neck.
+ const torso=mesh(new THREE.CapsuleGeometry(.41,.47,5,12),color,root);torso.position.set(0,1.77,0);torso.scale.z=.67;
+ const shoulders=mesh(new THREE.SphereGeometry(.46,12,9),color,root);
+ shoulders.position.set(0,2.11,0);shoulders.scale.set(1.26,.5,.75);
+ const hips=mesh(new THREE.SphereGeometry(.38,12,8),pant,root);
+ hips.position.set(0,1.29,0);hips.scale.set(1.0,.42,.75);
+ box(.24,.64,.04,0,1.73,.284,mat(['#f0e8dc','#253e58','#f2cf9a'][i%3]),root);
  box(.8,.095,.45,0,1.27,0,soleMat,root);
  const collar=box(.45,.10,.43,0,2.28,0,mat('#e0d4c2'),root);
  // Each passerby gets an accessory or a second clothing layer.
@@ -42,22 +47,38 @@ function human(i,x,z){
  if(i%4===2)box(.18,.8,.08,.18,1.73,.265,mat('#e5ce9e'),root);
 
  const neck=box(.2,.19,.2,0,2.36,0,face,root);
- const head=mesh(headGeo,face,root);head.position.y=2.69;
+ const head=mesh(headGeo,face,root);head.position.y=2.69;head.scale.set(.94,1.15,.86);
+ const jaw=mesh(new THREE.SphereGeometry(.255,12,10),face,root);jaw.position.set(0,2.50,.07);jaw.scale.set(1.05,.6,.88);
+ for(const side of [-1,1]){
+  const ear=mesh(new THREE.SphereGeometry(.12,9,7),face,root);
+  ear.position.set(side*.316,2.62,0);ear.scale.set(.7,1.17,.58);
+ }
  const cap=mesh(new THREE.SphereGeometry(.345,12,8,0,Math.PI*2,0,1.20),hair,root);cap.position.set(0,2.8,0);
- for(const side of [-1,1]){const eye=mesh(new THREE.SphereGeometry(.035,7,5),eyeMat,root);eye.position.set(side*.13,2.72,.316)}
+ for(const side of [-1,1]){
+  const eye=mesh(new THREE.SphereGeometry(.038,9,7),eyeMat,root);
+  eye.position.set(side*.126,2.72,.29);
+  const brow=mesh(new THREE.CapsuleGeometry(.023,.15,3,7),hair,root);brow.rotation.z=Math.PI/2;
+  brow.position.set(side*.128,2.81,.29);
+ }
  box(.09,.11,.1,0,2.60,.338,face,root);
  const lip=box(.19,.018,.022,0,2.46,.32,mat('#946f66'),root);
 
  const arms=[],legs=[];
  for(const side of [-1,1]){
   const a=new THREE.Group();a.position.set(side*.54,2.17,0);root.add(a);
-  const arm=mesh(armGeo,color,a);arm.position.y=-.48;arms.push(a);
+  const arm=mesh(armGeo,color,a);arm.position.y=-.48;
+ const elbow=mesh(new THREE.SphereGeometry(.145,9,7),color,a);elbow.position.y=-.70;
+ const hand=mesh(new THREE.SphereGeometry(.12,10,8),face,a);hand.position.y=-1.03;hand.scale.set(.85,1.22,.75);
+ arms.push(a);
   const leg=new THREE.Group();leg.position.set(side*.23,1.28,0);root.add(leg);
   const shin=mesh(legGeo,pant,leg);shin.position.y=-.61;
-  box(.32,.18,.52,0,-1.14,.13,soleMat,leg);
- box(.35,.055,.54,0,-1.23,.16,mat('#a5a39e'),leg);legs.push(leg);
+  const shoe=mesh(new THREE.SphereGeometry(.29,12,8),soleMat,leg);
+  shoe.position.set(0,-1.15,.15);shoe.scale.set(1.03,.50,1.48);
+  const sole=mesh(new THREE.SphereGeometry(.295,11,7),mat('#a5a39e'),leg);sole.position.set(0,-1.24,.18);
+  sole.scale.set(1,.18,1.49);
+  legs.push(leg);
  }
- return {root,arms,legs,head,torso,x,z,baseX:x,baseZ:z,phase:i*1.63,angle:i*.91,walk:0,name:npcNames[i%npcNames.length],id:i,chatIndex:0,pathAxis:i%3===0?'x':'z',direction:(i%2?1:-1),pace:.8+rnd(i*21)*.7,gesture:0,dodgeUntil:0,chatUntil:0,panic:0};
+ return {root,arms,legs,head,torso,x,z,baseX:x,baseZ:z,phase:i*1.63,angle:i*.91,walk:0,name:npcNames[i%npcNames.length],id:i,chatIndex:0,pathAxis:i%3===0?'x':'z',direction:(i%2?1:-1),pace:.8+rnd(i*21)*.7,gesture:0,dodgeUntil:0,chatUntil:0,panic:0,stumbleUntil:0,stumbleSide:1};
 }
 function streetPoint(i){
  const road=roadPositions[Math.floor(rnd(i*7+1)*roadPositions.length)],horizontal=rnd(i*9+2)>.5;
@@ -105,10 +126,16 @@ function update(dt,now){
      const dist=Math.hypot(dxFromCar,dzFromCar);
      const incoming=player.inCar&&Math.abs(player.speed||0)>3&&dist<11;
      if(incoming)n.dodgeUntil=Math.max(n.dodgeUntil,now+550);
-     const dodging=now<n.dodgeUntil&&dist<15;
-     const chatting=now<n.chatUntil;
+     const stumbling=now<n.stumbleUntil;
+     const dodging=!stumbling&&now<n.dodgeUntil&&dist<15;
+     const chatting=!stumbling&&now<n.chatUntil;
      let nx=px,nz=pz,walking=false;
-     if(dodging){
+     if(stumbling){
+       // Abstract, non-graphic impact reaction: step aside, crouch, recover.
+       const retreat=step*3.3,nx=px+Math.cos(n.root.rotation.y)*retreat*n.stumbleSide;
+       const nz=pz+Math.sin(n.root.rotation.y)*retreat*n.stumbleSide;
+       if(!collision(nx,nz,.25)){n.root.position.set(nx,0,nz);walking=true}
+     }else if(dodging){
        const len=Math.max(1,dist),side=(n.id%2?1:-1),speed=step*7.3;
        nx=px+(dxFromCar/len*1.5-dzFromCar/len*.35*side)*speed;
        nz=pz+(dzFromCar/len*1.5+dxFromCar/len*.35*side)*speed;
@@ -131,7 +158,10 @@ function update(dt,now){
      n.arms[1].rotation.x=chatting?-1.15+wave:dodging?-.55:stride*.7;
      n.head.rotation.y=chatting?.12*Math.sin(now*.003):dodging?-.22:Math.sin(now*.00065+n.phase)*.12;
      n.root.position.y=walking?Math.abs(stride)*.029:Math.sin(now*.002+n.phase)*.009;
-     n.torso?.rotation.set(0,0,0);
+     const stumblePhase=stumbling?1-Math.max(0,n.stumbleUntil-now)/800:0;
+     if(n.torso)n.torso.rotation.x=stumbling?.55*Math.sin(stumblePhase*Math.PI):Math.sin(now*.004+n.phase)*.016;
+     if(stumbling){n.arms[0].rotation.x=-.9;n.arms[1].rotation.x=.6;}
+     n.root.rotation.z=stumbling?.21*Math.sin(stumblePhase*Math.PI)*n.stumbleSide:THREE.MathUtils.lerp(n.root.rotation.z,0,Math.min(1,step*10));
    }
  }
  if(!isPlaying()){pop.style.display='none';dialog.style.display='none';return}
@@ -140,5 +170,20 @@ function update(dt,now){
  if(!n||now>dialogUntil)dialog.style.display='none';
 }
 
-return {update,interact,citizens,fixer};
+function reactToVehicle(x,z,force=1){
+ const now=performance.now();let reacted=false;
+ for(const n of citizens){
+  if(!n.root.visible||now<n.stumbleUntil)continue;
+  const dx=n.root.position.x-x,dz=n.root.position.z-z,dist=Math.hypot(dx,dz);
+  if(dist>3.6)continue;
+  n.stumbleUntil=now+850;n.dodgeUntil=now+1350;n.stumbleSide=n.id%2?1:-1;
+  n.chatUntil=0;reacted=true;
+  // Make space for the vehicle; characters return to their walking route.
+  const safeX=n.root.position.x+dx/Math.max(.2,dist)*Math.min(2.2,1.1*force);
+  const safeZ=n.root.position.z+dz/Math.max(.2,dist)*Math.min(2.2,1.1*force);
+  if(!collision(safeX,safeZ,.25))n.root.position.set(safeX,0,safeZ);
+ }
+ return reacted;
+}
+return {update,interact,citizens,fixer,reactToVehicle};
 }
