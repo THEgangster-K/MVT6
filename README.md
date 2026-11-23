@@ -1,5 +1,30 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v1.4 — Cinematic Streets, Living Workshop & Driving Systems
+
+This update expands the existing original browser game, preserving the online multiplayer client, accounts, campaign, mission phone, navigation, vehicle tuning and saved progress.
+
+### Graphics and environment
+- **Solara Customs visual rebuild** inspired by the previously shown cinematic workshop reference: procedural multi-layer tile, diamond-plate metal, rubber, wall-panel textures; transparent workshop glazing; garage service bays, tool cabinets, tire racks, overhead LED strips, lift machinery and warm/cool practical lighting.
+- **Workshop animations:** operating lift beams, subtle tool movement, Nico's head/body/arm motion and animated signage. Lighting and workshop detail are distance-culled to limit GPU usage.
+- **Refined cars:** clearcoat paint with metalness and smooth highlights, animated wheel spokes and steering, illuminated brake lights and indicators.
+- **Richer city:** bus shelters, shopfront public-transport signs, streetlight poles, small kiosks, benches, bollards and bins, instanced where practical.
+- **Atmosphere toggle:** press **N** to cycle daylight, golden hour and Solara Nights. Time-of-day presentation changes sky colour, fog, sun and ambient lighting. This is an arcade lighting preset, not a full physically based weather renderer.
+- **Quality settings:** Pause → Graphics Quality: Performance, Balanced or Cinematic. Cinematic increases render resolution; Performance lowers it and disables extra workshop point lights. Use Performance on low-powered laptops if FPS drops.
+
+### New gameplay and animation
+- **Traffic and pedestrians:** pedestrians respond to approaching vehicles by turning and moving clear; the car's arcade braking assist slows close encounters. This is a non-graphic safety mechanic, not an injury simulation.
+- **Driving controls:** **J** uses the horn, **L** toggles headlights. The car animates its wheels, body lean, indicators and brake lights.
+- **Vehicle condition:** collisions with buildings or vehicles reduce bodywork condition; severe damage limits maximum driving speed. In Solara Customs, a repair service restores condition for an in-game fee. A detailing service refreshes paint appearance.
+- **World interactions:** pedestrian conversation gestures, traffic responses, existing collectible equipment, missions, street art, and vehicle takeovers remain.
+- **Controls retained:** WASD walk/drive, Space jump/brake, E enter/exit, F interact, Q gadget wheel, P mission phone and Tab tutorial.
+
+### Verification and limits
+- JavaScript parser checks and a scan for duplicate or missing UI IDs were completed.
+- A successful deployment does not establish that the graphics look photorealistic or that every animation, input action or FPS level is correct. Full browser playtesting is still needed.
+- This is an original Three.js game. Photorealistic AAA visual fidelity would require custom professionally created 3D meshes, animation rigs, textures and considerably more GPU performance.
+
+
 ## v1.3 — Solara Customs, Jump Fix and Chapter Story
 
 ### Mission briefings and story conversations
