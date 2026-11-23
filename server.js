@@ -44,7 +44,7 @@ return json(res,404,{error:'Not found'});
 if(req.method!=='GET')return json(res,405,{error:'Method not allowed'});
 const target=url.pathname==='/'?'/index.html':url.pathname;
 const full=path.resolve(__dirname,'.'+target);
-if(full!==path.resolve(__dirname,'index.html')&&full!==path.resolve(__dirname,'client.js')&&full!==path.resolve(__dirname,'city-life.js'))return json(res,404,{error:'Not found'});
+if(full!==path.resolve(__dirname,'index.html')&&full!==path.resolve(__dirname,'client.js')&&full!==path.resolve(__dirname,'city-life.js')&&full!==path.resolve(__dirname,'game-core.js'))return json(res,404,{error:'Not found'});
 fs.readFile(full,(err,data)=>{if(err)return json(res,404,{error:'File missing'});res.writeHead(200,{'Content-Type':mime[path.extname(full)]||'application/octet-stream','Cache-Control':'no-cache','X-Content-Type-Options':'nosniff','Content-Security-Policy':"frame-ancestors 'none'"});res.end(data)})
 }
 const app=http.createServer((req,res)=>{route(req,res).catch(e=>{console.error(e);if(!res.headersSent)json(res,500,{error:'Server error'})})});
