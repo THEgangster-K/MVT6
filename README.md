@@ -1,5 +1,16 @@
 # MVT 6 — Motor Vehicle Theft
 
+## Street-side prologue and mouse control fix (v0.6)
+
+- The left/right directions have been corrected for the third-person camera in both on-foot and driving modes.
+- Click anywhere on the game canvas during gameplay to lock the mouse using the browser Pointer Lock API. Move the mouse to look around; press **Escape** to release the cursor. Click again to re-lock. Keyboard input is suspended while menus or the opening cinematic are active.
+- New story openings show the character seated on a roadside blanket, beside a cardboard **"Please donate"** sign and a donation cup. After the cinematic, the character stands up, then free exploration begins. Skipping the cinematic still triggers the stand-up transition.
+- The starting mission contact marker has been moved to the next intersection west, away from the character's starting position.
+- Existing multiplayer services, cash, upgrades and save-system integration remain in place.
+
+**Important:** Mouse locking is initiated by a direct click on the 3D game view because browsers do not allow automatic pointer capture without user interaction. Actual mouse responsiveness and 3D camera behavior need browser playtesting.
+
+
 An original 3D open-world browser driving game. This is an independent GTA-style prototype, not GTA 6.
 
 ## Controls and world presentation repair (v0.5)
