@@ -272,9 +272,9 @@ body:has(#hud[style*="block"]) #lockHint{display:block}
   <h1>YOUR FIRST NIGHT</h1>
   <p class="tutorialLead">Start on the sidewalk with nothing. Explore, meet locals, complete chapters and build a life in the city.</p>
   <div class="tutorialGrid">
-   <div><h3>WALK & CAMERA</h3><p><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move around<br><kbd>Shift</kbd> Sprint<br><kbd>Space</kbd> Jump (on foot)<br><kbd>Click</kbd> Lock mouse camera<br><kbd>Esc</kbd> Release mouse</p></div>
+   <div><h3>WALK & CAMERA</h3><p><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move around<br><kbd>Shift</kbd> Sprint on foot<br><kbd>Space</kbd> Jump (on foot)<br><kbd>Click</kbd> Lock mouse camera<br><kbd>Esc</kbd> Release mouse</p></div>
    <div><h3>EXPLORE & INTERACT</h3><p><kbd>F</kbd> Talk, collect, use<br><kbd>E</kbd> Enter / exit a vehicle<br><kbd>P</kbd> Mission phone<br><kbd>C</kbd> Change camera</p></div>
-   <div><h3>VEHICLES</h3><p><kbd>W</kbd><kbd>S</kbd> Accelerate / reverse<br><kbd>A</kbd><kbd>D</kbd> Steer<br><kbd>Space</kbd> Brake<br><kbd>R</kbd> Recover vehicle<br><kbd>J</kbd> Horn<br><kbd>L</kbd> Headlights<br><kbd>N</kbd> Change time of day</p></div>
+   <div><h3>VEHICLES</h3><p><kbd>W</kbd><kbd>S</kbd> Accelerate / reverse<br><kbd>A</kbd><kbd>D</kbd> Steer<br><kbd>Space</kbd> Brake<br><kbd>Shift</kbd> Drift / slide<br><kbd>R</kbd> Recover vehicle<br><kbd>J</kbd> Horn<br><kbd>L</kbd> Headlights<br><kbd>N</kbd> Change time of day</p></div>
    <div><h3>GADGETS & MAP</h3><p><kbd>Q</kbd> Equipment wheel<br><kbd>F</kbd> Pick up glowing equipment<br><kbd>G</kbd> Use collected gadget<br><kbd>T</kbd> Street art<br><kbd>Tab</kbd> Tutorial<br><b>Yellow diamond</b> Mission objective<br><b>Graphics</b> Change quality in pause menu</p></div>
   </div>
   <p class="tutorialMission"><b>FIRST JOB:</b> Talk to Rae near the starting sidewalk, then follow your mission phone and the map.</p>
@@ -1704,8 +1704,59 @@ function checkPedestrianTraffic(dt){
   if(clockTime>nearMissCooldown){nearMissCooldown=clockTime+5;heat=Math.min(5,heat+.3);setNotice('PEDESTRIAN ALERT · BRAKING ASSIST ACTIVE')}
  }
 }
+// Pooled procedural VFX: road spray, drift smoke, sparkle, safe impact puffs.
+const particleCanvas=document.createElement('canvas');particleCanvas.width=64;particleCanvas.height=64;
+const pc=particleCanvas.getContext('2d'),pg=pc.createRadialGradient(32,32,2,32,32,32);
+pg.addColorStop(0,'#ffffffdd');pg.addColorStop(.26,'#ffffffb9');pg.addColorStop(.7,'#ffffff36');pg.addColorStop(1,'#ffffff00');
+pc.fillStyle=pg;pc.fillRect(0,0,64,64);
+const particleTexture=new THREE.CanvasTexture(particleCanvas);
+const effects=new THREE.Group();scene.add(effects);
+const particles=Array.from({length:45},()=>{
+ const material=new THREE.SpriteMaterial({map:particleTexture,color:0x9cc5d3,transparent:true,depthWrite:false,opacity:0});
+ const sprite=new THREE.Sprite(material);sprite.visible=false;effects.add(sprite);
+ return {sprite,life:0,total:1,vx:0,vy:0,vz:0};
+});
+let particleCursor=0,driftElapsed=0,driftIntensity=0,driftDistance=0,driftChain=0,driftCombo=0;
+function emitVfx(x,y,z,color=0xabb7c3,size=1.0,vx=0,vy=1.2,vz=0,ttl=.7){
+ const part=particles[particleCursor++%particles.length],o=part.sprite;
+ part.life=ttl;part.total=ttl;part.vx=vx;part.vy=vy;part.vz=vz;
+ o.position.set(x,y,z);o.scale.set(size,size,size);o.material.color.set(color);
+ o.material.opacity=.58;o.visible=true;
+}
+function updateVfx(dt){
+ for(const p of particles){
+  if(p.life<=0)continue;
+  p.life=Math.max(0,p.life-dt);const t=1-p.life/p.total;
+  p.sprite.position.x+=p.vx*dt;p.sprite.position.y+=p.vy*dt;p.sprite.position.z+=p.vz*dt;
+  p.sprite.scale.multiplyScalar(1+dt*1.1);
+  p.sprite.material.opacity=(1-t)*.6;
+  if(p.life<=0)p.sprite.visible=false;
+ }
+}
+function impactFx(x,z,kind='dust'){
+ for(let i=0;i<10;i++){
+  const a=i*Math.PI/5,speed=2+rnd(i+clockTime)*3;
+  emitVfx(x,.8,z,kind==='spark'?0xffc287:0xb6c7cc,.35+rnd(i)*.65,
+   Math.sin(a)*speed,.3+rnd(i+5)*1.7,Math.cos(a)*speed,.35+rnd(i+9)*.4);
+ }
+}
+function driftFx(dt,turning){
+ if(!inCar||!keys.shift||Math.abs(velocity)<7||!turning){driftElapsed=0;driftIntensity=Math.max(0,driftIntensity-dt*2);return}
+ driftElapsed+=dt;driftIntensity=Math.min(1,driftIntensity+dt*2.2);
+ driftDistance+=Math.abs(velocity)*dt;
+ if(driftElapsed>.11){
+  driftElapsed=0;
+  for(const side of [-1,1]){
+   const x=carPos.x-Math.sin(angle)*2.5+Math.cos(angle)*side*1.3;
+   const z=carPos.z-Math.cos(angle)*2.5-Math.sin(angle)*side*1.3;
+   emitVfx(x,.43,z,0xc0c7c9,1.3+driftIntensity*.8,-Math.sin(angle)*2,.55,-Math.cos(angle)*2,.6);
+  }
+ }
+ if(driftDistance>95){driftDistance=0;driftCombo++;setNotice('DRIFT CHAIN · '+driftCombo+' · NICE CONTROL');}
+}
 function moveCar(dt){
- const accel=26+save.speed*4,maxSpeed=(31+save.speed*5.2)*(1+Math.max(0,(save.lifeTier||0)-1)*.06),boost=keys.shift?1.32+save.nitro*.08:1;
+ const accel=26+save.speed*4,maxSpeed=(31+save.speed*5.2)*(1+Math.max(0,(save.lifeTier||0)-1)*.06);
+ const driftActive=Boolean(keys.shift&&Math.abs(velocity)>7),boost=1;
  const throttle=Number(!!(keys.w||keys.arrowup))-Number(!!(keys.s||keys.arrowdown));
  if(throttle){velocity+=throttle*accel*dt}else velocity*=Math.exp(-1.7*dt);
  if(keys[' '])velocity*=Math.exp(-9*dt);
@@ -1714,21 +1765,28 @@ function moveCar(dt){
  if(vehicleCondition<35)velocity=THREE.MathUtils.clamp(velocity,-12,18);
  const turning=Number(!!(keys.a||keys.arrowleft))-Number(!!(keys.d||keys.arrowright));
  const steerResponse=Math.min(1,Math.abs(velocity)/8);
- angle+=turning*(1.55+save.handling*.13)*steerResponse*Math.sign(velocity)*dt;
+ angle+=turning*(1.55+save.handling*.13)*(driftActive?1.60:1)*steerResponse*Math.sign(velocity)*dt;
+ if(driftActive){
+   velocity*=Math.exp(-.55*dt);
+   // Sideways momentum makes the car slide through corners instead of rotating in place.
+   const lateral=Math.sin(Math.min(1,driftIntensity)*.7)*turning*velocity*dt*.31;
+   carPos.x+=Math.cos(angle)*lateral;carPos.z-=Math.sin(angle)*lateral;
+ }
+ driftFx(dt,turning);
  const nx=carPos.x+Math.sin(angle)*velocity*dt,nz=carPos.z+Math.cos(angle)*velocity*dt;
  if(!collision(nx,nz)){carPos.x=nx;carPos.z=nz}else{
   if(!collision(nx,carPos.z))carPos.x=nx;else if(!collision(carPos.x,nz))carPos.z=nz;
-  if(clockTime>vehicleImpactCooldown){vehicleImpactCooldown=clockTime+1.2;vehicleCondition=Math.max(5,vehicleCondition-Math.min(12,Math.abs(velocity)*.28));saveVehicleCondition();setNotice('BODYWORK IMPACT · '+Math.round(vehicleCondition)+'% CONDITION')}
+  if(clockTime>vehicleImpactCooldown){vehicleImpactCooldown=clockTime+1.2;impactFx(carPos.x,carPos.z,'spark');vehicleCondition=Math.max(5,vehicleCondition-Math.min(12,Math.abs(velocity)*.28));saveVehicleCondition();setNotice('BODYWORK IMPACT · '+Math.round(vehicleCondition)+'% CONDITION')}
   velocity*=-.15;heat=Math.min(5,heat+.08);
  }
  checkPedestrianTraffic(dt);
  playerCar.position.copy(carPos);playerCar.rotation.y=angle;
- playerCar.rotation.z=THREE.MathUtils.lerp(playerCar.rotation.z,-turning*Math.min(Math.abs(velocity)/38,1)*.045,Math.min(1,dt*5));
+ playerCar.rotation.z=THREE.MathUtils.lerp(playerCar.rotation.z,-turning*Math.min(Math.abs(velocity)/35,1)*(driftActive?.12:.045),Math.min(1,dt*5));
  playerCar.rotation.x=THREE.MathUtils.lerp(playerCar.rotation.x,throttle*-.012,Math.min(1,dt*4));
  if(detailingShine>0&&playerCar.children[0]?.material){
   playerCar.children[0].material.roughness=THREE.MathUtils.lerp(playerCar.children[0].material.roughness,.12,Math.min(1,dt*2));
  }else if(playerCar.children[0]?.material)playerCar.children[0].material.roughness=THREE.MathUtils.lerp(playerCar.children[0].material.roughness,.26,Math.min(1,dt));
- const braking=Boolean(keys[' ']||throttle<0&&velocity>1);
+ const braking=Boolean(keys[' ']||driftActive||throttle<0&&velocity>1);
  for(const rearLight of playerCar.userData.brakeLights||[]){
   rearLight.material.emissive.set(braking?'#ff6b52':'#4a1018');
   rearLight.material.emissiveIntensity=braking?2.3:.45;
@@ -2169,7 +2227,7 @@ getPlayer:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,inCar,
 isPlaying:()=>gameMode==='play',onNotice:setNotice,
 onReward:amount=>{save.money+=amount;persist();updateHUD()}});
 let network=multiplayer({THREE,scene,makeCar,box,mat,mesh,getState:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,angle:inCar?angle:person.rotation.y,inCar}),onAccount:progress=>{if(progress){save={...defaultSave(),...progress};updateHUD()}},onMessage:message=>setNotice(message)});
-let last=performance.now(),fpsCounter=0,fpsTime=0,lastShopUpdate=0;function frame(now){requestAnimationFrame(frame);if(now-lastShopUpdate>600){lastShopUpdate=now;touchJump.style.display=gameMode==='play'&&!inCar&&matchMedia('(pointer:coarse)').matches?'block':'none';const gearNear=gameMode==='play'&&!inCar?nearestEquipment():null;$('pickupPrompt').style.display=gearNear?'block':'none';if(gearNear)$('pickupPrompt').textContent='F · COLLECT '+gadgetNames[gearNear.id];carHint.style.display=(gameMode==='play'&&!inCar&&nearestTrafficCar())?'block':'none';const px=inCar?carPos.x:playerPos.x,pz=inCar?carPos.z:playerPos.z;for(const sh of shopBuildings){sh.root.visible=gameMode==='intro'||gameMode==='menu'||Math.hypot(px-sh.x,pz-sh.z)<155}}const dt=Math.min(.04,(now-last)/1000);last=now;animateCustoms(dt);if(gameMode==='play'){clockTime+=dt;if(atmosphereTime>0){atmosphereTime=Math.max(0,atmosphereTime-dt);if(atmosphereTime===0)atmosphereToast.classList.remove('show')}if(detailingShine>0)detailingShine=Math.max(0,detailingShine-dt);if(chapterBannerTime>0){chapterBannerTime-=dt;if(chapterBannerTime<=0)chapterScreen.classList.remove('show')}updateEquipmentWorld(dt);if(inCar)moveCar(dt);else movePerson(dt);advanceTraffic(dt);advancePolice(dt);updatePatrolAgents(dt);if(mission){missionTime-=dt;updateMissionActivity(dt);if(missionTime<=0)failMission()}cityLife.update(dt,now);updateHUD();updateCamera(dt);drawMap()}else if(gameMode==='arrest'){animateArrest(dt);cityLife.update(dt,now)}else if(gameMode==='jail'){cityLife.update(dt,now)}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='takeover'){clockTime+=dt;updateTakeover(dt);advanceTraffic(dt);cityLife.update(dt,now);updateCamera(dt);drawMap()}else if(gameMode==='menu'){cityLife.update(dt,now);const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;fpsTime+=dt;if(fpsTime>1){const fps=Math.round(fpsCounter/fpsTime);$('fps').textContent=fps+' FPS';if(gameMode==='play'&&fps<37&&qualityPixelRatio>.8&&graphicsPreset!=='cinematic'){qualityPixelRatio=Math.max(.8,qualityPixelRatio-.1);renderer.setPixelRatio(qualityPixelRatio)}fpsTime=0;fpsCounter=0}}
+let last=performance.now(),fpsCounter=0,fpsTime=0,lastShopUpdate=0;function frame(now){requestAnimationFrame(frame);if(now-lastShopUpdate>600){lastShopUpdate=now;touchJump.style.display=gameMode==='play'&&!inCar&&matchMedia('(pointer:coarse)').matches?'block':'none';const gearNear=gameMode==='play'&&!inCar?nearestEquipment():null;$('pickupPrompt').style.display=gearNear?'block':'none';if(gearNear)$('pickupPrompt').textContent='F · COLLECT '+gadgetNames[gearNear.id];carHint.style.display=(gameMode==='play'&&!inCar&&nearestTrafficCar())?'block':'none';const px=inCar?carPos.x:playerPos.x,pz=inCar?carPos.z:playerPos.z;for(const sh of shopBuildings){sh.root.visible=gameMode==='intro'||gameMode==='menu'||Math.hypot(px-sh.x,pz-sh.z)<155}}const dt=Math.min(.04,(now-last)/1000);last=now;animateCustoms(dt);if(gameMode==='play'){clockTime+=dt;if(atmosphereTime>0){atmosphereTime=Math.max(0,atmosphereTime-dt);if(atmosphereTime===0)atmosphereToast.classList.remove('show')}if(detailingShine>0)detailingShine=Math.max(0,detailingShine-dt);if(chapterBannerTime>0){chapterBannerTime-=dt;if(chapterBannerTime<=0)chapterScreen.classList.remove('show')}updateEquipmentWorld(dt);if(inCar)moveCar(dt);else movePerson(dt);updateVfx(dt);advanceTraffic(dt);advancePolice(dt);updatePatrolAgents(dt);if(mission){missionTime-=dt;updateMissionActivity(dt);if(missionTime<=0)failMission()}cityLife.update(dt,now);updateHUD();updateCamera(dt);drawMap()}else if(gameMode==='arrest'){animateArrest(dt);cityLife.update(dt,now)}else if(gameMode==='jail'){cityLife.update(dt,now)}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='takeover'){clockTime+=dt;updateVfx(dt);updateTakeover(dt);advanceTraffic(dt);cityLife.update(dt,now);updateCamera(dt);drawMap()}else if(gameMode==='menu'){cityLife.update(dt,now);const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;fpsTime+=dt;if(fpsTime>1){const fps=Math.round(fpsCounter/fpsTime);$('fps').textContent=fps+' FPS';if(gameMode==='play'&&fps<37&&qualityPixelRatio>.8&&graphicsPreset!=='cinematic'){qualityPixelRatio=Math.max(.8,qualityPixelRatio-.1);renderer.setPixelRatio(qualityPixelRatio)}fpsTime=0;fpsCounter=0}}
 person.visible=true;setSeatPose(save.completed===0?1:0);playerCar.visible=save.completed>=2;playerCar.position.copy(carPos);$('hud').style.display='none';requestAnimationFrame(frame);if(window.__mvtLoaded)window.__mvtLoaded();addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
 </script>
 </body>
