@@ -553,7 +553,11 @@ for(let i=0;i<buildingMatrices.length;i++){
  if(Math.abs(bx)>322||Math.abs(bz)>322||i%3!==0)continue;
  const east=bx>=0,side=east?-1:1;
  const edgeX=bx+side*(w/2+.34);
- const root=new THREE.Group();scene.add(root);root.position.set(edgeX,0,bz);shopBuildings.push({root,x:edgeX,z:bz});
+ const root=new THREE.Group();scene.add(root);root.position.set(edgeX,0,bz);
+ const businessName=shopNames[i%shopNames.length];
+ const cafeBusiness=/COFFEE|DELI|BAKERY/.test(businessName);
+ const marketBusiness=/MARKET|PHARMACY|BOOKS|RECORDS|CYCLES|FLOWERS|THREAD/.test(businessName);
+ shopBuildings.push({root,x:edgeX,z:bz});
  const faceX=side*.09;
  // Faces the street. Frames and depth details prevent a billboard-like look.
  const mainGlass=mesh(new THREE.PlaneGeometry(7.6,3.2),glassShop,root);
@@ -569,7 +573,45 @@ for(let i=0;i<buildingMatrices.length;i++){
    box(.72,.8,1.4,side*2.3,.58,z,potMat,root);
    const bush=mesh(new THREE.IcosahedronGeometry(.82,0),mat(z<0?'#5a885e':'#689f6e'),root);bush.position.set(side*2.3,1.28,z);
  }
- const access={x:edgeX+side*2.3,z:bz,name:shopNames[i%shopNames.length],visited:false};
+ // Shop-specific appearance. Cafés have terraces; retail shops display goods behind framed glass.
+ const displayMat=mat(i%2?'#c9af81':'#92afba',.63),chromeMat=mat('#8eacb8',.28,.66);
+ if(cafeBusiness){
+   const xSign=Math.sign(edgeX)||1,sidewalkX=Math.round(edgeX/BLOCK)*BLOCK+xSign*14.3;
+   if(Math.abs(edgeX-sidewalkX)<12&&Math.abs(bz-Math.round(bz/BLOCK)*BLOCK)>12){
+     for(const localZ of [-2.2,2.2]){
+       const desk=new THREE.Group();scene.add(desk);
+       desk.position.set(sidewalkX,0,bz+localZ);
+       const top=mesh(new THREE.CylinderGeometry(.92,.92,.13,16),mat('#b89772'),desk);top.position.y=1.05;
+       const pole=mesh(new THREE.CylinderGeometry(.10,.13,1.0,10),chromeMat,desk);pole.position.y=.52;
+       for(const offsetZ of [-1.3,1.3]){
+         mesh(new THREE.CylinderGeometry(.40,.35,.17,11),mat('#617f8a'),desk).position.set(0,.58,offsetZ);
+         box(.13,.68,.13,0,.3,offsetZ,chromeMat,desk);
+       }
+       const shade=mesh(new THREE.CylinderGeometry(1.62,1.95,.22,12),mat('#c18a73'),desk);
+       shade.position.set(0,3.05,0);mesh(new THREE.CylinderGeometry(.055,.055,2.1,8),chromeMat,desk).position.y=2;
+       shopBuildings.push({root:desk,x:sidewalkX,z:bz+localZ});
+     }
+   }
+   box(.34,.9,4.5,side*.3,1.6,0,mat('#ab815b'),root);
+   for(const z of [-1.1,1.1]){const cup=mesh(new THREE.CylinderGeometry(.22,.17,.37,12),mat('#f2dfc4'),root);cup.position.set(side*.56,2.2,z)}
+ }else if(marketBusiness){
+   for(const z of [-2.45,0,2.45]){
+     box(.5,1.25,2,side*.6,1.7,z,chromeMat,root);
+     for(let shelf=0;shelf<3;shelf++){
+       box(.56,.12,1.9,side*.76,1.13+shelf*.47,z,displayMat,root);
+       for(let item=0;item<3;item++){
+         const display=mesh(new THREE.CylinderGeometry(.17,.19,.35,8),mat(['#c38b6e','#83a9a5','#d5bc7c'][item]),root);
+         display.position.set(side*.85,1.38+shelf*.47,z+(item-1)*.5);
+       }
+     }
+   }
+ }else{
+   // Barber and service interiors get distinctive furniture and vertical advertising.
+   box(.85,1.7,2.3,side*.8,1.76,0,mat('#7796a5'),root);
+   box(.35,2.1,.3,side*.8,2.2,2.1,chromeMat,root);
+   box(.65,.72,.7,side*.5,1.2,-2.2,mat('#a47765'),root);
+ }
+ const access={x:edgeX+side*2.3,z:bz,name:businessName,visited:false};
  if(!shopDone.has(access.name)||Math.abs(bx)<105){shopFronts.push(access);shopDone.add(access.name)}
 }
 function interactShop(x,z){
@@ -582,23 +624,15 @@ function interactShop(x,z){
 }
 // Street furniture, markets and traffic detail remain GPU-instanced for smoothness.
 const pavementProps={post:[],table:[],stool:[],umbrella:[],planter:[],bin:[],lantern:[],sign:[]};
-const shopDistrict=[[-74,-14],[14,-74],[106,12],[194,14],[14,105],[-76,106],[-165,-74],[105,-167]];
+// Café seating is attached to café storefronts above, never spawned at arbitrary road coordinates.
 const addStreetPart=(type,x,y,z,w,h,d)=>pavementProps[type].push([x,y,z,w,h,d]);
-for(let i=0;i<shopDistrict.length;i++){
- const [x,z]=shopDistrict[i],side=(i%2?1:-1);
- for(let j=0;j<4;j++){
-  const offset=(j-1.5)*6.4,px=x+offset,pz=z+side*(1+j%2);
-  addStreetPart('table',px,1,pz,2.4,.16,2.4);
-  addStreetPart('post',px,0.57,pz,.14,1.14,.14);
-  addStreetPart('umbrella',px,2.95,pz,4.3,.15,4.3);
-  for(let seat of [-1,1])addStreetPart('stool',px+seat*1.5,.51,pz,.8,1.02,.7);
-  addStreetPart('planter',px-2.6,.5,pz-2.1,1,1,1);
+for(const shop of shopFronts){
+ const xx=shop.x,zz=shop.z,distRoadX=Math.abs(xx-Math.round(xx/BLOCK)*BLOCK);
+ if(distRoadX<11||distRoadX>20)continue;
+ for(const zOffset of [-4.8,4.8]){
+  addStreetPart('planter',xx,.51,zz+zOffset,1,.8,1);
  }
- for(let j=0;j<5;j++){
-  const p=shopDistrict[i],zz=p[1]+(j-2)*6;
-  addStreetPart('bin',p[0]+8,.7,zz,.78,1.4,.78);
-  addStreetPart('lantern',p[0]-4,3.6,zz,.8,.3,.45);
- }
+ addStreetPart('bin',xx,.6,zz+7,.76,1.2,.76);
 }
 const streetFurnitureColors={post:'#6b6869',table:'#a98972',stool:'#504d53',umbrella:'#b98a65',planter:'#738d61',bin:'#536c75',lantern:'#f4d8a0',sign:'#527a84'};
 for(const [kind,list] of Object.entries(pavementProps)){
