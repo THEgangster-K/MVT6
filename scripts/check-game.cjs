@@ -12,6 +12,10 @@ for(const [index,match] of matches.entries()){
  const plain=match[1].replace(/^import .*;$/gm,'');
  new vm.Script(plain,{filename:'inline-script-'+index});
 }
+for(const moduleName of ['city-life.js','client.js','game-core.js']){
+ const plain=read(moduleName).replace(/^import .*;$/gm,'').replace(/^export /gm,'');
+ new vm.Script(plain,{filename:moduleName});
+}
 const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
 assert.equal(ids.length,new Set(ids).size,'Duplicate HTML IDs');
 const builtAtRuntime=new Set(['hackCode','hackProgress','hackButtons','hackCancel','carHint','lockHint','citizenDialog','citizenPrompt']);
