@@ -749,6 +749,109 @@ const jacketNico=mat('#b98d5c',.75),faceNico=mat('#c08a6c');
 mesh(new THREE.CapsuleGeometry(.44,.8,5,11),jacketNico,customsMechanic).position.y=1.78;
 mesh(new THREE.SphereGeometry(.35,14,10),faceNico,customsMechanic).position.y=2.72;
 for(const side of [-1,1]){box(.3,1.1,.4,side*.27,.7,0,mat('#263b47'),customsMechanic);box(.28,.9,.34,side*.57,1.78,0,jacketNico,customsMechanic)}
+// Detail-pass: physically textured workshop from original generated materials, no external downloads.
+function workshopTexture(kind){
+ const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512;
+ const c=canvas.getContext('2d');const img=c.createImageData(512,512);
+ for(let y=0;y<512;y++)for(let x=0;x<512;x++){
+  const p=(y*512+x)*4,r=rnd(x*3+y*19+kind.length*42),grain=Math.sin(x*.19)*6+Math.sin(y*.13)*4+(r-.5)*20;
+  const base=kind==='metal'?[88,106,113]:kind==='rubber'?[47,57,64]:kind==='tile'?[104,113,117]:[118,125,128];
+  for(let k=0;k<3;k++)img.data[p+k]=Math.max(0,Math.min(255,base[k]+grain));img.data[p+3]=255;
+ }
+ c.putImageData(img,0,0);
+ if(kind==='tile'){
+  c.strokeStyle='#343b3eaa';c.lineWidth=7;
+  for(let a=0;a<512;a+=96){c.beginPath();c.moveTo(a,0);c.lineTo(a,512);c.moveTo(0,a);c.lineTo(512,a);c.stroke()}
+  c.strokeStyle='#b8c3c25e';c.lineWidth=2;for(let a=8;a<512;a+=96)c.strokeRect(a,a,80,80);
+ }else if(kind==='metal'){
+  c.fillStyle='#e1e8e655';for(let y=0;y<512;y+=28)for(let x=((y/28)%2)*22;x<512;x+=44){
+   c.beginPath();c.moveTo(x,y+8);c.lineTo(x+11,y+2);c.lineTo(x+23,y+8);c.lineTo(x+11,y+14);c.closePath();c.fill()
+  }
+ }else if(kind==='rubber'){
+  c.strokeStyle='#909a9b47';c.lineWidth=3;
+  for(let y=0;y<512;y+=24){c.beginPath();c.moveTo(0,y);c.lineTo(512,y);c.stroke()}
+ }else{
+  c.strokeStyle='#c4c9c744';c.lineWidth=1;
+  for(let y=0;y<512;y+=80){c.beginPath();c.moveTo(0,y);c.lineTo(512,y);c.stroke()}
+ }
+ const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;
+ tex.wrapS=THREE.RepeatWrapping;tex.wrapT=THREE.RepeatWrapping;
+ tex.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),4);
+ return tex;
+}
+const customsTileTex=workshopTexture('tile'),customsMetalTex=workshopTexture('metal'),customsRubberTex=workshopTexture('rubber'),customsWallTex=workshopTexture('wall');
+customsTileTex.repeat.set(4,4);
+const customsTileMat=new THREE.MeshStandardMaterial({map:customsTileTex,metalness:.32,roughness:.56});
+const customsMetalMat=new THREE.MeshStandardMaterial({map:customsMetalTex,metalness:.76,roughness:.35});
+const customsRubberMat=new THREE.MeshStandardMaterial({map:customsRubberTex,roughness:.9});
+const customsWallMat=new THREE.MeshStandardMaterial({map:customsWallTex,roughness:.83,side:THREE.DoubleSide});
+const customsNeonTeal=new THREE.MeshBasicMaterial({color:0x8ff7e5});
+const customsNeonAmber=new THREE.MeshBasicMaterial({color:0xffd09a});
+const customsGlassMat=new THREE.MeshStandardMaterial({color:0x76a9bc,metalness:.65,roughness:.14,transparent:true,opacity:.64,depthWrite:false,side:THREE.DoubleSide});
+box(27,.09,27,0,.13,0,customsTileMat,customsRoot);
+for(const x of [-12.4,12.4]){
+ box(.21,7.2,26,x,4.1,-.2,customsWallMat,customsRoot);
+ for(const z of [-10,-4,2,8]){
+  box(.3,3.5,.25,x,5,z,customsMetalMat,customsRoot);
+  box(.22,2.1,4.5,x,4.9,z+2,customsGlassMat,customsRoot);
+ }
+}
+box(25,.3,.22,0,7.8,-13.0,customsMetalMat,customsRoot);
+box(26,6.5,.22,0,3.65,-13.5,customsWallMat,customsRoot);
+for(let x=-10;x<=10;x+=4)for(let y=1.3;y<7;y+=1.7)
+ box(3.6,.075,.06,x,y,-13.32,customsMetalMat,customsRoot);
+for(const x of [-12.8,12.8])box(.08,7.4,.1,x,4.15,-11.7,customsNeonTeal,customsRoot);
+for(const x of [-8,8]){
+ const rig=new THREE.Group();rig.position.set(x,0,-1);customsRoot.add(rig);
+ box(1,6.2,.85,-2,3.1,0,customsMetalMat,rig);
+ box(1,6.2,.85,2,3.1,0,customsMetalMat,rig);
+ box(4.5,.35,.6,0,5.6,0,customsMetalMat,rig);
+ for(const off of [-1,1])box(1.9,.2,.55,off*.98,.54,1.5,customsNeonAmber,rig);
+ for(const off of [-1,1])box(1.9,.2,.55,off*.98,.54,-1.5,customsMetalMat,rig);
+ const beam=box(3.9,.2,1,0,1.4,0,customsMetalMat,rig);rig.userData.liftBeam=beam;
+}
+const customsToolParts=[],customsToolLabels=[];
+for(const side of [-1,1]){
+ for(let z=-9;z<=9;z+=3){
+  const cab=new THREE.Group();customsRoot.add(cab);cab.position.set(side*10.8,0,z);
+  box(2.1,2.1,1.65,0,1.05,0,customsMetalMat,cab);
+  box(2.06,.12,1.72,0,2.18,0,customsNeonAmber,cab);
+  for(let i=0;i<4;i++){
+   box(.06,.4,1.58,side*1.05,.49+i*.39,0,customsRubberMat,cab);
+   box(.07,.045,.6,side*1.11,.5+i*.39,.03,customsNeonTeal,cab);
+  }
+  const tireGroup=new THREE.Group();cab.add(tireGroup);tireGroup.position.set(0,2.76,0);
+  const tire=mesh(new THREE.TorusGeometry(.55,.24,7,18),customsRubberMat,tireGroup);
+  tire.rotation.y=Math.PI/2;
+  customsToolParts.push(tireGroup);
+ }
+}
+for(const x of [-9,9])for(const z of [-9,0,9]){
+ box(3.7,.15,.17,x,8.38,z,customsNeonTeal,customsRoot);
+ box(3.7,.15,.12,x,8.15,z,customsNeonAmber,customsRoot);
+}
+for(let x=-7;x<=7;x+=7)for(const z of [-9,9]){
+ const can=mesh(new THREE.CylinderGeometry(.38,.42,1.3,12),customsMetalMat,customsRoot);can.position.set(x,.73,z);
+ const cap=mesh(new THREE.CylinderGeometry(.41,.41,.12,12),customsNeonAmber,customsRoot);cap.position.set(x,1.46,z);
+}
+const customsAccentLights=[];
+for(const [x,z,color] of [[-8,-5,0x70e4db],[8,-5,0x70e4db],[0,7,0xffd5a1]]){
+ const light=new THREE.PointLight(color,26,18,2);light.position.set(x+184,6,z);scene.add(light);customsAccentLights.push(light);
+}
+let customsLiftPhase=0;
+function animateCustoms(dt){
+ const near=Math.hypot((inCar?carPos:playerPos).x-184,(inCar?carPos:playerPos).z)<85;
+ customsRoot.visible=near||gameMode==='intro'||gameMode==='menu'||gameMode==='garage';
+ for(const light of customsAccentLights)light.visible=near;
+ if(!near)return;
+ customsLiftPhase+=dt;
+ for(const [i,rig] of customsRoot.children.filter(c=>c.userData.liftBeam).entries()){
+  rig.userData.liftBeam.position.y=1.3+Math.sin(customsLiftPhase*.46+i)*.45;
+ }
+ for(const [i,part] of customsToolParts.entries())part.rotation.z=Math.sin(customsLiftPhase*.4+i)*.025;
+ customsMechanic.rotation.y=-.25+Math.sin(customsLiftPhase*.7)*.13;
+ customSign.material.opacity=.95+.05*Math.sin(customsLiftPhase*1.3);
+}
 // Pin and beacon lead you to the physical service entrance.
 const customsEntryRing=mesh(new THREE.TorusGeometry(8,.33,8,30),new THREE.MeshBasicMaterial({color:0x77ddd0,transparent:true,opacity:.55}));
 customsEntryRing.position.set(184,.32,0);customsEntryRing.rotation.x=Math.PI/2;
