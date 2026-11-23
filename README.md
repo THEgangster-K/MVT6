@@ -2,6 +2,25 @@
 
 An original 3D open-world browser driving game. This is an independent GTA-style prototype, not GTA 6.
 
+## Street-to-success campaign (v0.4)
+
+**You now begin on foot** in Solara City rather than driving immediately. New saves begin with **$45**, no reputation and no unlocked vehicle. The original intro shows a short cinematic flyover; select **SKIP INTRO** to play right away.
+
+- Walk to the green **street contact** ring near your starting location and press **F** to accept a job.
+- First two street jobs can be completed on foot. Completing both unlocks your first parked car. Walk over and press **E** to enter.
+- Later missions include fictional underground deliveries and escalating wanted levels. Complete jobs to earn more money and unlock higher social status.
+- At the vehicle garage in East Solara, purchase lifestyle upgrades from a room of your own to a tuned garage, crew headquarters and penthouse.
+- Progress is stored in browser saves for guests or cloud saves for signed-in accounts when the PostgreSQL database is configured.
+
+**Existing saves:** Previous progress is retained; you will still start on foot. Use **START OVER** on the menu if you want to begin the new $45 campaign from scratch. Resetting is permanent for the current save.
+
+### Performance + presentation update
+
+- The skyline now uses instanced meshes for hundreds of buildings, roofs, windows and trees, significantly reducing draw calls without removing most of the visual skyline detail.
+- An original three-scene illustrated loading gallery shows the coastal city, neon downtown and the street-to-success theme.
+- Introductory camera shots and chapter captions create an original cinematic opening. These are stylistic rather than copies of any GTA cinematics.
+- The runtime still adapts rendering resolution if FPS drops. The actual frame rate depends on your computer and browser.
+
 ## City Life + Controls Update (v0.3)
 
 - Third-person follow camera turns with the direction of travel, with drag-to-orbit camera input.
@@ -73,6 +92,8 @@ Open http://localhost:3000. To test persistent accounts locally, set `DATABASE_U
 | Escape | Pause |
 | Mouse drag | Look around |
 | F near an NPC | Talk |
+| F near green contact | Start street job |
+| Skip Intro | Begin playing immediately |
 
 ## Security and infrastructure limitations
 
