@@ -138,6 +138,29 @@ for(let i=-HALF;i<=HALF;i++){
   for(const off of [-7,7]){box(.22,.035,3,p+off,.082,a,materials.white);box(3,.035,.22,a,.082,p+off,materials.white)}
  }
 }
+// Pavements with actual kerb edges, patterned crossings and pedestrian ramps.
+const curbMat=mat('#c4c0b7'),redCurb=mat('#a64d4b'),tactile=mat('#c9b99a');
+for(let i=-HALF;i<=HALF;i++){
+ const p=i*BLOCK;
+ for(const side of [-1,1]){
+   box(1.05,.26,1100,p+side*10.7,.18,0,curbMat);
+   box(1100,.26,1.05,0,.18,p+side*10.7,curbMat);
+   for(let j=-HALF;j<=HALF;j++){
+     const q=j*BLOCK;
+     if((i+j)%2===0){
+       for(let k=-3;k<=3;k++){
+         box(1.0,.035,2.1,p-8+k*2.6,.09,q+side*15.1,materials.white);
+         box(2.1,.035,1,p+side*15.1,.09,q-8+k*2.6,materials.white);
+       }
+       box(3.5,.045,1.3,p+side*11.8,.25,q,tactile);
+       box(1.3,.045,3.5,p,.25,q+side*11.8,tactile);
+     }
+     if((i+j)%3===0){
+       box(.42,.035,13,p+side*9.82,.065,q+21,redCurb);
+     }
+   }
+ }
+}
 // City blocks: footprint, varied skyline, windows, awnings, small parks.
 // Shared procedural material maps add architectural variety without external assets.
 function patternTexture(kind,seed=0){
@@ -173,16 +196,21 @@ const windowMats=['tower','old','loft','modern'].map((type,i)=>new THREE.MeshSta
  map:patternTexture(type,i),side:THREE.DoubleSide,roughness:i===1?.85:.37,metalness:i===1?0:.15
 }));
 // GPU instancing renders many static skyline elements in four draw calls.
-const footprint=[],buildingMatrices=[],buildingTints=[],roofMatrices=[],facadeMatrices=[[],[],[],[]],treeTrunks=[],treeCanopies=[];
+const alleys=[],footprint=[],buildingMatrices=[],buildingTints=[],roofMatrices=[],facadeMatrices=[[],[],[],[]],treeTrunks=[],treeCanopies=[];
 const facadeDummy=new THREE.Object3D();
 function facadeMatrix(x,y,z,w,h,rot){facadeDummy.position.set(x,y,z);facadeDummy.rotation.set(0,rot,0);facadeDummy.scale.set(w,h,1);facadeDummy.updateMatrix();return facadeDummy.matrix.clone()}
 for(let ix=-HALF;ix<HALF;ix++)for(let iz=-HALF;iz<HALF;iz++){
  const cx=(ix+.5)*BLOCK,cz=(iz+.5)*BLOCK,n=(ix+HALF)*10+iz+HALF;
  plane(BLOCK-ROAD-1,BLOCK-ROAD-1,cx,cz,materials.sidewalk,.10);
+ if(n%13!==2&&n%17!==4){
+   plane(9.8,69,cx,cz,materials.asphalt,.14);
+   plane(69,9.8,cx,cz,materials.asphalt,.145);
+   alleys.push({x:cx,z:cz});
+ }
  if(n%13===2||n%17===4){plane(59,58,cx,cz,materials.grass,.16);for(let t=0;t<10;t++){let dx=(rnd(n*13+t)-.5)*52,dz=(rnd(n*21+t)-.5)*50;addTree(cx+dx,cz+dz,rnd(n+t)*2+3)}continue}
  for(let bi=0;bi<4;bi++){
   const bx=cx+(bi%2?17:-17),bz=cz+(bi>1?17:-17),height=15+rnd(n*13+bi*17)*78*(Math.abs(cx)<200&&Math.abs(cz)<200?1.45:.7);
-  const bw=27+rnd(n+bi)*4,depth=26+rnd(n*3+bi)*5;
+  const bw=22+rnd(n+bi)*6,depth=21+rnd(n*3+bi)*7;
   const colors=['#d6c6b0','#8da9b5','#d5b5a6','#6d909e','#e6ddcb','#b48d7f','#a6a9a4'];
   buildingMatrices.push(new THREE.Matrix4().compose(new THREE.Vector3(bx,height/2+.17,bz),new THREE.Quaternion(),new THREE.Vector3(bw,height,depth)));
   buildingTints.push(new THREE.Color(colors[Math.floor(rnd(n*19+bi)*colors.length)]));
@@ -235,6 +263,28 @@ detailBatch(signModules,new THREE.BoxGeometry(1,1,1),mat('#295970',.4,.16));
 for(let g=0;g<facadeMatrices.length;g++){const inst=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1),windowMats[g],facadeMatrices[g].length);
 for(let j=0;j<facadeMatrices[g].length;j++)inst.setMatrixAt(j,facadeMatrices[g][j]);
 inst.instanceMatrix.needsUpdate=true;inst.frustumCulled=false;scene.add(inst)}
+// Low-cost alley canopies, suspended signs and environmental clutter.
+const alleySteel=mat('#304347',.52,.38),alleyLamp=new THREE.MeshBasicMaterial({color:0xf6d8aa});
+const canopyBars=[],hangingLamps=[],alleyBins=[],alleyBunting=[];
+for(let n=0;n<alleys.length;n++){
+ const a=alleys[n];if(n%3!==0)continue;
+ for(let zoff=-26;zoff<=26;zoff+=13){
+   canopyBars.push([a.x,8.4,a.z+zoff,11,.16,.18]);
+   hangingLamps.push([a.x,8.15,a.z+zoff,1,.24,.5]);
+ }
+ for(let off of [-1,1]){
+   canopyBars.push([a.x+off*5.2,4.25,a.z-27,.18,8.5,.18]);
+   canopyBars.push([a.x+off*5.2,4.25,a.z+27,.18,8.5,.18]);
+ }
+ for(let k=-2;k<=2;k++)alleyBins.push([a.x+4.7,1,a.z+k*11,1.1,1.5,.7]);
+}
+function alleyInstances(arr,material){
+ if(!arr.length)return;
+ const im=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),material,arr.length),o=new THREE.Object3D();
+ for(let i=0;i<arr.length;i++){let [x,y,z,w,h,d]=arr[i];o.position.set(x,y,z);o.scale.set(w,h,d);o.updateMatrix();im.setMatrixAt(i,o.matrix)}
+ im.instanceMatrix.needsUpdate=true;im.frustumCulled=false;scene.add(im);
+}
+alleyInstances(canopyBars,alleySteel);alleyInstances(hangingLamps,alleyLamp);alleyInstances(alleyBins,mat('#667c78',.9));
 function addTree(x,z,s){
 treeTrunks.push(new THREE.Matrix4().compose(new THREE.Vector3(x,s*.82,z),new THREE.Quaternion(),new THREE.Vector3(1,s*1.65,1)));
 treeCanopies.push(new THREE.Matrix4().compose(new THREE.Vector3(x,s*2.15,z),new THREE.Quaternion(),new THREE.Vector3(s*1.3,s*1.3,s*1.3)));
@@ -285,7 +335,7 @@ for(const side of [-1,1]){
  const leg=new THREE.Group();leg.position.set(side*.26,1.25,0);person.add(leg);box(.34,1.12,.36,0,-.55,0,jeans,leg);box(.38,.23,.65,0,-1.17,.13,mat('#1e2935'),leg);limbs.legs.push(leg);
 }
 // Original street-level prologue props: cardboard sign, blanket, and donation cup.
-const prologueProps=new THREE.Group();scene.add(prologueProps);prologueProps.position.set(11.5,0,-6);
+const prologueProps=new THREE.Group();scene.add(prologueProps);prologueProps.position.set(12.4,0,-6);
 const blanket=box(2.3,.075,2.9,.2,.13,.25,mat('#516e70',.98),prologueProps);
 const paper=box(2.1,.13,.07,.05,1.16,-2.05,mat('#79604b',.96),prologueProps);
 paper.rotation.y=-Math.PI/2;
@@ -308,10 +358,10 @@ function setSeatPose(amount){
  limbs.legs[0].rotation.x=-1.27*a;limbs.legs[1].rotation.x=-1.27*a;
  limbs.arms[0].rotation.x=-.5*a;limbs.arms[1].rotation.x=-.5*a;
 }
-let carPos=new THREE.Vector3(5,0,36),playerPos=new THREE.Vector3(11.5,0,-6),angle=0,walkAngle=0,velocity=0,inCar=false,gameMode='menu',camMode=0,clockTime=0,heat=0,heatTimer=0,mission=null,missionCount=0,missionTime=0,missionCooldown=0,nearGarage=false;
+let carPos=new THREE.Vector3(5,0,36),playerPos=new THREE.Vector3(12.4,0,-6),angle=0,walkAngle=0,velocity=0,inCar=false,gameMode='menu',camMode=0,clockTime=0,heat=0,heatTimer=0,mission=null,missionCount=0,missionTime=0,missionCooldown=0,nearGarage=false;
 const traffic=[],police=[];for(let i=0;i<14;i++){const car=makeCar(['#5f9ac9','#eab76e','#94beb5','#e2e4e4','#657489'][i%5]);let q=roadPositions[Math.floor(rnd(i+10)*roadPositions.length)];const east=i%2===0;const pos=east?new THREE.Vector3((rnd(i+71)-.5)*950,0,q+(i%4===0?5:-5)):new THREE.Vector3(q+(i%3===0?5:-5),0,(rnd(i+88)-.5)*950);traffic.push({car,pos,east,dir:i%4<2?1:-1,speed:7+rnd(i+94)*8});car.position.copy(pos)}
 for(let i=0;i<4;i++){const c=makeCar('#e4edf2',true);c.visible=false;police.push({car:c,pos:new THREE.Vector3(),angle:0,active:false})}
-const depot={x:-92,z:0};const depotMark=cyl(6,6,.3,depot.x,.26,depot.z,mat('#65e2ac',.35));const garageMarker=cyl(7,7,.28,184,.28,0,mat('#edc66f'));const depotBeacon=mesh(new THREE.TorusGeometry(4.8,.37,8,32),new THREE.MeshBasicMaterial({color:0x6df5b5}));depotBeacon.rotation.x=Math.PI/2;depotBeacon.position.set(depot.x,.72,depot.z);const garageBeacon=depotBeacon.clone();garageBeacon.material=new THREE.MeshBasicMaterial({color:0xf5cb72});garageBeacon.position.set(184,.72,0);scene.add(depotBeacon,garageBeacon);
+const depot={x:12.5,z:-16};const depotMark=cyl(6,6,.3,depot.x,.26,depot.z,mat('#65e2ac',.35));const garageMarker=cyl(7,7,.28,184,.28,0,mat('#edc66f'));const depotBeacon=mesh(new THREE.TorusGeometry(4.8,.37,8,32),new THREE.MeshBasicMaterial({color:0x6df5b5}));depotBeacon.rotation.x=Math.PI/2;depotBeacon.position.set(depot.x,.72,depot.z);const garageBeacon=depotBeacon.clone();garageBeacon.material=new THREE.MeshBasicMaterial({color:0xf5cb72});garageBeacon.position.set(184,.72,0);scene.add(depotBeacon,garageBeacon);
 const destinations=[{x:370,z:0,name:'Sunset Marina'},{x:-370,z:276,name:'West Haven'},{x:0,z:-370,name:'Old Quarter'},{x:276,z:276,name:'Emerald Heights'},{x:-276,z:-276,name:'Industrial Point'},{x:0,z:370,name:'South Pier'}];const targetRing=mesh(new THREE.TorusGeometry(7,.7,8,40),new THREE.MeshBasicMaterial({color:0xffdc77}));targetRing.rotation.x=Math.PI/2;targetRing.position.y=.8;targetRing.visible=false;scene.add(targetRing);
 function collision(x,z){if(Math.abs(x)>489||Math.abs(z)>489)return true;for(const b of footprint)if(Math.abs(x-b.x)<b.w+1.4&&Math.abs(z-b.z)<b.d+1.4)return true;return false}
 function setNotice(t){$('notice').textContent=t;$('notice').style.opacity='1';clearTimeout(setNotice.timer);setNotice.timer=setTimeout(()=>$('notice').style.opacity='0',2800)}
