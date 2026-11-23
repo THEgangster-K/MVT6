@@ -1,5 +1,30 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v1.5 — Patrol & Jail, Drifting, Distinct Shops, Pedestrian Reactions, Smoother Rendering
+
+### Police and consequences
+- Replaced the old direct-to-player police movement (which caused cars to orbit the player) with turning-limited, road-aware pursuit. Cars approach, slow and can stop to arrest a wanted player.
+- Arrest triggers a short non-graphic cinematic and a Solara Central holding screen. Bail is **$175 per wanted star**, calculated on the arrested wanted level (1–5). If there is enough saved in-game cash, pay bail to return to the street; otherwise the jail screen requires a clear **Start a New Story** action. A new story resets chapter progress, gear, customisations and the vehicle.
+- Wanted stars still decay when not pursued. Existing campaign and persistent account progress remain.
+
+### Vehicles and NPC interactions
+- **Shift while turning at speed** now activates arcade drifting with sideways movement, reduced traction and procedural tyre smoke. Shift still sprints on foot; Space brakes in a car.
+- A small shared, pooled VFX system creates smoke, dust and arcade collision effects with a fixed particle budget to limit draw calls.
+- Pedestrians have a visibly rounded torso, head, face, hands and shoes and have contextual walking, conversation, dodge and brief stumble animations.
+- Non-graphic vehicle/pedestrian contacts trigger a stumble/retreat, reduced vehicle speed, vehicle wear and higher police attention. No injuries, deaths, or graphic collisions are depicted.
+
+### Environmental improvements
+- Removed the arbitrary street-furniture spawn list that placed table/chair/umbrella sets on roads. Café patios are now generated only for café/deli/bakery storefronts where there is a sidewalk.
+- Shops receive individual details: retail displays and product shelves; cafés have outdoor seating, cups and canopies; services have different furnishings.
+- Existing varied buildings, streetlamps, kiosks, transport shelters and Solara Customs remain in the city.
+
+### Performance and compatibility
+- HUD updates are throttled to 10 Hz and circular minimap redraws to about 10 Hz, while 3D gameplay is still rendered on animation frames. Distant shop details stay culled.
+- Workshop animation no longer repeatedly scans the entire shop group for lift rigs. Visual effects are pooled.
+- **Important:** The earlier code inadvertently removed a shared VFX function during a pedestrian collision change, which could cause a JavaScript error. Those VFX functions have been restored.
+- The game remains a procedural Three.js browser game; high-end realism requires professionally modeled assets. Code checks and deployment are not substitutes for an interactive browser test.
+
+
 ## v1.4 — Cinematic Streets, Living Workshop & Driving Systems
 
 This update expands the existing original browser game, preserving the online multiplayer client, accounts, campaign, mission phone, navigation, vehicle tuning and saved progress.
