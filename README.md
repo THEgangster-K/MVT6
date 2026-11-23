@@ -2,6 +2,11 @@
 
 ## v1.3 — Solara Customs, Jump Fix and Chapter Story
 
+### Mission briefings and story conversations
+
+Talk to Rae and press **F** to open a chapter briefing with the chapter title, character dialogue, a three-step objective list, reward, time limit, and **Accept / Not Now** choices. Accepting tracks the next destination automatically. Nico can be spoken to on foot near Solara Customs. The mechanic workshop interaction lets you customise a stationary car; chapter 3's delivery handoff takes priority when it is active.
+
+
 - **Jump repaired:** Space is captured at the document level during gameplay, with an immediate visible hop, a gravity arc and landing animation. The game suppresses browser scrolling on Space. A dedicated **JUMP** touch button appears for coarse-pointer touchscreen users while on foot. Space remains brake when driving.
 - **Solara Customs:** The old pause menu no longer offers instant vehicle upgrades. Drive east to the physical garage at (184, 0) and stop in its service bay, then press **F** to open the workshop. The building includes large signage, structural pillars, lifts and repair details plus mechanic Nico.
 - **Performance and customisation:** Keep the existing engine, handling and nitro upgrade purchases. Add a paint tab with eight finishes and options for a spoiler, LED underglow and alloy rims. Vehicle customisation is stored locally under `mvt6-customs`, while regular progress continues using existing save mechanisms. Fresh resets clear customisations.
