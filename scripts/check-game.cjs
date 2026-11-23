@@ -1,0 +1,59 @@
+'use strict';
+const fs=require('node:fs');
+const path=require('node:path');
+const vm=require('node:vm');
+const assert=require('node:assert/strict');
+const root=path.resolve(__dirname,'..');
+const read=name=>fs.readFileSync(path.join(root,name),'utf8');
+const html=read('index.html');
+const matches=[...html.matchAll(/<script(?: type="module")?>([\s\S]*?)<\/script>/g)];
+assert.ok(matches.length>=2,'Expected bootstrap and game scripts');
+for(const [index,match] of matches.entries()){
+ const plain=match[1].replace(/^import .*;$/gm,'');
+ new vm.Script(plain,{filename:'inline-script-'+index});
+}
+const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
+assert.equal(ids.length,new Set(ids).size,'Duplicate HTML IDs');
+const builtAtRuntime=new Set(['hackCode','hackProgress','hackButtons','hackCancel','carHint','lockHint','citizenDialog','citizenPrompt']);
+for(const match of matches[1][1].matchAll(/\$\('([^']+)'\)/g)){
+ assert.ok(ids.includes(match[1])||builtAtRuntime.has(match[1]),'Missing UI element: '+match[1]);
+}
+const coreSource=read('game-core.js').replace(/^export /gm,'')+
+ '\n;globalThis.core={movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase};';
+const context={Math};
+vm.runInNewContext(coreSource,context,{filename:'game-core.js'});
+const core=context.core;
+const near=(a,b)=>Math.abs(a-b)<1e-8;
+assert.ok(near(core.movementVector(0,1,0).z,1),'W moves forward');
+assert.ok(near(core.movementVector(0,0,1).x,-1),'D uses camera-right vector');
+assert.ok(near(core.movementVector(Math.PI/2,1,0).x,1),'Rotated camera forward');
+assert.equal(core.slideMove({x:0,z:0},{x:3,z:4},(x)=>x>1).z,4,'Slide along blocked wall');
+assert.ok(near(core.approachAngle(0,Math.PI,.2),.2),'Police heading has turn-rate limit');
+assert.equal(core.bailAmount(3.1),700,'Bail rounds up to next wanted star');
+assert.equal(core.nextMissionPhase({stage:'pickup',kind:'escape'},true),'escape');
+assert.equal(core.nextMissionPhase({stage:'pickup',kind:'courier'},true),'deliver');
+assert.ok(read('server.js').includes("'game-core.js'"),'Server serves game core');
+const taxiStart=html.indexOf('const taxiStops=['),taxiEnd=html.indexOf('function offerMission(){',taxiStart);
+assert.ok(taxiStart>0&&taxiEnd>taxiStart,'Taxi job module is present');
+const taxiSandbox={
+ Math,carPos:{x:0,z:0},velocity:0,mission:null,inCar:true,phoneOpen:false,
+ save:{money:45},setNotice:()=>{},setWaypoint:()=>{},closePhone:()=>{},
+ persist:()=>{},updateHUD:()=>{}
+};
+const taxiFunctions=html.slice(taxiStart,taxiEnd)+
+ ';globalThis.taxi={startTaxiJob,updateTaxiJob,taxiObjective,get job(){return taxiJob}};';
+vm.runInNewContext(taxiFunctions,taxiSandbox,{filename:'taxi-job'});
+taxiSandbox.taxi.startTaxiJob();
+assert.ok(taxiSandbox.taxi.job,'Taxi job starts from phone');
+assert.equal(taxiSandbox.taxi.job.stage,'pickup');
+taxiSandbox.carPos.x=taxiSandbox.taxi.job.from.x;
+taxiSandbox.carPos.z=taxiSandbox.taxi.job.from.z;
+taxiSandbox.taxi.updateTaxiJob(.1);
+assert.equal(taxiSandbox.taxi.job.stage,'dropoff','Taxi can collect passenger');
+const fare=taxiSandbox.taxi.job.pay;
+taxiSandbox.carPos.x=taxiSandbox.taxi.job.to.x;
+taxiSandbox.carPos.z=taxiSandbox.taxi.job.to.z;
+taxiSandbox.taxi.updateTaxiJob(.1);
+assert.equal(taxiSandbox.taxi.job,null,'Taxi job completes');
+assert.equal(taxiSandbox.save.money,45+fare,'Taxi fare is paid');
+console.log('MVT 6 QA: inline JS, UI IDs, gameplay math, static route, and taxi fare tests passed.');
