@@ -202,6 +202,34 @@ buildingBatch.instanceMatrix.needsUpdate=true;buildingBatch.instanceColor.needsU
 const roofBatch=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),mat('#e8e5df'),roofMatrices.length);
 for(let i=0;i<roofMatrices.length;i++)roofBatch.setMatrixAt(i,roofMatrices[i]);
 roofBatch.instanceMatrix.needsUpdate=true;roofBatch.frustumCulled=false;scene.add(roofBatch);
+// Varied buildings: rooftop machinery, water towers, stepped crowns and shop awnings.
+const roofModules=[],ventStacks=[],awningModules=[],balconyModules=[],signModules=[];
+const d=new THREE.Object3D(),dq=new THREE.Quaternion();
+function matrixBox(out,x,y,z,w,h,depth){d.position.set(x,y,z);d.rotation.set(0,0,0);d.scale.set(w,h,depth);d.updateMatrix();out.push(d.matrix.clone())}
+for(let k=0;k<buildingMatrices.length;k++){
+ const pos=new THREE.Vector3(),rot=new THREE.Quaternion(),scale=new THREE.Vector3();
+ buildingMatrices[k].decompose(pos,rot,scale);
+ const bx=pos.x,bz=pos.z,height=scale.y,depth=scale.z,bw=scale.x,y=height+.4;
+ const type=k%7;
+ if(type===0||type===4){matrixBox(roofModules,bx,y+2.1,bz,bw*.45,4.2,depth*.42);
+    matrixBox(roofModules,bx,y+4.45,bz,bw*.25,.55,depth*.24)}
+ if(type===1||type===3){matrixBox(roofModules,bx+5,y+.85,bz-3,4.8,1.7,7.2);
+    matrixBox(ventStacks,bx-6,y+2.7,bz+3,1.3,5.1,1.3)}
+ if(type===2){matrixBox(roofModules,bx,y+1.5,bz,bw*.68,3,depth*.6);
+    matrixBox(ventStacks,bx+4,y+4.1,bz,1.3,5,1.3)}
+ if(type===5){matrixBox(roofModules,bx+3,y+1.1,bz-3,8,2.2,7)}
+ if(k%4===0){matrixBox(awningModules,bx,3.25,bz+depth/2+2,bw*.8,.4,4.3);
+    matrixBox(signModules,bx,4.9,bz+depth/2+.15,bw*.68,1.2,.23)}
+ if(k%6===0&&height>26){for(let t=0;t<3;t++)matrixBox(balconyModules,bx-5,10+t*8,bz+depth/2+.9,bw*.42,.22,2.1)}
+}
+function detailBatch(list,geometry,material){if(!list.length)return;const mesh=new THREE.InstancedMesh(geometry,material,list.length);
+ for(let i=0;i<list.length;i++)mesh.setMatrixAt(i,list[i]);
+ mesh.instanceMatrix.needsUpdate=true;mesh.frustumCulled=false;scene.add(mesh);return mesh}
+detailBatch(roofModules,new THREE.BoxGeometry(1,1,1),mat('#778995',.81));
+detailBatch(ventStacks,new THREE.CylinderGeometry(.5,.5,1,8),mat('#728d9b',.45,.55));
+detailBatch(awningModules,new THREE.BoxGeometry(1,1,1),mat('#e7a97a',.62));
+detailBatch(balconyModules,new THREE.BoxGeometry(1,1,1),mat('#adbdc1',.55,.1));
+detailBatch(signModules,new THREE.BoxGeometry(1,1,1),mat('#295970',.4,.16));
 for(let g=0;g<facadeMatrices.length;g++){const inst=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1),windowMats[g],facadeMatrices[g].length);
 for(let j=0;j<facadeMatrices[g].length;j++)inst.setMatrixAt(j,facadeMatrices[g][j]);
 inst.instanceMatrix.needsUpdate=true;inst.frustumCulled=false;scene.add(inst)}
