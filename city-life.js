@@ -57,12 +57,12 @@ function human(i,x,z){
   box(.32,.18,.52,0,-1.14,.13,soleMat,leg);
  box(.35,.055,.54,0,-1.23,.16,mat('#a5a39e'),leg);legs.push(leg);
  }
- return {root,arms,legs,head,x,z,baseX:x,baseZ:z,phase:i*1.63,angle:i*.91,walk:0,name:npcNames[i%npcNames.length],id:i,chatIndex:0};
+ return {root,arms,legs,head,x,z,baseX:x,baseZ:z,phase:i*1.63,angle:i*.91,walk:0,name:npcNames[i%npcNames.length],id:i,chatIndex:0,pathAxis:i%3===0?'x':'z',direction:(i%2?1:-1),pace:.8+rnd(i*21)*.7,gesture:0};
 }
 function streetPoint(i){
  const road=roadPositions[Math.floor(rnd(i*7+1)*roadPositions.length)],horizontal=rnd(i*9+2)>.5;
  const offset=(rnd(i*9+3)>.5?1:-1)*14.4;
- const travel=(rnd(i*9+4)-.5)*865;
+ const travel=(rnd(i*9+4)-.5)*710;
  return horizontal?{x:travel,z:road+offset}:{x:road+offset,z:travel};
 }
 // Named contact for story jobs, stays by the start-of-game sidewalk.
@@ -94,22 +94,35 @@ function nearest(){const p=getPlayer();if(p.inCar)return null;let best=null,d=5.
 function interact(){const n=nearest();if(!n)return false;if(n.role==='fixer'){onStoryContact?.();return true}active=n;const story=stories[n.id%stories.length];const first=n.chatIndex++===0;dialog.innerHTML='<b style="color:#6ee8ba">'+n.name+'</b><div style="margin-top:5px">'+(first?story[0]:story[1])+'</div><small style="color:#a7c4cf">Press F to talk again · Walk away to close</small>';dialog.style.display='block';dialogUntil=performance.now()+6500;if(first){onReward(story[2]);onNotice(n.name+' gave you $'+story[2]+' for helping around town')}return true}
 let lastNpc=0;
 function update(dt,now){
- // NPC movement update at 30fps; animation and camera interaction run every frame.
- if(now-lastNpc>33){const step=Math.min(.05,(now-lastNpc)/1000||dt);lastNpc=now;for(const n of citizens){
- const nearby=Math.hypot(n.root.position.x-getPlayer().x,n.root.position.z-getPlayer().z)<145;
- n.root.visible=nearby;
- if(!nearby)continue;
- const cycle=now*.0002+n.phase;const targetX=n.baseX+Math.cos(cycle)*1.3,targetZ=n.baseZ+Math.sin(cycle)*11;
- if(!collision(targetX,targetZ)){n.root.position.x+=(targetX-n.root.position.x)*Math.min(.065,step*2);n.root.position.z+=(targetZ-n.root.position.z)*Math.min(.065,step*2)}
- n.root.rotation.y=Math.atan2(-Math.sin(cycle)*11,-Math.sin(cycle)*11+Math.cos(cycle)*1.3);
- const gait=now*.004+n.phase;const swing=Math.sin(gait)*.28;
- n.legs[0].rotation.x=swing;n.legs[1].rotation.x=-swing;
- n.arms[0].rotation.x=-swing*.75;n.arms[1].rotation.x=swing*.75;n.head.rotation.y=Math.sin(now*.0009+n.phase)*.21;
- }}
+ if(now-lastNpc>33){
+   const step=Math.min(.065,(now-lastNpc)/1000||dt);lastNpc=now;
+   const player=getPlayer();
+   for(const n of citizens){
+     const px=n.root.position.x,pz=n.root.position.z;
+     const nearby=Math.hypot(px-player.x,pz-player.z)<115;
+     n.root.visible=nearby;if(!nearby)continue;
+     const speed=n.pace*step*n.direction,axis=n.pathAxis;
+     const nx=axis==='x'?px+speed:px,nz=axis==='z'?pz+speed:pz;
+     const dFromBase=Math.abs((axis==='x'?nx-n.baseX:nz-n.baseZ));
+     let walking=false;
+     if(dFromBase>26||collision(nx,nz,.25)){n.direction*=-1}
+     else{n.root.position.x=nx;n.root.position.z=nz;walking=Math.abs(speed)>.0001}
+     // Rotate to match ACTUAL direction of travel, with natural turning.
+     const heading=axis==='x'?(n.direction>0?Math.PI/2:-Math.PI/2):(n.direction>0?0:Math.PI);
+     const turn=Math.atan2(Math.sin(heading-n.root.rotation.y),Math.cos(heading-n.root.rotation.y));
+     n.root.rotation.y+=turn*Math.min(1,step*7);
+     const stride=Math.sin(now*.009*n.pace+n.phase)*(walking?.48:0);
+     n.legs[0].rotation.x=stride;n.legs[1].rotation.x=-stride;
+     n.arms[0].rotation.x=-stride*.67;n.arms[1].rotation.x=stride*.67;
+     n.head.rotation.y=Math.sin(now*.00065+n.phase)*.12;
+     n.root.position.y=walking?Math.abs(stride)*.03:0;
+   }
+ }
  if(!isPlaying()){pop.style.display='none';dialog.style.display='none';return}
  const n=nearest();
  pop.style.display=n?'block':'none';if(n)pop.textContent=n.role==='fixer'?'F  ·  Talk to Rae (street jobs)':'F  ·  Talk to '+n.name;
  if(!n||now>dialogUntil)dialog.style.display='none';
 }
+
 return {update,interact,citizens,fixer};
 }
