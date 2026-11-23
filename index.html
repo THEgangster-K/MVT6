@@ -1067,7 +1067,7 @@ function updateHUD(){ $('streetRank').textContent=getRank();$('money').textConte
  escape:'Keep moving and lose the patrol.'
 }[mission.stage]||'Follow the next story objective.')+
  ' · '+Math.round(Math.hypot(p.x-missionObjective().x,p.z-missionObjective().z))+'m TO TARGET'+
- ' · '+Math.max(0,Math.ceil(missionTime))+'s'}else{$('missionTitle').textContent='The city is yours';$('missionText').textContent='Talk to Rae to start the next chapter. Follow the yellow mission marker and your phone.'}}
+ ' · '+Math.max(0,Math.ceil(missionTime))+'s'}else if(taxiJob){const o=taxiObjective();$('missionTitle').textContent='TAXI · '+(taxiJob.stage==='pickup'?'PICKUP':'DROP OFF');$('missionText').textContent='Stop at '+o.name+' · '+Math.round(Math.hypot(p.x-o.x,p.z-o.z))+'m · '+Math.ceil(taxiJob.time)+'s'}else{$('missionTitle').textContent='The city is yours';$('missionText').textContent='Talk to Rae for story chapters or take a taxi fare in your phone.'}}
 // Original crime-fiction campaign: Lost Solara, a city of rival crews and secret debts.
 const chapterBeats=[
  ['A PLACE TO START','Rae: Everyone starts somewhere. Meet me near the alley.'],
@@ -1129,7 +1129,7 @@ function renderTaxiPhone(){
 }
 function offerMission(){
  if(gameMode!=='play')return;
- if(mission){setNotice('Finish the current chapter before speaking to Rae again.');return}
+ if(mission||taxiJob){setNotice('Finish your current job before starting a chapter.');return}
  const n=save.completed,job=storyJobs[Math.min(n,storyJobs.length-1)];
  const narrative=chapterBeats[Math.min(n,chapterBeats.length-1)];
  if(document.pointerLockElement)document.exitPointerLock();
@@ -1274,7 +1274,7 @@ function updateMissionActivity(dt){
  }
 }
 function startMission(){
- if(mission){setNotice('Complete your active chapter first.');return}
+ if(mission||taxiJob){setNotice('Complete your active job first.');return}
  const n=save.completed,base=storyJobs[Math.min(n,storyJobs.length-1)];
  const kind=base.kind,stage=kind==='courier'||kind==='escape'?'pickup':kind==='vehicle'?'vehicle':kind==='race'?'race':kind==='scout'?'scout':'terminal';
  mission={title:base.title,description:base.description,kind,
@@ -2044,7 +2044,7 @@ $('jailRelease').onclick=()=>{
 };
 $('jailRestart').onclick=()=>{
  if(gameMode!=='jail')return;
- save=defaultSave();mission=null;missionTime=0;velocity=0;
+ save=defaultSave();mission=null;taxiJob=null;missionTime=0;velocity=0;
  cosmetics={paint:'#e96e5d',spoiler:false,lightKit:false,rims:false};applyCustoms();
  collectedGear=[];selectedGadget=0;updateGadgetWheel();
  vehicleCondition=100;saveVehicleCondition();
@@ -2154,6 +2154,7 @@ function drawMap(){
  for(const shop of nearShops)if(Math.hypot(shop.x-p.x,shop.z-p.z)<120)dot(shop.x,shop.z,'#95dce3',4,false);
  dot(cityLife.fixer.root.position.x,cityLife.fixer.root.position.z,'#c3e0a4',5);
  dot(184,0,'#d9b378',5);
+ if(taxiJob){const target=taxiObjective();if(target)dot(target.x,target.z,'#76deed',9,true)}
  if(mission){const target=missionObjective();if(target){
    ctx.strokeStyle='#ffdf8c';ctx.lineWidth=2.9;ctx.setLineDash([5,8]);ctx.beginPath();
    ctx.moveTo(p.x*zoom,-p.z*zoom);ctx.lineTo(target.x*zoom,-target.z*zoom);ctx.stroke();ctx.setLineDash([]);
@@ -2180,7 +2181,7 @@ let phoneOpen=false;
 const phoneRoot=$('gamePhone');
 const phoneMissionStatus=()=>mission?({pickup:'Collect item',deliver:'Meet contact',terminal:'Decode signal',vehicle:'Find a ride',race:'Drive the route',scout:'Gather clues',escape:'Lose pursuit'}[mission.stage]||'Follow objective'):'Talk to Rae to begin';
 function renderPhone(){
- renderLifestyle();
+ renderLifestyle();renderTaxiPhone();
  $('phoneClock').textContent=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
  const current=$('phoneCurrent');current.innerHTML='';
  const active=document.createElement('div');active.className='phoneCard';
@@ -2277,7 +2278,7 @@ getPlayer:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,inCar,
 isPlaying:()=>gameMode==='play',onNotice:setNotice,
 onReward:amount=>{save.money+=amount;persist();updateHUD()}});
 let network=multiplayer({THREE,scene,makeCar,box,mat,mesh,getState:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,angle:inCar?angle:person.rotation.y,inCar}),onAccount:progress=>{if(progress){save={...defaultSave(),...progress};updateHUD()}},onMessage:message=>setNotice(message)});
-let last=performance.now(),fpsCounter=0,fpsTime=0,lastShopUpdate=0,lastHudUpdate=0,lastMapUpdate=0;function frame(now){requestAnimationFrame(frame);if(now-lastShopUpdate>800){lastShopUpdate=now;touchJump.style.display=gameMode==='play'&&!inCar&&matchMedia('(pointer:coarse)').matches?'block':'none';const gearNear=gameMode==='play'&&!inCar?nearestEquipment():null;$('pickupPrompt').style.display=gearNear?'block':'none';if(gearNear)$('pickupPrompt').textContent='F · COLLECT '+gadgetNames[gearNear.id];carHint.style.display=(gameMode==='play'&&!inCar&&nearestTrafficCar())?'block':'none';const px=inCar?carPos.x:playerPos.x,pz=inCar?carPos.z:playerPos.z;for(const sh of shopBuildings){sh.root.visible=gameMode==='intro'||gameMode==='menu'||Math.hypot(px-sh.x,pz-sh.z)<155}}const dt=Math.max(.001,Math.min(.04,(now-last)/1000));last=now;animateCustoms(dt);if(gameMode==='play'){clockTime+=dt;if(atmosphereTime>0){atmosphereTime=Math.max(0,atmosphereTime-dt);if(atmosphereTime===0)atmosphereToast.classList.remove('show')}if(detailingShine>0)detailingShine=Math.max(0,detailingShine-dt);if(chapterBannerTime>0){chapterBannerTime-=dt;if(chapterBannerTime<=0)chapterScreen.classList.remove('show')}updateEquipmentWorld(dt);if(inCar)moveCar(dt);else movePerson(dt);updateVfx(dt);advanceTraffic(dt);advancePolice(dt);updatePatrolAgents(dt);if(mission){missionTime-=dt;updateMissionActivity(dt);if(missionTime<=0)failMission()}cityLife.update(dt,now);if(now-lastHudUpdate>100){lastHudUpdate=now;updateHUD()}updateCamera(dt);if(now-lastMapUpdate>95){lastMapUpdate=now;drawMap()}}else if(gameMode==='arrest'){animateArrest(dt);cityLife.update(dt,now)}else if(gameMode==='jail'){cityLife.update(dt,now)}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='takeover'){clockTime+=dt;updateVfx(dt);updateTakeover(dt);advanceTraffic(dt);cityLife.update(dt,now);updateCamera(dt);if(now-lastMapUpdate>95){lastMapUpdate=now;drawMap()}}else if(gameMode==='menu'){cityLife.update(dt,now);const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;fpsTime+=dt;if(fpsTime>1){const fps=Math.round(fpsCounter/fpsTime);$('fps').textContent=fps+' FPS';if(gameMode==='play'&&fps<37&&qualityPixelRatio>.8&&graphicsPreset!=='cinematic'){qualityPixelRatio=Math.max(.8,qualityPixelRatio-.1);renderer.setPixelRatio(qualityPixelRatio)}fpsTime=0;fpsCounter=0}}
+let last=performance.now(),fpsCounter=0,fpsTime=0,lastShopUpdate=0,lastHudUpdate=0,lastMapUpdate=0;function frame(now){requestAnimationFrame(frame);if(now-lastShopUpdate>800){lastShopUpdate=now;touchJump.style.display=gameMode==='play'&&!inCar&&matchMedia('(pointer:coarse)').matches?'block':'none';const gearNear=gameMode==='play'&&!inCar?nearestEquipment():null;$('pickupPrompt').style.display=gearNear?'block':'none';if(gearNear)$('pickupPrompt').textContent='F · COLLECT '+gadgetNames[gearNear.id];carHint.style.display=(gameMode==='play'&&!inCar&&nearestTrafficCar())?'block':'none';const px=inCar?carPos.x:playerPos.x,pz=inCar?carPos.z:playerPos.z;for(const sh of shopBuildings){sh.root.visible=gameMode==='intro'||gameMode==='menu'||Math.hypot(px-sh.x,pz-sh.z)<155}}const dt=Math.max(.001,Math.min(.04,(now-last)/1000));last=now;animateCustoms(dt);if(gameMode==='play'){clockTime+=dt;if(atmosphereTime>0){atmosphereTime=Math.max(0,atmosphereTime-dt);if(atmosphereTime===0)atmosphereToast.classList.remove('show')}if(detailingShine>0)detailingShine=Math.max(0,detailingShine-dt);if(chapterBannerTime>0){chapterBannerTime-=dt;if(chapterBannerTime<=0)chapterScreen.classList.remove('show')}updateEquipmentWorld(dt);if(inCar)moveCar(dt);else movePerson(dt);updateVfx(dt);advanceTraffic(dt);advancePolice(dt);updatePatrolAgents(dt);if(mission){missionTime-=dt;updateMissionActivity(dt);if(missionTime<=0)failMission()}if(taxiJob)updateTaxiJob(dt);cityLife.update(dt,now);if(now-lastHudUpdate>100){lastHudUpdate=now;updateHUD()}updateCamera(dt);if(now-lastMapUpdate>95){lastMapUpdate=now;drawMap()}}else if(gameMode==='arrest'){animateArrest(dt);cityLife.update(dt,now)}else if(gameMode==='jail'){cityLife.update(dt,now)}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='takeover'){clockTime+=dt;updateVfx(dt);updateTakeover(dt);advanceTraffic(dt);cityLife.update(dt,now);updateCamera(dt);if(now-lastMapUpdate>95){lastMapUpdate=now;drawMap()}}else if(gameMode==='menu'){cityLife.update(dt,now);const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;fpsTime+=dt;if(fpsTime>1){const fps=Math.round(fpsCounter/fpsTime);$('fps').textContent=fps+' FPS';if(gameMode==='play'&&fps<37&&qualityPixelRatio>.8&&graphicsPreset!=='cinematic'){qualityPixelRatio=Math.max(.8,qualityPixelRatio-.1);renderer.setPixelRatio(qualityPixelRatio)}fpsTime=0;fpsCounter=0}}
 person.visible=true;setSeatPose(save.completed===0?1:0);playerCar.visible=save.completed>=2;playerCar.position.copy(carPos);$('hud').style.display='none';requestAnimationFrame(frame);if(window.__mvtLoaded)window.__mvtLoaded();addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
 </script>
 </body>
