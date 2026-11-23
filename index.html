@@ -97,7 +97,7 @@ body:has(#hud[style*="block"]) #lockHint{display:block}
  <div id="fps"></div>
  <div id="objective"><b>ACTIVE CONTRACT</b><strong id="missionTitle">—</strong><p id="missionText">—</p></div>
  <div id="notice"></div><div id="speed">0 <small>KM/H</small></div>
- <div id="help"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Drive / walk &nbsp; <kbd>Shift</kbd> Sprint / boost &nbsp; <kbd>Space</kbd> Brake<br><kbd>E</kbd> Enter / exit / take vehicle &nbsp; <kbd>F</kbd> Contract / garage &nbsp; <kbd>C</kbd> Camera &nbsp; <kbd>Esc</kbd> Pause &nbsp; <kbd>R</kbd> Reset car &nbsp; <kbd>Click</kbd> Lock mouse <kbd>Esc</kbd> Unlock &nbsp; <kbd>F</kbd> Talk to NPCs</div>
+ <div id="help"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Drive / walk &nbsp; <kbd>Shift</kbd> Sprint / boost &nbsp; <kbd>Space</kbd> Brake<br><kbd>E</kbd> Enter / exit / take vehicle &nbsp; <kbd>F</kbd> Talk / collect / interact &nbsp; <kbd>T</kbd> Street art &nbsp; <kbd>C</kbd> Camera &nbsp; <kbd>Esc</kbd> Pause &nbsp; <kbd>R</kbd> Reset car &nbsp; <kbd>Click</kbd> Lock mouse <kbd>Esc</kbd> Unlock &nbsp; <kbd>F</kbd> Talk to NPCs</div>
  <div id="mapWrap"><canvas id="minimap" width="320" height="320"></canvas></div>
  <div id="touch"><div class="cross"><button data-key="w">▲</button><br><button data-key="a">◀</button><button data-key="s">▼</button><button data-key="d">▶</button></div><div class="actions"><button data-key="Shift">BOOST</button><button data-action="e">ENTER</button><button data-action="f">USE</button><button data-key=" ">BRAKE</button></div></div>
 </div>
@@ -712,9 +712,57 @@ function renderLifestyle(){
  button.onclick=()=>{if(save.lifeTier!==tier||save.money<item.cost)return;save.money-=item.cost;save.lifeTier=tier+1;persist();setNotice('STATUS UPGRADED: '+item.name);renderGarage();updateHUD()};
  line.append(summary,button);root.append(line);
 }
+// Repeatable fictional street side-activities, separate from the eight story chapters.
+const stashLocations=[
+ {x:13.7,z:105},{x:-13.7,z:197},{x:105,z:13.7},{x:-105,z:-13.7},
+ {x:-184,z:13.7},{x:184,z:-13.7},{x:13.7,z:-197},{x:-13.7,z:289}
+];
+const streetStashes=[];
+for(let i=0;i<stashLocations.length;i++){
+ const p=stashLocations[i],root=new THREE.Group();scene.add(root);root.position.set(p.x,0,p.z);
+ const shell=mat(i%2?'#716c6c':'#797354',.86),trim=mat('#3f4b50');
+ box(1.1,1.1,.93,0,.63,0,shell,root);
+ box(1.16,.12,1.01,0,1.19,0,trim,root);
+ for(const side of [-1,1])box(.08,1,.08,side*.49,.63,.42,trim,root);
+ const sig=mesh(new THREE.PlaneGeometry(.64,.48),new THREE.MeshBasicMaterial({color:0xf2c582}),root);sig.position.set(0,.75,.485);
+ streetStashes.push({x:p.x,z:p.z,root,lastUsed:-999});
+}
+const murals=[
+ {x:-12.4,z:-140,rot:Math.PI/2},{x:12.4,z:-233,rot:-Math.PI/2},
+ {x:-104,z:56,rot:Math.PI/2},{x:104,z:155,rot:-Math.PI/2}
+];
+const muralCanvas=document.createElement('canvas');muralCanvas.width=512;muralCanvas.height=256;
+const mc=muralCanvas.getContext('2d');mc.fillStyle='#153f51';mc.fillRect(0,0,512,256);
+mc.fillStyle='#e9be8b';mc.font='900 102px system-ui';mc.textAlign='center';mc.fillText('SOLARA',256,155);
+mc.strokeStyle='#74e7c5';mc.lineWidth=13;mc.strokeRect(14,15,484,226);
+const muralTexture=new THREE.CanvasTexture(muralCanvas);muralTexture.colorSpace=THREE.SRGBColorSpace;
+for(const p of murals){const panel=mesh(new THREE.PlaneGeometry(5.7,2.75),new THREE.MeshBasicMaterial({map:muralTexture,side:THREE.DoubleSide}));panel.rotation.y=p.rot;panel.position.set(p.x,2.8,p.z);p.panel=panel;p.lastTagged=-999;p.panel.visible=false}
+function streetSideActivity(){
+ if(inCar)return false;
+ for(const stash of streetStashes){
+  if(Math.hypot(stash.x-playerPos.x,stash.z-playerPos.z)>4.5)continue;
+  if(clockTime-stash.lastUsed<90){setNotice('This underground stash is empty. Search elsewhere.');return true}
+  stash.lastUsed=clockTime;const reward=50+Math.floor(rnd(clockTime+stash.x)*105);
+  save.money+=reward;heat=Math.min(5,heat+.45);persist();
+  setNotice('UNDERGROUND STASH · +$'+reward+' · Patrol attention increased');gestureTime=1;updateHUD();
+  return true;
+ }
+ return false;
+}
+function tagWall(){
+ if(inCar||gameMode!=='play')return;
+ for(const p of murals){
+  if(Math.hypot(playerPos.x-p.x,playerPos.z-p.z)>8)continue;
+  if(clockTime-p.lastTagged<120){setNotice('This wall already has your crew tag.');return}
+  p.lastTagged=clockTime;p.panel.visible=true;save.money+=30;heat=Math.min(5,heat+.3);persist();
+  gestureTime=1;setNotice('STREET ART TAG · +$30 · Crew reputation grows');return;
+ }
+ setNotice('Find a wall marked on the map before using T to leave your crew tag.');
+}
 function interact(){
  if(gameMode!=='play')return;
  if(interactMission()){gestureTime=.65;return;}
+ if(streetSideActivity())return;
  const p=inCar?carPos:playerPos;
  if(Math.hypot(p.x-184,p.z)<16){openGarage();return}
  if(!inCar&&interactShop(p.x,p.z))return;
@@ -809,7 +857,7 @@ function keyState(e,on){
  if(editable){if(!on)for(const k of ['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'])keys[k]=false;return}
  let k=String(e.key||'').toLowerCase();
  if(e.code==='KeyW')k='w';if(e.code==='KeyA')k='a';if(e.code==='KeyS')k='s';if(e.code==='KeyD')k='d';
-if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();if(gameMode!=='play'&&k!=='escape')return;keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(document.pointerLockElement)document.exitPointerLock();else if(gameMode==='play')pause();else if(gameMode==='pause')resume();else if(gameMode==='garage')closeGarage()}if(k==='e')enterExit();if(k==='f')interact();if(k==='c'){camMode=(camMode+1)%3;orbitOffset=0};if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;playerCar.position.copy(carPos);playerCar.rotation.y=angle;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
+if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();if(gameMode!=='play'&&k!=='escape')return;keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(document.pointerLockElement)document.exitPointerLock();else if(gameMode==='play')pause();else if(gameMode==='pause')resume();else if(gameMode==='garage')closeGarage()}if(k==='e')enterExit();if(k==='f')interact();if(k==='t')tagWall();if(k==='c'){camMode=(camMode+1)%3;orbitOffset=0};if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;playerCar.position.copy(carPos);playerCar.rotation.y=angle;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
 addEventListener('keydown',e=>keyState(e,true));addEventListener('keyup',e=>keyState(e,false));addEventListener('blur',()=>{for(let k in keys)keys[k]=false});
 function pause(){if(document.pointerLockElement)document.exitPointerLock();gameMode='pause';$('paused').style.display='flex'}function resume(){gameMode='play';$('paused').style.display='none';$('garage').style.display='none'}function closeGarage(){gameMode='play';$('garage').style.display='none'}
 $('play').onclick=()=>{startIntro()};$('resetSave').onclick=()=>{if(confirm('Reset your MVT 6 cash, upgrades and contracts?')){save=defaultSave();persist();setNotice('Save reset')}};$('resume').onclick=resume;$('openGarage').onclick=openGarage;$('closeGarage').onclick=closeGarage;$('toMenu').onclick=()=>{gameMode='menu';$('paused').style.display='none';$('hud').style.display='none';$('menu').style.display='flex'};
