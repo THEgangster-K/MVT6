@@ -1,11 +1,12 @@
 {
   "name": "mvt6",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Original 3D multiplayer browser driving game",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check client.js"
+    "check": "node --check server.js && node --check client.js && node --check city-life.js && node scripts/check-game.cjs",
+    "test": "node scripts/check-game.cjs"
   },
   "engines": {
     "node": ">=20"
