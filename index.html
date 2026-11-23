@@ -116,9 +116,9 @@ import {createCityLife} from './city-life.js';
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';
 // MVT 6: an original browser game and city, not GTA assets or source.
 const $=id=>document.getElementById(id), world=$('game');
-const scene=new THREE.Scene();scene.background=new THREE.Color('#92c4e2');scene.fog=new THREE.FogExp2('#b0cde0',0.00265);
-const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.25));renderer.shadowMap.enabled=false;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.27;world.appendChild(renderer.domElement);
-const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,0.1,1800);camera.position.set(0,9,-17);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#92c4e2');scene.fog=new THREE.FogExp2('#a8bbca',0.0032);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.25));renderer.shadowMap.enabled=false;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;world.appendChild(renderer.domElement);
+const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,0.6,1150);camera.position.set(0,9,-17);
 scene.add(new THREE.HemisphereLight(0xcbe6ff,0x60605a,2.15));const sun=new THREE.DirectionalLight(0xffe4b7,2.2);sun.position.set(-120,210,-90);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-155;sun.shadow.camera.right=155;sun.shadow.camera.top=155;sun.shadow.camera.bottom=-155;sun.shadow.bias=-.0003;scene.add(sun);
 const mat=(c,rough=0.7,metal=0)=>new THREE.MeshStandardMaterial({color:c,roughness:rough,metalness:metal});
 const materials={asphalt:mat('#344653'),sidewalk:mat('#b3b3a5'),line:mat('#ece5cb'),grass:mat('#4e9475'),water:mat('#2c8ba1',.22,.24),trunk:mat('#664b3b'),leaf:mat('#277d63'),windows:mat('#6fa7b9',.18,.45),white:mat('#e6e7dc')};
@@ -345,7 +345,7 @@ for(const side of [-1,1]){
  const leg=new THREE.Group();leg.position.set(side*.26,1.25,0);person.add(leg);box(.34,1.12,.36,0,-.55,0,jeans,leg);box(.38,.23,.65,0,-1.17,.13,mat('#1e2935'),leg);limbs.legs.push(leg);
 }
 // Original street-level prologue props: cardboard sign, blanket, and donation cup.
-const prologueProps=new THREE.Group();scene.add(prologueProps);prologueProps.position.set(12.4,0,-6);
+const prologueProps=new THREE.Group();scene.add(prologueProps);prologueProps.position.set(16,0,-29);
 const blanket=box(2.3,.075,2.9,.2,.13,.25,mat('#516e70',.98),prologueProps);
 const paper=box(2.1,.13,.07,.05,1.16,-2.05,mat('#79604b',.96),prologueProps);
 paper.rotation.y=-Math.PI/2;
@@ -368,7 +368,7 @@ function setSeatPose(amount){
  limbs.legs[0].rotation.x=-1.27*a;limbs.legs[1].rotation.x=-1.27*a;
  limbs.arms[0].rotation.x=-.5*a;limbs.arms[1].rotation.x=-.5*a;
 }
-let carPos=new THREE.Vector3(5,0,36),playerPos=new THREE.Vector3(12.4,0,-6),angle=0,walkAngle=0,velocity=0,inCar=false,gameMode='menu',camMode=0,clockTime=0,heat=0,heatTimer=0,mission=null,missionCount=0,missionTime=0,missionCooldown=0,nearGarage=false;
+let carPos=new THREE.Vector3(5,0,36),playerPos=new THREE.Vector3(16,0,-29),angle=0,walkAngle=0,velocity=0,inCar=false,gameMode='menu',camMode=0,clockTime=0,heat=0,heatTimer=0,mission=null,missionCount=0,missionTime=0,missionCooldown=0,nearGarage=false;
 const traffic=[],police=[];for(let i=0;i<14;i++){const car=makeCar(['#5f9ac9','#eab76e','#94beb5','#e2e4e4','#657489'][i%5]);let q=roadPositions[Math.floor(rnd(i+10)*roadPositions.length)];const east=i%2===0;const pos=east?new THREE.Vector3((rnd(i+71)-.5)*950,0,q+(i%4===0?5:-5)):new THREE.Vector3(q+(i%3===0?5:-5),0,(rnd(i+88)-.5)*950);traffic.push({car,pos,east,dir:i%4<2?1:-1,speed:7+rnd(i+94)*8});car.position.copy(pos)}
 for(let i=0;i<4;i++){const c=makeCar('#e4edf2',true);c.visible=false;police.push({car:c,pos:new THREE.Vector3(),angle:0,active:false})}
 const depot={x:12.5,z:-16};const depotMark=cyl(6,6,.3,depot.x,.26,depot.z,mat('#65e2ac',.35));depotMark.visible=false;const garageMarker=cyl(7,7,.28,184,.28,0,mat('#edc66f'));const depotBeacon=mesh(new THREE.TorusGeometry(4.8,.37,8,32),new THREE.MeshBasicMaterial({color:0x6df5b5}));depotBeacon.rotation.x=Math.PI/2;depotBeacon.position.set(depot.x,.72,depot.z);const garageBeacon=depotBeacon.clone();garageBeacon.material=new THREE.MeshBasicMaterial({color:0xf5cb72});garageBeacon.position.set(184,.72,0);scene.add(depotBeacon,garageBeacon);depotBeacon.visible=false;
@@ -475,7 +475,7 @@ const introShots=[
  {duration:4.1,from:[-92,17,-290],to:[-92,11,-137],lookFrom:[-92,11,-154],lookTo:[-92,6,-61],title:'SOLARA CITY',copy:'A maze of storefronts, old brick alleys, and modern towers.'},
  {duration:4.2,from:[0,12,-190],to:[0,8,-64],lookFrom:[0,8,-104],lookTo:[0,5,26],title:'CHAPTER ONE',copy:'Some arrive with everything. You arrive with almost nothing.'},
  {duration:4.0,from:[0,8,-44],to:[0,5,-18],lookFrom:[0,5,-4],lookTo:[12.4,2,-6],title:'NO SHORTCUTS',copy:'The next opportunity is just down the street.'},
- {duration:5.0,from:[12,6,-27],to:[12.8,3.5,-12],lookFrom:[12.4,2,-6],lookTo:[12.4,1.3,-6],title:'YOUR STORY BEGINS',copy:'One small sign on the pavement. An entire city ahead.'}
+ {duration:5.0,from:[0,6,-44],to:[4.0,3.5,-29],lookFrom:[16,2,-29],lookTo:[16,1.3,-29],title:'YOUR STORY BEGINS',copy:'One small sign on the pavement. An entire city ahead.'}
 ];
 const introDuration=introShots.reduce((a,x)=>a+x.duration,0);
 function startIntro(){
@@ -543,8 +543,8 @@ document.addEventListener('pointerlockchange',()=>{mouseLocked=document.pointerL
 document.addEventListener('mousemove',e=>{
  if(!mouseLocked||gameMode!=='play')return;
  const sensitivity=.00265;
- if(inCar)orbitOffset=THREE.MathUtils.clamp(orbitOffset+e.movementX*sensitivity,-1.35,1.35);
- else camYaw+=e.movementX*sensitivity;
+ if(inCar)orbitOffset=THREE.MathUtils.clamp(orbitOffset-e.movementX*sensitivity,-1.35,1.35);
+ else camYaw-=e.movementX*sensitivity;
  orbitPitch=THREE.MathUtils.clamp(orbitPitch+e.movementY*.0016,-.12,.35);
 });
 function keyState(e,on){if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;let k=e.key.toLowerCase();if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();if(gameMode!=='play'&&k!=='escape')return;keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(document.pointerLockElement)document.exitPointerLock();else if(gameMode==='play')pause();else if(gameMode==='pause')resume();else if(gameMode==='garage')closeGarage()}if(k==='e')enterExit();if(k==='f')interact();if(k==='c'){camMode=(camMode+1)%3;orbitOffset=0};if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;playerCar.position.copy(carPos);playerCar.rotation.y=angle;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
@@ -573,8 +573,8 @@ function movePerson(dt){
  walkMotion=0;
  if(forward||sideways){
  const length=Math.hypot(forward,sideways),speed=(keys.shift?8.6:5.7)*dt;
- const dx=(Math.sin(camYaw)*forward-Math.cos(camYaw)*sideways)/length*speed;
- const dz=(Math.cos(camYaw)*forward+Math.sin(camYaw)*sideways)/length*speed;
+ const dx=(Math.sin(camYaw)*forward+Math.cos(camYaw)*sideways)/length*speed;
+ const dz=(Math.cos(camYaw)*forward-Math.sin(camYaw)*sideways)/length*speed;
  // Separate axis collision enables movement alongside walls.
  if(!collision(playerPos.x+dx,playerPos.z)){playerPos.x+=dx;walkMotion=1}
  if(!collision(playerPos.x,playerPos.z+dz)){playerPos.z+=dz;walkMotion=1}
