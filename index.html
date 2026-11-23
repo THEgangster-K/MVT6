@@ -21,7 +21,7 @@
  <div id="fps"></div>
  <div id="objective"><b>ACTIVE CONTRACT</b><strong id="missionTitle">—</strong><p id="missionText">—</p></div>
  <div id="notice"></div><div id="speed">0 <small>KM/H</small></div>
- <div id="help"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Drive / walk &nbsp; <kbd>Shift</kbd> Sprint / boost &nbsp; <kbd>Space</kbd> Brake<br><kbd>E</kbd> Enter / exit &nbsp; <kbd>F</kbd> Contract / garage &nbsp; <kbd>C</kbd> Camera &nbsp; <kbd>Esc</kbd> Pause &nbsp; <kbd>R</kbd> Reset car</div>
+ <div id="help"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Drive / walk &nbsp; <kbd>Shift</kbd> Sprint / boost &nbsp; <kbd>Space</kbd> Brake<br><kbd>E</kbd> Enter / exit &nbsp; <kbd>F</kbd> Contract / garage &nbsp; <kbd>C</kbd> Camera &nbsp; <kbd>Esc</kbd> Pause &nbsp; <kbd>R</kbd> Reset car &nbsp; <kbd>Mouse drag</kbd> Look around &nbsp; <kbd>F</kbd> Talk to NPCs</div>
  <div id="mapWrap"><canvas id="minimap" width="320" height="320"></canvas></div>
  <div id="touch"><div class="cross"><button data-key="w">▲</button><br><button data-key="a">◀</button><button data-key="s">▼</button><button data-key="d">▶</button></div><div class="actions"><button data-key="Shift">BOOST</button><button data-action="e">ENTER</button><button data-action="f">USE</button><button data-key=" ">BRAKE</button></div></div>
 </div>
@@ -32,11 +32,12 @@
 <div id="garage" class="overlay"><div class="panel"><div class="eyebrow">SOLARA AUTO WORKS</div><h2>Vehicle upgrades</h2><p>Money available: <b id="garageMoney" style="color:#66e2ad"></b></p><div id="upgradeList"></div><button id="closeGarage">BACK TO GAME</button></div></div>
 <script type="module">
 import {multiplayer} from './client.js';
+import {createCityLife} from './city-life.js';
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';
 // MVT 6: an original browser game and city, not GTA assets or source.
 const $=id=>document.getElementById(id), world=$('game');
 const scene=new THREE.Scene();scene.background=new THREE.Color('#92c4e2');scene.fog=new THREE.FogExp2('#b0cde0',0.00265);
-const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.65));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.27;world.appendChild(renderer.domElement);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.25));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.27;world.appendChild(renderer.domElement);
 const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,0.1,1800);camera.position.set(0,9,-17);
 scene.add(new THREE.HemisphereLight(0xcbe6ff,0x60605a,2.15));const sun=new THREE.DirectionalLight(0xffe4b7,2.2);sun.position.set(-120,210,-90);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-155;sun.shadow.camera.right=155;sun.shadow.camera.top=155;sun.shadow.camera.bottom=-155;sun.shadow.bias=-.0003;scene.add(sun);
 const mat=(c,rough=0.7,metal=0)=>new THREE.MeshStandardMaterial({color:c,roughness:rough,metalness:metal});
@@ -68,7 +69,7 @@ for(let ix=-HALF;ix<HALF;ix++)for(let iz=-HALF;iz<HALF;iz++){
  for(let bi=0;bi<4;bi++){
   const bx=cx+(bi%2?17:-17),bz=cz+(bi>1?17:-17),height=15+rnd(n*13+bi*17)*78*(Math.abs(cx)<200&&Math.abs(cz)<200?1.45:.7);
   const bw=27+rnd(n+bi)*4,depth=26+rnd(n*3+bi)*5;
-  const colors=['#d6c6b0','#8da9b5','#d5b5a6','#6d909e','#e6ddcb','#b48d7f','#a6a9a4'];const building=box(bw,height,depth,bx,height/2+.17,bz,mat(colors[Math.floor(rnd(n*19+bi)*colors.length)],.83));building.castShadow=true;building.receiveShadow=true;footprint.push({x:bx,z:bz,w:bw/2+.6,d:depth/2+.6});
+  const colors=['#d6c6b0','#8da9b5','#d5b5a6','#6d909e','#e6ddcb','#b48d7f','#a6a9a4'];const building=box(bw,height,depth,bx,height/2+.17,bz,mat(colors[Math.floor(rnd(n*19+bi)*colors.length)],.83));building.castShadow=false;building.receiveShadow=true;footprint.push({x:bx,z:bz,w:bw/2+.6,d:depth/2+.6});
   box(bw+1,.65,depth+1,bx,height+.18,bz,mat('#e8e5df'));
   // Window facades use a shared procedural texture, avoiding thousands of individual window meshes.
   const glass=windowMats[(n+bi)%windowMats.length];
@@ -92,7 +93,17 @@ function makeCar(color='#ed636a',police=false){const group=new THREE.Group();sce
  return group}
 let save;const defaultSave=()=>({money:500,completed:0,speed:0,handling:0,nitro:0});try{save={...defaultSave(),...JSON.parse(localStorage.getItem('mvt6-save')||'{}')}}catch{save=defaultSave()}
 function persist(){try{localStorage.setItem('mvt6-save',JSON.stringify(save))}catch{};if(network)network.save(save)}
-const playerCar=makeCar('#e96e5d');const person=new THREE.Group();scene.add(person);box(.76,1.48,.42,0,1.5,0,mat('#eacaa2'),person);box(1.3,1.33,.57,0,1.62,0,mat('#1c3b63'),person);const head=mesh(new THREE.SphereGeometry(.47,12,10),mat('#e5b58e'),person);head.position.y=2.63;for(let s of [-1,1]){box(.34,1,.36,s*.32,.49,0,mat('#273548'),person);box(.32,1.2,.35,s*.88,1.59,0,mat('#e5b58e'),person)}
+const playerCar=makeCar('#e96e5d');
+const person=new THREE.Group();scene.add(person);
+const skin=mat('#d79a72'),jacket=mat('#1c4f72'),jeans=mat('#273548');
+box(.95,1.1,.48,0,1.77,0,jacket,person);
+const head=mesh(new THREE.SphereGeometry(.39,14,10),skin,person);head.position.y=2.71;
+const hair=mesh(new THREE.SphereGeometry(.4,14,8,0,Math.PI*2,0,1.15),mat('#24252a'),person);hair.position.y=2.79;
+const limbs={arms:[],legs:[]};
+for(const side of [-1,1]){
+ const arm=new THREE.Group();arm.position.set(side*.62,2.14,0);person.add(arm);box(.26,.96,.32,0,-.48,0,jacket,arm);box(.26,.24,.32,0,-1.01,0,skin,arm);limbs.arms.push(arm);
+ const leg=new THREE.Group();leg.position.set(side*.26,1.25,0);person.add(leg);box(.34,1.12,.36,0,-.55,0,jeans,leg);box(.38,.23,.65,0,-1.17,.13,mat('#1e2935'),leg);limbs.legs.push(leg);
+}
 let carPos=new THREE.Vector3(0,0,0),playerPos=new THREE.Vector3(0,0,0),angle=0,walkAngle=0,velocity=0,inCar=true,gameMode='menu',camMode=0,clockTime=0,heat=0,heatTimer=0,mission=null,missionCount=0,missionTime=0,missionCooldown=0,nearGarage=false;
 const traffic=[],police=[];for(let i=0;i<24;i++){const car=makeCar(['#5f9ac9','#eab76e','#94beb5','#e2e4e4','#657489'][i%5]);let q=roadPositions[Math.floor(rnd(i+10)*roadPositions.length)];const east=i%2===0;const pos=east?new THREE.Vector3((rnd(i+71)-.5)*950,0,q+(i%4===0?5:-5)):new THREE.Vector3(q+(i%3===0?5:-5),0,(rnd(i+88)-.5)*950);traffic.push({car,pos,east,dir:i%4<2?1:-1,speed:7+rnd(i+94)*8});car.position.copy(pos)}
 for(let i=0;i<5;i++){const c=makeCar('#e4edf2',true);c.visible=false;police.push({car:c,pos:new THREE.Vector3(),angle:0,active:false})}
@@ -107,21 +118,79 @@ function failMission(){setNotice('Contract expired — return to the contract ri
 function openGarage(){if(gameMode==='menu')return;gameMode='garage';$('paused').style.display='none';$('garage').style.display='flex';renderGarage()}
 const upgrades=[{id:'speed',name:'Performance engine',desc:'Raise top speed and acceleration',cost:l=>450*(l+1)},{id:'handling',name:'Sport suspension',desc:'Sharpen steering control',cost:l=>350*(l+1)},{id:'nitro',name:'Boost system',desc:'Increase boost strength',cost:l=>500*(l+1)}];
 function renderGarage(){$('garageMoney').textContent='$'+save.money.toLocaleString();$('upgradeList').innerHTML='';for(const u of upgrades){const level=save[u.id],cost=u.cost(level),div=document.createElement('div');div.className='upg';const desc=document.createElement('span');desc.innerHTML='<b>'+u.name+'</b> <span style="color:#68e2ae">Lv '+level+'/5</span><br>'+u.desc;const b=document.createElement('button');b.textContent=level>=5?'MAXED':'$'+cost;b.disabled=level>=5||save.money<cost;b.onclick=()=>{if(save.money>=cost&&save[u.id]<5){save.money-=cost;save[u.id]++;persist();renderGarage();updateHUD()}};div.append(desc,b);$('upgradeList').append(div)}}
-function interact(){if(gameMode!=='play')return;const p=inCar?carPos:playerPos;if(Math.hypot(p.x-depot.x,p.z-depot.z)<16){startMission();return}if(Math.hypot(p.x-184,p.z)<16){openGarage();return}setNotice('Go to a colored ring to interact')}
+function interact(){if(gameMode!=='play')return;if(cityLife.interact())return;const p=inCar?carPos:playerPos;if(Math.hypot(p.x-depot.x,p.z-depot.z)<16){startMission();return}if(Math.hypot(p.x-184,p.z)<16){openGarage();return}setNotice('Go to a colored ring to interact')}
 function enterExit(){if(gameMode!=='play')return;if(inCar){if(Math.abs(velocity)>3){setNotice('Slow down before exiting');return}inCar=false;person.visible=true;playerPos.set(carPos.x+4,0,carPos.z+2);person.position.copy(playerPos);setNotice('On foot — E to enter car')}else if(playerPos.distanceTo(carPos)<12){inCar=true;person.visible=false;setNotice('Vehicle entered')}else{setNotice('Walk closer to your car')}}
-const keys={};function keyState(e,on){let k=e.key.toLowerCase();if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(gameMode==='play')pause();else if(gameMode==='pause')resume();else if(gameMode==='garage'){closeGarage()}}if(k==='e')enterExit();if(k==='f')interact();if(k==='c')camMode=(camMode+1)%3;if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
+const keys={};let orbitOffset=0,orbitPitch=.06,mouseDown=false,camYaw=0,walkMotion=0,qualityPixelRatio=Math.min(devicePixelRatio,1.25);
+renderer.domElement.addEventListener('pointerdown',e=>{if(e.button===0||e.pointerType==='touch'){mouseDown=true;renderer.domElement.setPointerCapture(e.pointerId)}});
+renderer.domElement.addEventListener('pointermove',e=>{if(!mouseDown||gameMode!=='play')return;orbitOffset=THREE.MathUtils.clamp(orbitOffset-e.movementX*.0045,-1.5,1.5);orbitPitch=THREE.MathUtils.clamp(orbitPitch+e.movementY*.0025,-.18,.55)});
+renderer.domElement.addEventListener('pointerup',()=>mouseDown=false);
+renderer.domElement.addEventListener('pointercancel',()=>mouseDown=false);
+function keyState(e,on){let k=e.key.toLowerCase();if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(gameMode==='play')pause();else if(gameMode==='pause')resume();else if(gameMode==='garage'){closeGarage()}}if(k==='e')enterExit();if(k==='f')interact();if(k==='c'){camMode=(camMode+1)%3;orbitOffset=0};if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
 addEventListener('keydown',e=>keyState(e,true));addEventListener('keyup',e=>keyState(e,false));addEventListener('blur',()=>{for(let k in keys)keys[k]=false});
 function pause(){gameMode='pause';$('paused').style.display='flex'}function resume(){gameMode='play';$('paused').style.display='none';$('garage').style.display='none'}function closeGarage(){gameMode='play';$('garage').style.display='none'}
 $('play').onclick=()=>{$('menu').style.display='none';$('hud').style.display='block';gameMode='play';setNotice('Welcome to Solara City — drive west to begin a contract')};$('resetSave').onclick=()=>{if(confirm('Reset your MVT 6 cash, upgrades and contracts?')){save=defaultSave();persist();setNotice('Save reset')}};$('resume').onclick=resume;$('openGarage').onclick=openGarage;$('closeGarage').onclick=closeGarage;$('toMenu').onclick=()=>{gameMode='menu';$('paused').style.display='none';$('hud').style.display='none';$('menu').style.display='flex'};
 for(const b of document.querySelectorAll('#touch button')){b.addEventListener('pointerdown',e=>{e.preventDefault();if(b.dataset.key){keys[b.dataset.key.toLowerCase()]=true}else if(b.dataset.action==='e')enterExit();else if(b.dataset.action==='f')interact()});for(const event of ['pointerup','pointercancel','pointerleave'])b.addEventListener(event,()=>{if(b.dataset.key)keys[b.dataset.key.toLowerCase()]=false})}
-function moveCar(dt){const accel=15+save.speed*2.6,maxSpeed=27+save.speed*5.2,boost=(keys.shift?1.45+save.nitro*.08:1);const throttle=(keys.w||keys.arrowup?1:0)-(keys.s||keys.arrowdown?1:0);if(throttle!==0)velocity+=throttle*accel*dt;else velocity*=Math.pow(.972,dt*60);if(keys[' '])velocity*=Math.pow(.89,dt*60);velocity=THREE.MathUtils.clamp(velocity,-maxSpeed*.47,maxSpeed*boost);if(Math.abs(velocity)<.02)velocity=0;const turning=(keys.a||keys.arrowleft?1:0)-(keys.d||keys.arrowright?1:0);angle+=turning*(.85+save.handling*.11)*Math.min(1,Math.abs(velocity)/11)*Math.sign(velocity)*dt;const nx=carPos.x+Math.sin(angle)*velocity*dt,nz=carPos.z+Math.cos(angle)*velocity*dt;if(!collision(nx,nz)){carPos.x=nx;carPos.z=nz}else{velocity*=-.25;heat=Math.min(5,heat+.08)}playerCar.position.copy(carPos);playerCar.rotation.y=angle}
-function movePerson(dt){const forward=(keys.w||keys.arrowup?1:0)-(keys.s||keys.arrowdown?1:0),strafe=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0);if(forward||strafe){const len=Math.hypot(forward,strafe),spd=(keys.shift?10:6)*dt;const dx=(Math.sin(walkAngle)*forward+Math.cos(walkAngle)*strafe)/len*spd,dz=(Math.cos(walkAngle)*forward-Math.sin(walkAngle)*strafe)/len*spd;const nx=playerPos.x+dx,nz=playerPos.z+dz;if(!collision(nx,nz)){playerPos.x=nx;playerPos.z=nz}person.rotation.y=Math.atan2(dx,dz)}person.position.copy(playerPos)}
+function moveCar(dt){
+ const accel=26+save.speed*4,maxSpeed=31+save.speed*5.2,boost=keys.shift?1.32+save.nitro*.08:1;
+ const throttle=Number(!!(keys.w||keys.arrowup))-Number(!!(keys.s||keys.arrowdown));
+ if(throttle){velocity+=throttle*accel*dt}else velocity*=Math.exp(-1.7*dt);
+ if(keys[' '])velocity*=Math.exp(-9*dt);
+ velocity=THREE.MathUtils.clamp(velocity,-maxSpeed*.42,maxSpeed*boost);
+ if(Math.abs(velocity)<.06)velocity=0;
+ const turning=Number(!!(keys.a||keys.arrowleft))-Number(!!(keys.d||keys.arrowright));
+ const steerResponse=Math.min(1,Math.abs(velocity)/8);
+ angle+=turning*(1.55+save.handling*.13)*steerResponse*Math.sign(velocity)*dt;
+ const nx=carPos.x+Math.sin(angle)*velocity*dt,nz=carPos.z+Math.cos(angle)*velocity*dt;
+ if(!collision(nx,nz)){carPos.x=nx;carPos.z=nz}else{velocity*=-.20;heat=Math.min(5,heat+.08)}
+ playerCar.position.copy(carPos);playerCar.rotation.y=angle;
+ playerCar.rotation.z=THREE.MathUtils.lerp(playerCar.rotation.z,-turning*Math.min(Math.abs(velocity)/38,1)*.045,Math.min(1,dt*5));
+ playerCar.rotation.x=THREE.MathUtils.lerp(playerCar.rotation.x,throttle*-.012,Math.min(1,dt*4));
+}
+function movePerson(dt){
+ const forward=Number(!!(keys.w||keys.arrowup))-Number(!!(keys.s||keys.arrowdown));
+ const strafe=Number(!!(keys.d||keys.arrowright))-Number(!!(keys.a||keys.arrowleft));
+ walkMotion=0;
+ if(forward||strafe){
+ const base=walkAngle+orbitOffset;
+ const len=Math.hypot(forward,strafe),speed=(keys.shift?9.4:5.8)*dt;
+ const dx=(Math.sin(base)*forward+Math.cos(base)*strafe)/len*speed;
+ const dz=(Math.cos(base)*forward-Math.sin(base)*strafe)/len*speed;
+ const nx=playerPos.x+dx,nz=playerPos.z+dz;
+ if(!collision(nx,nz)){playerPos.x=nx;playerPos.z=nz;walkMotion=keys.shift?1.5:1}
+ const desired=Math.atan2(dx,dz);
+ person.rotation.y+=Math.atan2(Math.sin(desired-person.rotation.y),Math.cos(desired-person.rotation.y))*Math.min(1,dt*12);
+ if(Math.abs(orbitOffset)<.3)walkAngle+=Math.atan2(Math.sin(desired-walkAngle),Math.cos(desired-walkAngle))*Math.min(1,dt*2.2);
+ }
+ person.position.copy(playerPos);
+ const bob=Math.sin(clockTime*(keys.shift?15:10))*walkMotion;
+ person.position.y=Math.abs(bob)*.035;
+ limbs.legs[0].rotation.x=bob*.50;limbs.legs[1].rotation.x=-bob*.50;
+ limbs.arms[0].rotation.x=-bob*.36;limbs.arms[1].rotation.x=bob*.36;
+}
 function advanceTraffic(dt){for(const t of traffic){const v=t.dir*t.speed*dt;if(t.east)t.pos.x+=v;else t.pos.z+=v;if(t.east&&Math.abs(t.pos.x)>505)t.pos.x=-Math.sign(t.pos.x)*503;if(!t.east&&Math.abs(t.pos.z)>505)t.pos.z=-Math.sign(t.pos.z)*503;t.car.position.copy(t.pos);t.car.rotation.y=t.east?(t.dir>0?Math.PI/2:-Math.PI/2):(t.dir>0?0:Math.PI);if(inCar&&t.pos.distanceTo(carPos)<5.3&&Math.abs(velocity)>7){velocity*=-.31;heat=Math.min(5,heat+.34);heatTimer=0}}}
 function advancePolice(dt){heatTimer+=dt;if(heatTimer>17&&heat>0){heat=Math.max(0,heat-dt*.05)}for(let i=0;i<police.length;i++){const p=police[i],active=heat>i*.9+.25;p.car.visible=active;if(!active){p.active=false;continue}if(!p.active){p.pos.copy(carPos);p.pos.x+=120+i*31;p.pos.z+=-120+i*24;p.active=true}const target=inCar?carPos:playerPos;const dx=target.x-p.pos.x,dz=target.z-p.pos.z,dist=Math.hypot(dx,dz);p.angle=Math.atan2(dx,dz);const speed=17+i*2;p.pos.x+=Math.sin(p.angle)*speed*dt;p.pos.z+=Math.cos(p.angle)*speed*dt;p.car.position.copy(p.pos);p.car.rotation.y=p.angle;if(dist<7){heat=Math.min(5,heat+.006);if(mission&&mission.title==='Evasive Driving')missionTime-=dt*.6}}}
-const camTarget=new THREE.Vector3();function updateCamera(dt){const focus=inCar?carPos:playerPos;const facing=inCar?angle:walkAngle;let distance=camMode===0?22:camMode===1?36:10,alt=camMode===0?11:camMode===1?25:5;const target=new THREE.Vector3(focus.x-Math.sin(facing)*distance,alt,focus.z-Math.cos(facing)*distance);camera.position.lerp(target,Math.min(1,dt*4));camTarget.set(focus.x,2.7,focus.z);camera.lookAt(camTarget)}
+const camTarget=new THREE.Vector3(),camPos=new THREE.Vector3(),camLook=new THREE.Vector3();
+function updateCamera(dt){
+ const focus=inCar?carPos:playerPos;
+ const heading=inCar?angle:person.rotation.y;
+ const smooth=1-Math.exp(-(inCar?9:6)*dt),targetAngle=heading+orbitOffset;
+ camYaw+=Math.atan2(Math.sin(targetAngle-camYaw),Math.cos(targetAngle-camYaw))*smooth;
+ orbitOffset*=Math.exp(-.65*dt);
+ const distance=inCar?(camMode===0?16:camMode===1?27:10):(camMode===0?9:camMode===1?16:5);
+ const altitude=(inCar?(camMode===0?7.2:camMode===1?15:4.5):(camMode===0?5.3:camMode===1?9:3.4))+orbitPitch*distance;
+ camPos.set(focus.x-Math.sin(camYaw)*distance,altitude,focus.z-Math.cos(camYaw)*distance);
+ camera.position.lerp(camPos,1-Math.exp(-12*dt));
+ camLook.set(focus.x, inCar?2.0:2.2,focus.z);
+ camTarget.lerp(camLook,1-Math.exp(-14*dt));
+ camera.lookAt(camTarget);
+}
 const map=$('minimap'),ctx=map.getContext('2d');function drawMap(){const w=map.width,h=map.height,p=inCar?carPos:playerPos,scale=.27;ctx.fillStyle='#183b45';ctx.fillRect(0,0,w,h);ctx.save();ctx.translate(w/2,h/2);ctx.translate(-p.x*scale,p.z*scale);ctx.fillStyle='#60736c';for(let i=-5;i<5;i++)for(let j=-5;j<5;j++){ctx.fillRect((i*BLOCK+13)*scale,-((j+1)*BLOCK-13)*scale,(BLOCK-26)*scale,(BLOCK-26)*scale)}ctx.fillStyle='#31414e';for(let i=-5;i<=5;i++){ctx.fillRect((i*BLOCK-10)*scale,-510*scale,20*scale,1020*scale);ctx.fillRect(-510*scale,-(i*BLOCK+10)*scale,1020*scale,20*scale)}function marker(x,z,color,rad=4){ctx.fillStyle=color;ctx.beginPath();ctx.arc(x*scale,-z*scale,rad,0,Math.PI*2);ctx.fill()}marker(depot.x,depot.z,'#74e6ba',6);marker(184,0,'#e8c67b',6);if(mission)marker(mission.place.x,mission.place.z,'#ffe185',8);for(const pol of police)if(pol.active)marker(pol.pos.x,pol.pos.z,'#f56c70',3);if(!inCar)marker(carPos.x,carPos.z,'#9ed5fb',4);ctx.restore();ctx.save();ctx.translate(w/2,h/2);ctx.rotate(inCar?angle:walkAngle);ctx.fillStyle='#fff';ctx.strokeStyle='#0c3344';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(7,9);ctx.lineTo(0,5);ctx.lineTo(-7,9);ctx.closePath();ctx.stroke();ctx.fill();ctx.restore()}
+const cityLife=createCityLife({THREE,scene,box,mesh,mat,roadPositions,rnd,collision,
+getPlayer:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,inCar}),
+isPlaying:()=>gameMode==='play',onNotice:setNotice,
+onReward:amount=>{save.money+=amount;persist();updateHUD()}});
 let network=multiplayer({THREE,scene,makeCar,box,mat,mesh,getState:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,angle:inCar?angle:person.rotation.y,inCar}),onAccount:progress=>{if(progress){save={...defaultSave(),...progress};updateHUD()}},onMessage:message=>setNotice(message)});
-let last=performance.now(),fpsCounter=0,fpsTime=0;function frame(now){requestAnimationFrame(frame);const dt=Math.min(.04,(now-last)/1000);last=now;if(gameMode==='play'){clockTime+=dt;if(inCar)moveCar(dt);else movePerson(dt);advanceTraffic(dt);advancePolice(dt);if(mission){missionTime-=dt;const p=inCar?carPos:playerPos;if(Math.hypot(p.x-mission.place.x,p.z-mission.place.z)<14){if(mission.title!=='Evasive Driving'||heat<1.1)finishMission();else if(clockTime%3<dt)setNotice('Lose your wanted level before arriving!')}else if(missionTime<=0)failMission()}updateHUD();updateCamera(dt);drawMap()}else if(gameMode==='menu'){const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;fpsTime+=dt;if(fpsTime>1){$('fps').textContent=Math.round(fpsCounter/fpsTime)+' FPS';fpsTime=0;fpsCounter=0}}
+let last=performance.now(),fpsCounter=0,fpsTime=0;function frame(now){requestAnimationFrame(frame);const dt=Math.min(.04,(now-last)/1000);last=now;if(gameMode==='play'){clockTime+=dt;if(inCar)moveCar(dt);else movePerson(dt);advanceTraffic(dt);advancePolice(dt);if(mission){missionTime-=dt;const p=inCar?carPos:playerPos;if(Math.hypot(p.x-mission.place.x,p.z-mission.place.z)<14){if(mission.title!=='Evasive Driving'||heat<1.1)finishMission();else if(clockTime%3<dt)setNotice('Lose your wanted level before arriving!')}else if(missionTime<=0)failMission()}cityLife.update(dt,now);updateHUD();updateCamera(dt);drawMap()}else if(gameMode==='menu'){cityLife.update(dt,now);const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;fpsTime+=dt;if(fpsTime>1){const fps=Math.round(fpsCounter/fpsTime);$('fps').textContent=fps+' FPS';if(gameMode==='play'&&fps<37&&qualityPixelRatio>.8){qualityPixelRatio=Math.max(.8,qualityPixelRatio-.1);renderer.setPixelRatio(qualityPixelRatio)}fpsTime=0;fpsCounter=0}}
 person.visible=false;playerCar.position.copy(carPos);$('hud').style.display='none';requestAnimationFrame(frame);addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
 </script>
 </body>
