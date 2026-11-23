@@ -892,7 +892,7 @@ function keyState(e,on){
  if(editable){if(!on)for(const k of ['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'])keys[k]=false;return}
  let k=String(e.key||'').toLowerCase();
  if(e.code==='KeyW')k='w';if(e.code==='KeyA')k='a';if(e.code==='KeyS')k='s';if(e.code==='KeyD')k='d';
-if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();if(gameMode!=='play'&&k!=='escape')return;keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(document.pointerLockElement)document.exitPointerLock();else if(gameMode==='play')pause();else if(gameMode==='pause')resume();else if(gameMode==='garage')closeGarage()}if(k==='e')enterExit();if(k==='f')interact();if(k==='t')tagWall();if(k==='c'){camMode=(camMode+1)%3;orbitOffset=0};if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;playerCar.position.copy(carPos);playerCar.rotation.y=angle;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
+if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();if(k==='p'&&on&&!e.repeat){if(phoneOpen)closePhone();else if(gameMode==='play')openPhone();return}if(gameMode!=='play'&&k!=='escape')return;keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(document.pointerLockElement)document.exitPointerLock();else if(gameMode==='play')pause();else if(gameMode==='pause')resume();else if(gameMode==='garage')closeGarage()}if(k==='e')enterExit();if(k==='f')interact();if(k==='t')tagWall();if(k==='c'){camMode=(camMode+1)%3;orbitOffset=0};if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;playerCar.position.copy(carPos);playerCar.rotation.y=angle;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
 addEventListener('keydown',e=>keyState(e,true));addEventListener('keyup',e=>keyState(e,false));addEventListener('blur',()=>{for(let k in keys)keys[k]=false});
 function pause(){if(document.pointerLockElement)document.exitPointerLock();gameMode='pause';$('paused').style.display='flex'}function resume(){gameMode='play';$('paused').style.display='none';$('garage').style.display='none'}function closeGarage(){gameMode='play';$('garage').style.display='none'}
 $('play').onclick=()=>{startIntro()};$('resetSave').onclick=()=>{if(confirm('Reset your MVT 6 cash, upgrades and contracts?')){save=defaultSave();persist();setNotice('Save reset')}};$('resume').onclick=resume;$('openGarage').onclick=openGarage;$('closeGarage').onclick=closeGarage;$('toMenu').onclick=()=>{gameMode='menu';$('paused').style.display='none';$('hud').style.display='none';$('menu').style.display='flex'};
@@ -1043,7 +1043,98 @@ function updateCamera(dt){
  camLook.set(focus.x,inCar?2.3:2.05,focus.z);
  camTarget.lerp(camLook,1-Math.exp(-13*dt));camera.lookAt(camTarget);
 }
-const map=$('minimap'),ctx=map.getContext('2d');function drawMap(){const w=map.width,h=map.height,p=inCar?carPos:playerPos,scale=.27;ctx.fillStyle='#183b45';ctx.fillRect(0,0,w,h);ctx.save();ctx.translate(w/2,h/2);ctx.translate(-p.x*scale,p.z*scale);ctx.fillStyle='#60736c';for(let i=-HALF;i<HALF;i++)for(let j=-HALF;j<HALF;j++){ctx.fillRect((i*BLOCK+13)*scale,-((j+1)*BLOCK-13)*scale,(BLOCK-26)*scale,(BLOCK-26)*scale)}ctx.fillStyle='#31414e';for(let i=-HALF;i<=HALF;i++){ctx.fillRect((i*BLOCK-10)*scale,-390*scale,20*scale,780*scale);ctx.fillRect(-390*scale,-(i*BLOCK+10)*scale,780*scale,20*scale)}function marker(x,z,color,rad=4){ctx.fillStyle=color;ctx.beginPath();ctx.arc(x*scale,-z*scale,rad,0,Math.PI*2);ctx.fill()}marker(depot.x,depot.z,'#efba81',5);marker(184,0,'#e8c67b',6);if(mission){const target=missionObjective();if(target)marker(target.x,target.z,mission.stage==='pickup'?'#e8c47f':'#78d9c5',8)}for(const pol of police)if(pol.active)marker(pol.pos.x,pol.pos.z,'#f56c70',3);if(!inCar)marker(carPos.x,carPos.z,'#9ed5fb',4);ctx.restore();ctx.save();ctx.translate(w/2,h/2);ctx.rotate(inCar?angle:walkAngle);ctx.fillStyle='#fff';ctx.strokeStyle='#0c3344';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(7,9);ctx.lineTo(0,5);ctx.lineTo(-7,9);ctx.closePath();ctx.stroke();ctx.fill();ctx.restore()}
+// Circular, player-centred tactical minimap. Map rotates opposite heading so forward stays UP.
+let mapWaypoint=null,mapWaypointName='';
+const map=$('minimap'),ctx=map.getContext('2d'),mapRadius=153;
+function bearingOf(radians){return ((Math.round(THREE.MathUtils.radToDeg(radians))%360)+360)%360}
+function compassName(b){return ['N','NE','E','SE','S','SW','W','NW'][Math.round(b/45)%8]}
+function setWaypoint(place,name){if(place){mapWaypoint={x:place.x,z:place.z};mapWaypointName=name||'USER MARKER';setNotice('MAP PIN: '+mapWaypointName)}else{mapWaypoint=null;mapWaypointName='';setNotice('Map pin cleared')} }
+function drawMap(){
+ const w=map.width,h=map.height,p=inCar?carPos:playerPos,heading=inCar?angle:camYaw,zoom=.82;
+ const bearing=bearingOf(heading);
+ $('mapCompass').textContent=compassName(bearing)+'  '+String(bearing).padStart(3,'0')+'°';
+ ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,w,h);
+ ctx.save();ctx.beginPath();ctx.arc(w/2,h/2,mapRadius,0,Math.PI*2);ctx.clip();
+ const bg=ctx.createRadialGradient(w/2,h/2,6,w/2,h/2,mapRadius);
+ bg.addColorStop(0,'#305768');bg.addColorStop(1,'#132f43');
+ ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+ ctx.translate(w/2,h/2);ctx.rotate(-heading);ctx.translate(-p.x*zoom,p.z*zoom);
+ for(let i=-HALF;i<HALF;i++)for(let j=-HALF;j<HALF;j++){
+  const cx=(i+.5)*BLOCK,cz=(j+.5)*BLOCK;
+  ctx.fillStyle=(i+j)%3===0?'#638a74':'#66867b';
+  ctx.fillRect((cx-(BLOCK-ROAD)/2)*zoom,-(cz+(BLOCK-ROAD)/2)*zoom,(BLOCK-ROAD)*zoom,(BLOCK-ROAD)*zoom);
+  ctx.strokeStyle='#a9bba499';ctx.lineWidth=1;ctx.strokeRect((cx-34)*zoom,-(cz+34)*zoom,68*zoom,68*zoom);
+ }
+ ctx.fillStyle='#28465a';
+ for(let i=-HALF;i<=HALF;i++){ctx.fillRect((i*BLOCK-ROAD/2)*zoom,-390*zoom,ROAD*zoom,780*zoom);ctx.fillRect(-390*zoom,-(i*BLOCK+ROAD/2)*zoom,780*zoom,ROAD*zoom)}
+ ctx.strokeStyle='#d9d0a064';ctx.lineWidth=1.15;ctx.setLineDash([7,9]);
+ for(let i=-HALF;i<=HALF;i++){ctx.beginPath();ctx.moveTo(i*BLOCK*zoom,-390*zoom);ctx.lineTo(i*BLOCK*zoom,390*zoom);ctx.moveTo(-390*zoom,-i*BLOCK*zoom);ctx.lineTo(390*zoom,-i*BLOCK*zoom);ctx.stroke()}
+ ctx.setLineDash([]);
+ const dot=(x,z,color,rad=5,diamond=false)=>{
+   ctx.fillStyle=color;ctx.strokeStyle='#061725';ctx.lineWidth=2.2;
+   const xx=x*zoom,yy=-z*zoom;
+   ctx.beginPath();
+   if(diamond){ctx.moveTo(xx,yy-rad);ctx.lineTo(xx+rad,yy);ctx.lineTo(xx,yy+rad);ctx.lineTo(xx-rad,yy);ctx.closePath()}
+   else ctx.arc(xx,yy,rad,0,Math.PI*2);
+   ctx.stroke();ctx.fill();
+ };
+ for(const stash of streetStashes)dot(stash.x,stash.z,'#e5c58c',3.5,false);
+ for(const shop of shopFronts)if(Math.hypot(shop.x-p.x,shop.z-p.z)<160)dot(shop.x,shop.z,'#8ccbd4',2.8,false);
+ dot(cityLife.fixer.root.position.x,cityLife.fixer.root.position.z,'#c3e0a4',5);
+ dot(184,0,'#d9b378',5);
+ if(mission){const target=missionObjective();if(target)dot(target.x,target.z,'#f3df8e',8,true)}
+ if(mapWaypoint)dot(mapWaypoint.x,mapWaypoint.z,'#ff96cb',7,true);
+ for(const pol of police)if(pol.active)dot(pol.pos.x,pol.pos.z,'#f56b74',4.5);
+ if(!inCar)dot(carPos.x,carPos.z,'#8ed5fa',5);
+ ctx.restore();
+ // User arrow always points upward as the geographic display tracks heading.
+ ctx.save();ctx.translate(w/2,h/2);
+ ctx.fillStyle='#fefcf0';ctx.strokeStyle='#103d4d';ctx.lineWidth=3;
+ ctx.beginPath();ctx.moveTo(0,-15);ctx.lineTo(11,12);ctx.lineTo(0,6);ctx.lineTo(-11,12);ctx.closePath();ctx.stroke();ctx.fill();
+ ctx.restore();
+ ctx.strokeStyle='#9cc9bf';ctx.lineWidth=3;ctx.beginPath();ctx.arc(w/2,h/2,mapRadius-2,0,Math.PI*2);ctx.stroke();
+ // Cardinal north tick, accurately placed relative to current player heading.
+ ctx.save();ctx.translate(w/2,h/2);ctx.rotate(-heading);
+ ctx.fillStyle='#ffe2ba';ctx.font='900 15px system-ui';ctx.textAlign='center';ctx.fillText('N',0,-131);
+ ctx.restore();
+}
+let phoneOpen=false;
+const phoneRoot=$('gamePhone');
+const phoneMissionStatus=()=>mission?({pickup:'Collect item',deliver:'Meet contact',terminal:'Decode signal',vehicle:'Find a ride',race:'Drive the route',scout:'Gather clues',escape:'Lose pursuit'}[mission.stage]||'Follow objective'):'Talk to Rae to begin';
+function renderPhone(){
+ $('phoneClock').textContent=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+ const current=$('phoneCurrent');current.innerHTML='';
+ const active=document.createElement('div');active.className='phoneCard';
+ const label=document.createElement('b');label.textContent=mission?mission.title:'NO ACTIVE MISSION';
+ const desc=document.createElement('p');desc.textContent=mission?mission.description:'Talk to Rae near your starting street to accept your next chapter.';
+ const status=document.createElement('small');status.textContent=mission?phoneMissionStatus()+' · '+Math.ceil(missionTime)+'s remaining':'STORY PROGRESS: '+save.completed+' CHAPTERS';
+ const track=document.createElement('button');track.textContent=mission?'TRACK OBJECTIVE':'TRACK RAE';
+ track.onclick=()=>{const place=mission?missionObjective():{x:cityLife.fixer.root.position.x,z:cityLife.fixer.root.position.z};setWaypoint(place,mission?mission.title:'RAE');closePhone()};
+ active.append(label,desc,status,document.createElement('br'),track);current.append(active);
+ const list=$('phoneMissions');list.innerHTML='';
+ storyJobs.forEach((job,i)=>{
+ const card=document.createElement('div');card.className='phoneCard'+(i>save.completed?' locked':'');
+ const title=document.createElement('b');title.textContent=job.title;
+ const p=document.createElement('p');p.textContent=job.description;
+ const status=document.createElement('small');status.textContent=i<save.completed?'✓ COMPLETED':i===save.completed?'● NEXT STORY CHAPTER':'LOCKED · FINISH EARLIER CHAPTERS';
+ card.append(title,p,status);
+ if(i===save.completed&&!mission){const pin=document.createElement('button');pin.textContent='TRACK CONTACT';pin.onclick=()=>{setWaypoint(cityLife.fixer.root.position,'RAE · STORY CONTACT');closePhone()};card.append(pin)}
+ list.append(card);
+ });
+}
+function openPhone(){
+ if(!['play','phone'].includes(gameMode))return;
+ if(document.pointerLockElement)document.exitPointerLock();
+ phoneOpen=true;gameMode='phone';for(const k in keys)keys[k]=false;
+ phoneRoot.classList.add('visible');renderPhone();
+}
+function closePhone(){if(!phoneOpen)return;phoneOpen=false;phoneRoot.classList.remove('visible');if(gameMode==='phone')gameMode='play'}
+$('phoneToggle').onclick=()=>phoneOpen?closePhone():openPhone();
+$('phoneClose').onclick=closePhone;
+$('phoneWaypointRae').onclick=()=>{setWaypoint({x:cityLife.fixer.root.position.x,z:cityLife.fixer.root.position.z},'RAE · STORY CONTACT');closePhone()};
+$('phoneWaypointGarage').onclick=()=>{setWaypoint({x:184,z:0},'SOLARA GARAGE');closePhone()};
+$('phoneWaypointLoot').onclick=()=>{const pos=inCar?carPos:playerPos;let nearest=null,best=Infinity;for(const stash of streetStashes){const d=Math.hypot(stash.x-pos.x,stash.z-pos.z);if(d<best){nearest=stash;best=d}}if(nearest)setWaypoint(nearest,'NEAREST LOOT');closePhone()};
+$('phoneWaypointClear').onclick=()=>{setWaypoint(null);closePhone()};
 const cityLife=createCityLife({THREE,scene,box,mesh,mat,roadPositions,rnd,collision,onStoryContact:startMission,
 getPlayer:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,inCar}),
 isPlaying:()=>gameMode==='play',onNotice:setNotice,
