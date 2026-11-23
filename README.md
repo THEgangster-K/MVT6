@@ -1,5 +1,21 @@
 # MVT 6 — Motor Vehicle Theft
 
+## Sidewalk, Alley & Mission Overhaul (v0.7)
+
+The new visual layout draws from the supplied screenshots showing an older brick retail alley, textured suburban pavement and an urban street junction. The screenshots are **references only**; no proprietary artwork, buildings or game assets were copied.
+
+- **Pavement spawn:** the protagonist starts on a sidewalk beside the blanket and "Please donate" sign, not in the middle of a traffic lane.
+- **Richer roads:** kerbs, colour-accented curbs, pedestrian crossing stripes, tactile ramps and broader sidewalk textures.
+- **Walkable cross-block lanes:** mid-block alleyways between lower-width buildings with overhead framework, lamp fixtures and bins.
+- **Varied skyline:** low-rise shops, mid-rise flats, warehouse-like blocks and occasional tall towers instead of uniformly massive buildings.
+- **Four safer cinematic camera routes:** track through open road corridors and approach the pavement without passing through solid buildings.
+- **Mission interactions:** walk up to Rae (a fixed NPC near the first sidewalk) and press F to receive a job; go to the physical parcel, press F to pick it up, find the receiving character and press F to hand it over. Simply touching the old green ring no longer completes jobs.
+- **Pedestrians:** roaming NPCs continue to walk around and respond to F interactions, with a dedicated story contact.
+- **Character animation:** idle breathing, walking, sprint lean and brief interaction gestures.
+- **Performance:** curb pieces, crossing stripes, ramps, rooftops, tree geometry and alley framework are drawn in instanced GPU batches instead of hundreds of individual meshes.
+
+A real-world photorealistic scene like the screenshots would require additional 3D art assets and a larger renderer. This version uses original procedural geometry and materials. Static JavaScript syntax and Render deployment checks do not replace hands-on in-browser testing.
+
 ## Street-side prologue and mouse control fix (v0.6)
 
 - The left/right directions have been corrected for the third-person camera in both on-foot and driving modes.
