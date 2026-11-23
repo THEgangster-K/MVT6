@@ -361,12 +361,12 @@ function setSeatPose(amount){
 let carPos=new THREE.Vector3(5,0,36),playerPos=new THREE.Vector3(12.4,0,-6),angle=0,walkAngle=0,velocity=0,inCar=false,gameMode='menu',camMode=0,clockTime=0,heat=0,heatTimer=0,mission=null,missionCount=0,missionTime=0,missionCooldown=0,nearGarage=false;
 const traffic=[],police=[];for(let i=0;i<14;i++){const car=makeCar(['#5f9ac9','#eab76e','#94beb5','#e2e4e4','#657489'][i%5]);let q=roadPositions[Math.floor(rnd(i+10)*roadPositions.length)];const east=i%2===0;const pos=east?new THREE.Vector3((rnd(i+71)-.5)*950,0,q+(i%4===0?5:-5)):new THREE.Vector3(q+(i%3===0?5:-5),0,(rnd(i+88)-.5)*950);traffic.push({car,pos,east,dir:i%4<2?1:-1,speed:7+rnd(i+94)*8});car.position.copy(pos)}
 for(let i=0;i<4;i++){const c=makeCar('#e4edf2',true);c.visible=false;police.push({car:c,pos:new THREE.Vector3(),angle:0,active:false})}
-const depot={x:12.5,z:-16};const depotMark=cyl(6,6,.3,depot.x,.26,depot.z,mat('#65e2ac',.35));const garageMarker=cyl(7,7,.28,184,.28,0,mat('#edc66f'));const depotBeacon=mesh(new THREE.TorusGeometry(4.8,.37,8,32),new THREE.MeshBasicMaterial({color:0x6df5b5}));depotBeacon.rotation.x=Math.PI/2;depotBeacon.position.set(depot.x,.72,depot.z);const garageBeacon=depotBeacon.clone();garageBeacon.material=new THREE.MeshBasicMaterial({color:0xf5cb72});garageBeacon.position.set(184,.72,0);scene.add(depotBeacon,garageBeacon);
+const depot={x:12.5,z:-16};const depotMark=cyl(6,6,.3,depot.x,.26,depot.z,mat('#65e2ac',.35));depotMark.visible=false;const garageMarker=cyl(7,7,.28,184,.28,0,mat('#edc66f'));const depotBeacon=mesh(new THREE.TorusGeometry(4.8,.37,8,32),new THREE.MeshBasicMaterial({color:0x6df5b5}));depotBeacon.rotation.x=Math.PI/2;depotBeacon.position.set(depot.x,.72,depot.z);const garageBeacon=depotBeacon.clone();garageBeacon.material=new THREE.MeshBasicMaterial({color:0xf5cb72});garageBeacon.position.set(184,.72,0);scene.add(depotBeacon,garageBeacon);depotBeacon.visible=false;
 const destinations=[{x:370,z:0,name:'Sunset Marina'},{x:-370,z:276,name:'West Haven'},{x:0,z:-370,name:'Old Quarter'},{x:276,z:276,name:'Emerald Heights'},{x:-276,z:-276,name:'Industrial Point'},{x:0,z:370,name:'South Pier'}];const targetRing=mesh(new THREE.TorusGeometry(7,.7,8,40),new THREE.MeshBasicMaterial({color:0xffdc77}));targetRing.rotation.x=Math.PI/2;targetRing.position.y=.8;targetRing.visible=false;scene.add(targetRing);
 function collision(x,z){if(Math.abs(x)>489||Math.abs(z)>489)return true;for(const b of footprint)if(Math.abs(x-b.x)<b.w+1.4&&Math.abs(z-b.z)<b.d+1.4)return true;return false}
 function setNotice(t){$('notice').textContent=t;$('notice').style.opacity='1';clearTimeout(setNotice.timer);setNotice.timer=setTimeout(()=>$('notice').style.opacity='0',2800)}
 function getRank(){if(save.lifeTier>=4)return 'CITY LEGEND';if(save.lifeTier>=3)return 'HIGH SOCIETY';if(save.lifeTier>=2)return 'CREW LEADER';if(save.lifeTier>=1||save.completed>=2)return 'STREET RUNNER';return 'NEW TO THE STREETS'}
-function updateHUD(){ $('streetRank').textContent=getRank();$('money').textContent='$'+Math.floor(save.money).toLocaleString();$('heat').textContent='★'.repeat(Math.ceil(heat))+'☆'.repeat(5-Math.ceil(heat));$('speed').innerHTML=(inCar?Math.round(Math.abs(velocity)*3.6):0)+' <small>KM/H</small>';const p=inCar?carPos:playerPos;$('district').textContent=p.x<-185?'WEST HAVEN':p.x>185?'EAST SOLARA':p.z>185?'SOUTH PIER':p.z< -185?'NORTH QUARTER':'DOWNTOWN';if(mission){$('missionTitle').textContent=mission.title;$('missionText').textContent=mission.description+' · '+Math.max(0,Math.ceil(missionTime))+'s remaining'}else{$('missionTitle').textContent='The city is yours';$('missionText').textContent='Find the green STREET CONTACT ring one block west, press F for a job, and unlock your first car after two jobs.'}}
+function updateHUD(){ $('streetRank').textContent=getRank();$('money').textContent='$'+Math.floor(save.money).toLocaleString();$('heat').textContent='★'.repeat(Math.ceil(heat))+'☆'.repeat(5-Math.ceil(heat));$('speed').innerHTML=(inCar?Math.round(Math.abs(velocity)*3.6):0)+' <small>KM/H</small>';const p=inCar?carPos:playerPos;$('district').textContent=p.x<-185?'WEST HAVEN':p.x>185?'EAST SOLARA':p.z>185?'SOUTH PIER':p.z< -185?'NORTH QUARTER':'DOWNTOWN';if(mission){$('missionTitle').textContent=mission.title;$('missionText').textContent=(mission.stage==='pickup'?'Find the parcel beside the alley and press F.':'Meet the receiving NPC and press F to deliver.')+' · '+Math.max(0,Math.ceil(missionTime))+'s remaining'}else{$('missionTitle').textContent='The city is yours';$('missionText').textContent='Talk to Rae on the pavement, collect a parcel and deliver it to another NPC. Two jobs unlock a car.'}}
 const storyJobs=[
  {title:'First Hustle',description:'Take a street delivery to North Row',place:{x:0,z:82,name:'North Row'},reward:140,time:165,heat:0},
  {title:'Backstreet Drop',description:'Deliver the mystery package to Dock Street',place:{x:92,z:0,name:'Dock Street'},reward:250,time:165,heat:.3},
@@ -377,21 +377,58 @@ const storyJobs=[
  {title:'Shadow Cargo',description:'Reach the South Pier exchange',place:{x:0,z:370,name:'South Pier'},reward:2400,time:160,heat:3},
  {title:'Last Escape',description:'Lose your heat and reach the northern exit',place:{x:0,z:-370,name:'North Quarter'},reward:3200,time:175,heat:3.8}
 ];
+// Missions consist of conversations, a physical pickup and a handoff to a receiving NPC.
+const parcelMesh=new THREE.Group();scene.add(parcelMesh);
+box(1.05,.72,.85,0,.44,0,mat('#aa815c',.9),parcelMesh);
+box(1.09,.11,.16,0,.77,0,mat('#ded2a7'),parcelMesh);parcelMesh.visible=false;
+const courierMesh=new THREE.Group();scene.add(courierMesh);
+box(.8,1.15,.48,0,1.67,0,mat('#507c69'),courierMesh);
+const courierHead=mesh(new THREE.SphereGeometry(.37,12,9),mat('#c28e72'),courierMesh);courierHead.position.y=2.54;
+for(const side of [-1,1]){box(.27,1.1,.3,side*.25,.58,0,mat('#303744'),courierMesh);box(.28,.9,.3,side*.56,1.55,0,mat('#507c69'),courierMesh)}
+courierMesh.visible=false;
+const sidewalkDelivery=n=>[
+ {x:12.5,z:-83},{x:78,z:-12.5},{x:104,z:-83},{x:-78,z:-12.5},{x:196,z:12.5},{x:288,z:288},{x:-265,z:12.5},{x:12.5,z:380}
+][n%8];
+function refreshMissionProps(){
+ parcelMesh.visible=Boolean(mission&&mission.stage==='pickup');
+ courierMesh.visible=Boolean(mission&&mission.stage==='deliver');
+ if(mission){parcelMesh.position.set(mission.pickup.x,0,mission.pickup.z);courierMesh.position.set(mission.place.x,0,mission.place.z)}
+}
+function interactMission(){
+ if(!mission)return false;
+ const current=inCar?carPos:playerPos;
+ const near=(q,dist)=>Math.hypot(current.x-q.x,current.z-q.z)<dist;
+ if(mission.stage==='pickup'&&near(mission.pickup,5)){
+   mission.stage='deliver';refreshMissionProps();
+   setNotice('PACKAGE COLLECTED · Find the delivery contact and press F to hand it over.');updateHUD();return true;
+ }
+ if(mission.stage==='deliver'&&near(mission.place,6)){
+   if(mission.needEscape&&heat>=1.2){setNotice('Lose the patrol before making the handoff.');return true}
+   finishMission();return true;
+ }
+ return false;
+}
 function startMission(){
- if(mission){setNotice('Finish your active job first');return}
+ if(mission){setNotice('Finish your current job before accepting another.');return}
  const n=save.completed,base=storyJobs[Math.min(n,storyJobs.length-1)];
- const place=n>=storyJobs.length?destinations[n%destinations.length]:base.place;
- mission={title:base.title,description:base.description,place,reward:Math.floor((base.reward+(n>=storyJobs.length?(n-storyJobs.length)*140:0))*(1+(save.lifeTier||0)*.12)),needEscape:n>=5};
- missionTime=base.time;targetRing.visible=true;targetRing.position.set(place.x,1,place.z);heat=Math.max(heat,base.heat);heatTimer=0;
- setNotice('NEW STREET JOB: '+mission.title+' · $'+mission.reward);
+ const delivery=sidewalkDelivery(n);
+ mission={title:base.title,description:base.description,place:delivery,pickup:{x:12.5,z:-56},stage:'pickup',
+ reward:Math.floor((base.reward+(n>=storyJobs.length?(n-storyJobs.length)*140:0))*(1+(save.lifeTier||0)*.12)),needEscape:n>=5};
+ missionTime=Math.max(base.time,200);targetRing.visible=false;refreshMissionProps();
+ heat=Math.max(heat,base.heat);heatTimer=0;
+ setNotice('RAE: '+base.title+' · Find the package beside the alley.');updateHUD();
 }
 function finishMission(){
+ if(!mission)return;
  const wasLocked=save.completed<2;save.money+=mission.reward;save.completed++;missionCount=save.completed;persist();
- setNotice('JOB COMPLETE · +$'+mission.reward+' · '+getRank());
- mission=null;targetRing.visible=false;heat=Math.max(0,heat-.9);
- if(wasLocked&&save.completed===2){playerCar.visible=true;setTimeout(()=>setNotice('YOUR FIRST RIDE IS READY! Find the blue car on the road and press E.'),600)}
+ setNotice('DELIVERY COMPLETE · +$'+mission.reward+' · '+getRank());
+ mission=null;parcelMesh.visible=false;courierMesh.visible=false;targetRing.visible=false;heat=Math.max(0,heat-.9);
+ if(wasLocked&&save.completed===2){playerCar.visible=true;setTimeout(()=>setNotice('YOUR FIRST RIDE IS READY! Find your parked car and press E.'),700)}
 }
-function failMission(){setNotice('Contract expired — return to the contract ring');mission=null;targetRing.visible=false}
+function failMission(){
+ setNotice('The contact left. Talk to Rae to retry.');
+ mission=null;targetRing.visible=false;parcelMesh.visible=false;courierMesh.visible=false;
+}
 function openGarage(){if(gameMode==='menu')return;if(document.pointerLockElement)document.exitPointerLock();gameMode='garage';$('paused').style.display='none';$('garage').style.display='flex';renderGarage()}
 const upgrades=[{id:'speed',name:'Performance engine',desc:'Raise top speed and acceleration',cost:l=>450*(l+1)},{id:'handling',name:'Sport suspension',desc:'Sharpen steering control',cost:l=>350*(l+1)},{id:'nitro',name:'Boost system',desc:'Increase boost strength',cost:l=>500*(l+1)}];
 function renderGarage(){$('garageMoney').textContent='$'+save.money.toLocaleString();$('upgradeList').innerHTML='';for(const u of upgrades){const level=save[u.id],cost=u.cost(level),div=document.createElement('div');div.className='upg';const desc=document.createElement('span');desc.innerHTML='<b>'+u.name+'</b> <span style="color:#68e2ae">Lv '+level+'/5</span><br>'+u.desc;const b=document.createElement('button');b.textContent=level>=5?'MAXED':'$'+cost;b.disabled=level>=5||save.money<cost;b.onclick=()=>{if(save.money>=cost&&save[u.id]<5){save.money-=cost;save[u.id]++;persist();renderGarage();updateHUD()}};div.append(desc,b);$('upgradeList').append(div)}renderLifestyle()}
@@ -412,7 +449,14 @@ function renderLifestyle(){
  button.onclick=()=>{if(save.lifeTier!==tier||save.money<item.cost)return;save.money-=item.cost;save.lifeTier=tier+1;persist();setNotice('STATUS UPGRADED: '+item.name);renderGarage();updateHUD()};
  line.append(summary,button);root.append(line);
 }
-function interact(){if(gameMode!=='play')return;const p=inCar?carPos:playerPos;if(Math.hypot(p.x-depot.x,p.z-depot.z)<14){startMission();return}if(Math.hypot(p.x-184,p.z)<16){openGarage();return}if(cityLife.interact())return;setNotice('Find the green contact ring or walk up to a resident to talk')}
+function interact(){
+ if(gameMode!=='play')return;
+ if(interactMission())return;
+ const p=inCar?carPos:playerPos;
+ if(Math.hypot(p.x-184,p.z)<16){openGarage();return}
+ if(cityLife.interact())return;
+ setNotice(mission?'Collect the parcel or speak to the receiving NPC.':'Talk to Rae near the starting pavement to find work.');
+}
 function enterExit(){if(gameMode!=='play')return;if(inCar){if(Math.abs(velocity)>3){setNotice('Slow down before exiting');return}inCar=false;person.visible=true;playerPos.set(carPos.x+4,0,carPos.z+2);person.position.copy(playerPos);setNotice('On foot — E to enter car')}else if(save.completed<2){setNotice('Start on the streets: finish two jobs to unlock your first ride')}else if(playerPos.distanceTo(carPos)<12){inCar=true;person.visible=false;playerCar.visible=true;setNotice('Vehicle entered')}else{setNotice('Walk closer to your car')}}
 let introTime=0;
 const introCameraLook=new THREE.Vector3();
@@ -544,13 +588,13 @@ function updateCamera(dt){
  camLook.set(focus.x,inCar?2.3:2.05,focus.z);
  camTarget.lerp(camLook,1-Math.exp(-13*dt));camera.lookAt(camTarget);
 }
-const map=$('minimap'),ctx=map.getContext('2d');function drawMap(){const w=map.width,h=map.height,p=inCar?carPos:playerPos,scale=.27;ctx.fillStyle='#183b45';ctx.fillRect(0,0,w,h);ctx.save();ctx.translate(w/2,h/2);ctx.translate(-p.x*scale,p.z*scale);ctx.fillStyle='#60736c';for(let i=-5;i<5;i++)for(let j=-5;j<5;j++){ctx.fillRect((i*BLOCK+13)*scale,-((j+1)*BLOCK-13)*scale,(BLOCK-26)*scale,(BLOCK-26)*scale)}ctx.fillStyle='#31414e';for(let i=-5;i<=5;i++){ctx.fillRect((i*BLOCK-10)*scale,-510*scale,20*scale,1020*scale);ctx.fillRect(-510*scale,-(i*BLOCK+10)*scale,1020*scale,20*scale)}function marker(x,z,color,rad=4){ctx.fillStyle=color;ctx.beginPath();ctx.arc(x*scale,-z*scale,rad,0,Math.PI*2);ctx.fill()}marker(depot.x,depot.z,'#74e6ba',6);marker(184,0,'#e8c67b',6);if(mission)marker(mission.place.x,mission.place.z,'#ffe185',8);for(const pol of police)if(pol.active)marker(pol.pos.x,pol.pos.z,'#f56c70',3);if(!inCar)marker(carPos.x,carPos.z,'#9ed5fb',4);ctx.restore();ctx.save();ctx.translate(w/2,h/2);ctx.rotate(inCar?angle:walkAngle);ctx.fillStyle='#fff';ctx.strokeStyle='#0c3344';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(7,9);ctx.lineTo(0,5);ctx.lineTo(-7,9);ctx.closePath();ctx.stroke();ctx.fill();ctx.restore()}
-const cityLife=createCityLife({THREE,scene,box,mesh,mat,roadPositions,rnd,collision,
+const map=$('minimap'),ctx=map.getContext('2d');function drawMap(){const w=map.width,h=map.height,p=inCar?carPos:playerPos,scale=.27;ctx.fillStyle='#183b45';ctx.fillRect(0,0,w,h);ctx.save();ctx.translate(w/2,h/2);ctx.translate(-p.x*scale,p.z*scale);ctx.fillStyle='#60736c';for(let i=-5;i<5;i++)for(let j=-5;j<5;j++){ctx.fillRect((i*BLOCK+13)*scale,-((j+1)*BLOCK-13)*scale,(BLOCK-26)*scale,(BLOCK-26)*scale)}ctx.fillStyle='#31414e';for(let i=-5;i<=5;i++){ctx.fillRect((i*BLOCK-10)*scale,-510*scale,20*scale,1020*scale);ctx.fillRect(-510*scale,-(i*BLOCK+10)*scale,1020*scale,20*scale)}function marker(x,z,color,rad=4){ctx.fillStyle=color;ctx.beginPath();ctx.arc(x*scale,-z*scale,rad,0,Math.PI*2);ctx.fill()}marker(depot.x,depot.z,'#efba81',5);marker(184,0,'#e8c67b',6);if(mission){const target=mission.stage==='pickup'?mission.pickup:mission.place;marker(target.x,target.z,mission.stage==='pickup'?'#e8c47f':'#78d9c5',8)}for(const pol of police)if(pol.active)marker(pol.pos.x,pol.pos.z,'#f56c70',3);if(!inCar)marker(carPos.x,carPos.z,'#9ed5fb',4);ctx.restore();ctx.save();ctx.translate(w/2,h/2);ctx.rotate(inCar?angle:walkAngle);ctx.fillStyle='#fff';ctx.strokeStyle='#0c3344';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(7,9);ctx.lineTo(0,5);ctx.lineTo(-7,9);ctx.closePath();ctx.stroke();ctx.fill();ctx.restore()}
+const cityLife=createCityLife({THREE,scene,box,mesh,mat,roadPositions,rnd,collision,onStoryContact:startMission,
 getPlayer:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,inCar}),
 isPlaying:()=>gameMode==='play',onNotice:setNotice,
 onReward:amount=>{save.money+=amount;persist();updateHUD()}});
 let network=multiplayer({THREE,scene,makeCar,box,mat,mesh,getState:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,angle:inCar?angle:person.rotation.y,inCar}),onAccount:progress=>{if(progress){save={...defaultSave(),...progress};updateHUD()}},onMessage:message=>setNotice(message)});
-let last=performance.now(),fpsCounter=0,fpsTime=0;function frame(now){requestAnimationFrame(frame);const dt=Math.min(.04,(now-last)/1000);last=now;if(gameMode==='play'){clockTime+=dt;if(inCar)moveCar(dt);else movePerson(dt);advanceTraffic(dt);advancePolice(dt);if(mission){missionTime-=dt;const p=inCar?carPos:playerPos;if(Math.hypot(p.x-mission.place.x,p.z-mission.place.z)<14){if(mission.title!=='Evasive Driving'||heat<1.1)finishMission();else if(clockTime%3<dt)setNotice('Lose your wanted level before arriving!')}else if(missionTime<=0)failMission()}cityLife.update(dt,now);updateHUD();updateCamera(dt);drawMap()}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='menu'){cityLife.update(dt,now);const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;fpsTime+=dt;if(fpsTime>1){const fps=Math.round(fpsCounter/fpsTime);$('fps').textContent=fps+' FPS';if(gameMode==='play'&&fps<37&&qualityPixelRatio>.8){qualityPixelRatio=Math.max(.8,qualityPixelRatio-.1);renderer.setPixelRatio(qualityPixelRatio)}fpsTime=0;fpsCounter=0}}
+let last=performance.now(),fpsCounter=0,fpsTime=0;function frame(now){requestAnimationFrame(frame);const dt=Math.min(.04,(now-last)/1000);last=now;if(gameMode==='play'){clockTime+=dt;if(inCar)moveCar(dt);else movePerson(dt);advanceTraffic(dt);advancePolice(dt);if(mission){missionTime-=dt;if(missionTime<=0)failMission()}cityLife.update(dt,now);updateHUD();updateCamera(dt);drawMap()}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='menu'){cityLife.update(dt,now);const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;fpsTime+=dt;if(fpsTime>1){const fps=Math.round(fpsCounter/fpsTime);$('fps').textContent=fps+' FPS';if(gameMode==='play'&&fps<37&&qualityPixelRatio>.8){qualityPixelRatio=Math.max(.8,qualityPixelRatio-.1);renderer.setPixelRatio(qualityPixelRatio)}fpsTime=0;fpsCounter=0}}
 person.visible=true;setSeatPose(save.completed===0?1:0);playerCar.visible=save.completed>=2;playerCar.position.copy(carPos);$('hud').style.display='none';requestAnimationFrame(frame);if(window.__mvtLoaded)window.__mvtLoaded();addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
 </script>
 </body>
