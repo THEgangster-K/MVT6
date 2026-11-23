@@ -222,6 +222,25 @@ body:has(#hud[style*="block"]) #lockHint{display:block}
 .qualitySelector{margin:16px 0;padding:12px;border-radius:10px;background:#ffffff0f;border:1px solid #85b6b36b;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:9px}
 .qualitySelector label{font:850 11px system-ui;letter-spacing:1px;color:#e5d1ac}
 .qualitySelector select{background:#153545;color:white;border:1px solid #8abbaf;border-radius:8px;padding:9px 7px;font:800 10px system-ui;max-width:230px}
+#arrestScene,#jailScene{position:fixed;inset:0;z-index:95;display:none;align-items:center;justify-content:center;pointer-events:none}
+#arrestScene.visible,#jailScene.visible{display:flex}
+#arrestScene{background:linear-gradient(0deg,#04101dd6,#0e1f3199,#0b1521aa);backdrop-filter:blur(2px)}
+#arrestScene:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 95px,#ff444422 95px 190px,#407cff22 190px 290px);animation:arrestFlash 1.1s linear infinite}
+@keyframes arrestFlash{50%{opacity:.25}}
+.arrestCinematic{position:relative;max-width:740px;text-align:center;color:white;padding:30px;transform:translateY(12vh)}
+.arrestCinematic span{font:800 11px system-ui;letter-spacing:3px;color:#fad4a1}
+.arrestCinematic h2{font:900 clamp(27px,6vw,60px) system-ui;letter-spacing:-2px;margin:12px 0}
+.arrestCinematic p{font:14px/1.6 system-ui;color:#d6e0e8}
+#jailScene{background:linear-gradient(120deg,#0a1726f5,#142b3cf4);backdrop-filter:blur(12px);pointer-events:auto}
+.jailPanel{width:min(530px,92vw);max-height:92vh;overflow:auto;padding:29px;border:1px solid #8db4b9;border-radius:18px;background:linear-gradient(137deg,#213747,#0d1f31);color:#f4f8f6;box-shadow:0 23px 80px #000a}
+.jailBars{height:83px;background:repeating-linear-gradient(90deg,#334c60 0 10px,#102235 10px 55px);border:5px solid #627786;border-radius:10px;margin-bottom:23px}
+.jailSection{font:850 11px system-ui;letter-spacing:2px;color:#e3c58e}
+.jailPanel h2{font:900 36px system-ui;letter-spacing:-1px;margin:10px 0}
+.jailPanel p{color:#c7d5da;font:13px/1.6 system-ui}
+.jailReceipt{display:flex;justify-content:space-between;gap:8px;padding:13px 0;border-bottom:1px solid #6d89946b;font:850 12px system-ui}
+.jailReceipt strong{color:#f3cd90;font-size:17px}
+#jailStatus{color:#f1bb9a!important;font-weight:800!important}
+#jailScene button{pointer-events:auto;display:block;width:100%;padding:13px;margin-top:11px;background:linear-gradient(115deg,#91d8bf,#64adac);color:#112936;font:900 12px system-ui;border-radius:10px}
 </style>
 </head>
 <body>
@@ -302,7 +321,20 @@ body:has(#hud[style*="block"]) #lockHint{display:block}
 <option value="balanced" selected>BALANCED · DEFAULT</option>
 <option value="cinematic">CINEMATIC · SHARPER TEXTURES</option>
 </select></div><button id="toMenu" class="secondary">MAIN MENU</button></div></div>
-<div id="garage" class="overlay"><div class="panel customsPanel">
+<div id="arrestScene">
+ <div id="arrestFlash"></div>
+ <div class="arrestCinematic"><span>POLICE DEPARTMENT · SOLARA CITY</span><h2>YOU ARE UNDER ARREST</h2><p>Patrol officers have detained you. You will be processed at Solara Central.</p></div>
+ </div>
+ <div id="jailScene"><div class="jailPanel"><div class="jailBars"></div>
+ <div class="jailSection">SOLARA CENTRAL · HOLDING</div><h2>IN CUSTODY</h2>
+ <p>Your wanted level determines the bail cost. Pay it to return to the street.</p>
+ <div class="jailReceipt"><span>WANTED LEVEL</span><strong id="jailStars">★★☆☆☆</strong></div>
+ <div class="jailReceipt"><span>BAIL REQUIRED</span><strong id="jailBail">$350</strong></div>
+ <div class="jailReceipt"><span>CASH AVAILABLE</span><strong id="jailCash">$45</strong></div>
+ <p id="jailStatus"></p><button id="jailRelease">PAY BAIL & RELEASE</button>
+ <button id="jailRestart" class="secondary" style="display:none">START A NEW STORY</button>
+ </div></div>
+ <div id="garage" class="overlay"><div class="panel customsPanel">
  <div class="eyebrow">NICO'S WORKSHOP · EAST SOLARA</div><h2>SOLARA <span style="color:#edc38a">CUSTOMS</span></h2>
  <p>Park in the service bay, press F, and let Nico tune, repair, or customise your vehicle.</p>
  <div class="customsMeta"><span>AVAILABLE BALANCE <b id="garageMoney"></b></span><span id="customsVehicle">PERSONAL VEHICLE</span></div>
@@ -1853,7 +1885,110 @@ function advanceTraffic(dt){
  if(d.age>10){scene.remove(d.group);formerDrivers.splice(i,1)}
  }
 }
-function advancePolice(dt){heatTimer+=dt;if(heatTimer>17&&heat>0){heat=Math.max(0,heat-dt*.05)}for(let i=0;i<police.length;i++){const p=police[i],active=heat>i*.9+.25;p.car.visible=active;if(!active){p.active=false;continue}if(!p.active){p.pos.copy(carPos);p.pos.x+=120+i*31;p.pos.z+=-120+i*24;p.active=true}const target=inCar?carPos:playerPos;const dx=target.x-p.pos.x,dz=target.z-p.pos.z,dist=Math.hypot(dx,dz);p.angle=Math.atan2(dx,dz);const speed=17+i*2;p.pos.x+=Math.sin(p.angle)*speed*dt;p.pos.z+=Math.cos(p.angle)*speed*dt;p.car.position.copy(p.pos);p.car.rotation.y=p.angle;if(dist<7){heat=Math.min(5,heat+.006);if(mission&&mission.title==='Evasive Driving')missionTime-=dt*.6}}}
+// Arcade police arrest / jail flow. No injury depiction or real-world policing simulation.
+let arrestElapsed=0,arrestWanted=0,arrestBail=0,arrestCooldown=0,arrestTarget=null;
+const jailLocation=new THREE.Vector3(-92,0,92);
+function arrestPlayer(officer){
+ if(gameMode!=='play'||clockTime<arrestCooldown)return;
+ arrestWanted=Math.min(5,Math.max(1,Math.ceil(heat)));
+ arrestBail=arrestWanted*175;
+ arrestTarget=officer||null;arrestElapsed=0;gameMode='arrest';
+ velocity=0;for(const key in keys)keys[key]=false;
+ if(document.pointerLockElement)document.exitPointerLock();
+ $('arrestScene').classList.add('visible');$('jailScene').classList.remove('visible');
+ $('phoneToggle').style.pointerEvents='none';
+ heatTimer=0;
+}
+function showJail(){
+ gameMode='jail';$('arrestScene').classList.remove('visible');
+ $('jailStars').textContent='★'.repeat(arrestWanted)+'☆'.repeat(5-arrestWanted);
+ $('jailBail').textContent='$'+arrestBail.toLocaleString();
+ $('jailCash').textContent='$'+Math.floor(save.money).toLocaleString();
+ const enough=save.money>=arrestBail;
+ $('jailStatus').textContent=enough?'Pay the fee to regain your freedom.':'INSUFFICIENT FUNDS · You must begin a new story.';
+ $('jailRelease').style.display=enough?'block':'none';
+ $('jailRestart').style.display=enough?'none':'block';
+ $('jailScene').classList.add('visible');
+}
+function resetArrestPosition(){
+ inCar=false;velocity=0;person.visible=true;
+ playerPos.set(15.35,0,-29);person.position.copy(playerPos);
+ playerCar.position.copy(carPos);
+ camYaw=0;orbitOffset=0;heat=0;heatTimer=0;
+ for(const policeCar of police){policeCar.active=false;policeCar.car.visible=false}
+ arrestCooldown=clockTime+15;
+ $('jailScene').classList.remove('visible');$('arrestScene').classList.remove('visible');
+ $('phoneToggle').style.pointerEvents='auto';
+ gameMode='play';
+ safeWalkingPosition();updateHUD();camera.position.set(playerPos.x-5,4.5,playerPos.z-8);
+}
+$('jailRelease').onclick=()=>{
+ if(gameMode!=='jail'||save.money<arrestBail)return;
+ save.money-=arrestBail;persist();resetArrestPosition();
+ setNotice('RELEASED ON BAIL · $'+arrestBail+' deducted');
+};
+$('jailRestart').onclick=()=>{
+ if(gameMode!=='jail')return;
+ save=defaultSave();mission=null;missionTime=0;velocity=0;
+ cosmetics={paint:'#e96e5d',spoiler:false,lightKit:false,rims:false};applyCustoms();
+ collectedGear=[];selectedGadget=0;updateGadgetWheel();
+ vehicleCondition=100;saveVehicleCondition();
+ try{localStorage.removeItem('mvt6-gear-v2');localStorage.removeItem('mvt6-customs')}catch{}
+ carPos.set(4,0,27);playerCar.visible=false;persist();resetArrestPosition();
+ setNotice('NEW STORY · You are back on the streets with $45');
+};
+function animateArrest(dt){
+ arrestElapsed+=Math.max(0,dt);
+ const target=arrestTarget?.pos||jailLocation;
+ camera.position.lerp(new THREE.Vector3(target.x+8,5.5,target.z+8),Math.min(1,dt*3));
+ camera.lookAt(inCar?carPos:playerPos);
+ if(arrestElapsed>2.7)showJail();
+}
+// Road-aware police AI: spawn on nearby roads, turn smoothly, stop instead of orbiting.
+function advancePolice(dt){
+ heatTimer+=dt;
+ if(heatTimer>19&&heat>0)heat=Math.max(0,heat-dt*.048);
+ const target=inCar?carPos:playerPos,road=(v)=>Math.max(-HALF,Math.min(HALF,Math.round(v/BLOCK)))*BLOCK;
+ for(let i=0;i<police.length;i++){
+  const p=police[i],active=heat>i*.95+.25;
+  if(!active){p.active=false;p.car.visible=false;continue}
+  if(!p.active){
+   const roadX=road(target.x),roadZ=road(target.z);
+   const offset=47+i*17;
+   p.pos.set(i%2?roadX+4:target.x+(i%2?offset:-offset),0,i%2?target.z+offset:roadZ+5);
+   if(Math.abs(p.pos.x)>360)p.pos.x=roadX+5;
+   if(Math.abs(p.pos.z)>360)p.pos.z=roadZ+5;
+   p.angle=0;p.speed=0;p.active=true;
+  }
+  p.car.visible=true;
+  const dx=target.x-p.pos.x,dz=target.z-p.pos.z,dist=Math.hypot(dx,dz);
+  const roadX=road(p.pos.x),roadZ=road(p.pos.z),goalX=road(target.x),goalZ=road(target.z);
+  // Use grid intersections as intermediate destinations instead of cutting through buildings.
+  let waypointX=target.x,waypointZ=target.z;
+  if(dist>12){
+   if(Math.abs(p.pos.z-roadZ)<8&&Math.abs(target.x-p.pos.x)>10){waypointX=target.x;waypointZ=roadZ+5}
+   else if(Math.abs(p.pos.x-roadX)<8){waypointX=roadX+5;waypointZ=target.z}
+   else if(Math.abs(p.pos.z-roadZ)>8){waypointX=p.pos.x;waypointZ=roadZ+5}
+   else{waypointX=roadX+5;waypointZ=target.z}
+  }
+  const desired=Math.atan2(waypointX-p.pos.x,waypointZ-p.pos.z);
+  const delta=Math.atan2(Math.sin(desired-p.angle),Math.cos(desired-p.angle));
+  p.angle+=THREE.MathUtils.clamp(delta,-dt*2.0,dt*2.0);
+  const arrestRange=inCar?7:4.1;
+  const targetSpeed=dist<arrestRange?0:dist<16?6:Math.min(25,13+i*2.3);
+  p.speed=THREE.MathUtils.lerp(p.speed,targetSpeed,Math.min(1,dt*2.4));
+  const nx=p.pos.x+Math.sin(p.angle)*p.speed*dt,nz=p.pos.z+Math.cos(p.angle)*p.speed*dt;
+  if(!collision(nx,nz,2.2)){p.pos.x=nx;p.pos.z=nz}else{
+   p.angle+=dt*1.7;p.speed*=.72;
+  }
+  p.car.position.copy(p.pos);p.car.rotation.y=p.angle;
+  for(const wheel of p.car.userData.wheels||[])wheel.spin.rotation.x+=p.speed*dt/.87;
+  if(dist<arrestRange&&(!inCar||Math.abs(velocity)<10)&&clockTime>arrestCooldown){
+   arrestPlayer(p);return;
+  }
+ }
+}
+
 const camTarget=new THREE.Vector3(),camPos=new THREE.Vector3(),camLook=new THREE.Vector3();
 function updateCamera(dt){
  const focus=inCar?carPos:playerPos;
@@ -2034,7 +2169,7 @@ getPlayer:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,inCar,
 isPlaying:()=>gameMode==='play',onNotice:setNotice,
 onReward:amount=>{save.money+=amount;persist();updateHUD()}});
 let network=multiplayer({THREE,scene,makeCar,box,mat,mesh,getState:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,angle:inCar?angle:person.rotation.y,inCar}),onAccount:progress=>{if(progress){save={...defaultSave(),...progress};updateHUD()}},onMessage:message=>setNotice(message)});
-let last=performance.now(),fpsCounter=0,fpsTime=0,lastShopUpdate=0;function frame(now){requestAnimationFrame(frame);if(now-lastShopUpdate>600){lastShopUpdate=now;touchJump.style.display=gameMode==='play'&&!inCar&&matchMedia('(pointer:coarse)').matches?'block':'none';const gearNear=gameMode==='play'&&!inCar?nearestEquipment():null;$('pickupPrompt').style.display=gearNear?'block':'none';if(gearNear)$('pickupPrompt').textContent='F · COLLECT '+gadgetNames[gearNear.id];carHint.style.display=(gameMode==='play'&&!inCar&&nearestTrafficCar())?'block':'none';const px=inCar?carPos.x:playerPos.x,pz=inCar?carPos.z:playerPos.z;for(const sh of shopBuildings){sh.root.visible=gameMode==='intro'||gameMode==='menu'||Math.hypot(px-sh.x,pz-sh.z)<155}}const dt=Math.min(.04,(now-last)/1000);last=now;animateCustoms(dt);if(gameMode==='play'){clockTime+=dt;if(atmosphereTime>0){atmosphereTime=Math.max(0,atmosphereTime-dt);if(atmosphereTime===0)atmosphereToast.classList.remove('show')}if(detailingShine>0)detailingShine=Math.max(0,detailingShine-dt);if(chapterBannerTime>0){chapterBannerTime-=dt;if(chapterBannerTime<=0)chapterScreen.classList.remove('show')}updateEquipmentWorld(dt);if(inCar)moveCar(dt);else movePerson(dt);advanceTraffic(dt);advancePolice(dt);updatePatrolAgents(dt);if(mission){missionTime-=dt;updateMissionActivity(dt);if(missionTime<=0)failMission()}cityLife.update(dt,now);updateHUD();updateCamera(dt);drawMap()}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='takeover'){clockTime+=dt;updateTakeover(dt);advanceTraffic(dt);cityLife.update(dt,now);updateCamera(dt);drawMap()}else if(gameMode==='menu'){cityLife.update(dt,now);const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;fpsTime+=dt;if(fpsTime>1){const fps=Math.round(fpsCounter/fpsTime);$('fps').textContent=fps+' FPS';if(gameMode==='play'&&fps<37&&qualityPixelRatio>.8&&graphicsPreset!=='cinematic'){qualityPixelRatio=Math.max(.8,qualityPixelRatio-.1);renderer.setPixelRatio(qualityPixelRatio)}fpsTime=0;fpsCounter=0}}
+let last=performance.now(),fpsCounter=0,fpsTime=0,lastShopUpdate=0;function frame(now){requestAnimationFrame(frame);if(now-lastShopUpdate>600){lastShopUpdate=now;touchJump.style.display=gameMode==='play'&&!inCar&&matchMedia('(pointer:coarse)').matches?'block':'none';const gearNear=gameMode==='play'&&!inCar?nearestEquipment():null;$('pickupPrompt').style.display=gearNear?'block':'none';if(gearNear)$('pickupPrompt').textContent='F · COLLECT '+gadgetNames[gearNear.id];carHint.style.display=(gameMode==='play'&&!inCar&&nearestTrafficCar())?'block':'none';const px=inCar?carPos.x:playerPos.x,pz=inCar?carPos.z:playerPos.z;for(const sh of shopBuildings){sh.root.visible=gameMode==='intro'||gameMode==='menu'||Math.hypot(px-sh.x,pz-sh.z)<155}}const dt=Math.min(.04,(now-last)/1000);last=now;animateCustoms(dt);if(gameMode==='play'){clockTime+=dt;if(atmosphereTime>0){atmosphereTime=Math.max(0,atmosphereTime-dt);if(atmosphereTime===0)atmosphereToast.classList.remove('show')}if(detailingShine>0)detailingShine=Math.max(0,detailingShine-dt);if(chapterBannerTime>0){chapterBannerTime-=dt;if(chapterBannerTime<=0)chapterScreen.classList.remove('show')}updateEquipmentWorld(dt);if(inCar)moveCar(dt);else movePerson(dt);advanceTraffic(dt);advancePolice(dt);updatePatrolAgents(dt);if(mission){missionTime-=dt;updateMissionActivity(dt);if(missionTime<=0)failMission()}cityLife.update(dt,now);updateHUD();updateCamera(dt);drawMap()}else if(gameMode==='arrest'){animateArrest(dt);cityLife.update(dt,now)}else if(gameMode==='jail'){cityLife.update(dt,now)}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='takeover'){clockTime+=dt;updateTakeover(dt);advanceTraffic(dt);cityLife.update(dt,now);updateCamera(dt);drawMap()}else if(gameMode==='menu'){cityLife.update(dt,now);const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;fpsTime+=dt;if(fpsTime>1){const fps=Math.round(fpsCounter/fpsTime);$('fps').textContent=fps+' FPS';if(gameMode==='play'&&fps<37&&qualityPixelRatio>.8&&graphicsPreset!=='cinematic'){qualityPixelRatio=Math.max(.8,qualityPixelRatio-.1);renderer.setPixelRatio(qualityPixelRatio)}fpsTime=0;fpsCounter=0}}
 person.visible=true;setSeatPose(save.completed===0?1:0);playerCar.visible=save.completed>=2;playerCar.position.copy(carPos);$('hud').style.display='none';requestAnimationFrame(frame);if(window.__mvtLoaded)window.__mvtLoaded();addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
 </script>
 </body>
