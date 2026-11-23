@@ -261,6 +261,15 @@ function patternTexture(kind,seed=0){
       if(kind==='old'){ctx.fillStyle='#d3c4ac';ctx.fillRect(x-2,y-2,29,3)}
       if(kind==='loft'){ctx.fillStyle='#c1b0a0';ctx.fillRect(x+9,y,2,gap*.62)}
    }}
+ // Layer tonal gradients over grain so surfaces have variation, not flat colours.
+ const light=ctx.createLinearGradient(0,0,256,256);
+ light.addColorStop(0,'#ffffff');light.addColorStop(.45,'#e4e9e9');light.addColorStop(1,'#b2bec6');
+ ctx.save();ctx.globalCompositeOperation='multiply';ctx.globalAlpha=.34;ctx.fillStyle=light;ctx.fillRect(0,0,256,256);ctx.restore();
+ for(let n=0;n<90;n++){
+  const x=rnd(n*31+seed)*256,y=rnd(n*19+seed*4)*256;
+  ctx.strokeStyle=n%3?'#ffffff11':'#1b303112';
+  ctx.lineWidth=.5+rnd(n*43)*1.8;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+4+rnd(n*27)*9,y+8+rnd(n*11)*15);ctx.stroke();
+ }
  const tx=new THREE.CanvasTexture(c);tx.colorSpace=THREE.SRGBColorSpace;
  tx.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),4);return tx;
 }
@@ -457,7 +466,24 @@ trunkBatch.frustumCulled=false;canopyBatch.frustumCulled=false;scene.add(trunkBa
 plane(425,1000,-570,0,materials.water,-.10);for(let i=-4;i<=4;i++){box(15,1.8,1,-400,1,i*92,materials.white)}
 // Reusable driving actors and props.
 function makeCar(color='#ed636a',police=false){const group=new THREE.Group();scene.add(group);const paint=mat(color,.26,.63),dark=mat('#192735',.4,.2),lamp=mat('#fff6c5',.2),rear=mat('#e0454c',.25),wheel=mat('#101820',.92),trim=mat('#d7e5ea',.24,.65);
- const hull=box(3.65,1.05,7.5,0,1,0,paint,group);hull.castShadow=true;box(3.15,1.05,3.7,0,1.98,-.45,paint,group);box(3.2,.75,2.3,0,2.05,-.35,dark,group);box(3.23,.08,2,0,2.55,-.35,paint,group);
+ // Bevelled vehicle body and curved roofline; reused geometry keeps draw costs moderate.
+ const hullShape=new THREE.Shape();
+ hullShape.moveTo(-1.53,.5);hullShape.lineTo(1.53,.5);
+ hullShape.quadraticCurveTo(1.85,.5,1.85,.78);hullShape.lineTo(1.85,1.24);
+ hullShape.quadraticCurveTo(1.85,1.54,1.53,1.54);hullShape.lineTo(-1.53,1.54);
+ hullShape.quadraticCurveTo(-1.85,1.54,-1.85,1.24);hullShape.lineTo(-1.85,.78);
+ hullShape.quadraticCurveTo(-1.85,.5,-1.53,.5);
+ const hull=mesh(new THREE.ExtrudeGeometry(hullShape,{depth:7.28,steps:1,bevelEnabled:true,bevelThickness:.1,bevelSize:.09,bevelSegments:2,curveSegments:5}),paint,group);
+ hull.position.z=-3.64;hull.castShadow=false;
+ const canopyShape=new THREE.Shape();
+ canopyShape.moveTo(-1.3,1.5);canopyShape.lineTo(1.3,1.5);
+ canopyShape.quadraticCurveTo(1.65,1.65,1.42,2.32);
+ canopyShape.quadraticCurveTo(1.23,2.59,.9,2.60);
+ canopyShape.lineTo(-.9,2.60);
+ canopyShape.quadraticCurveTo(-1.23,2.59,-1.42,2.32);
+ canopyShape.quadraticCurveTo(-1.65,1.65,-1.3,1.5);
+ const canopy=mesh(new THREE.ExtrudeGeometry(canopyShape,{depth:3.4,steps:1,bevelEnabled:true,bevelSize:.07,bevelThickness:.08,bevelSegments:2,curveSegments:5}),paint,group);
+ canopy.position.z=-2.15;box(3.2,.75,2.3,0,2.05,-.35,dark,group);box(3.23,.08,2,0,2.55,-.35,paint,group);
  for(let side of [-1,1])for(let along of [-2.42,2.42]){const tire=mesh(new THREE.CylinderGeometry(.87,.87,.43,14),wheel,group);tire.rotation.z=Math.PI/2;tire.position.set(side*1.82,.86,along);const hub=mesh(new THREE.CylinderGeometry(.45,.45,.46,12),trim,group);hub.rotation.z=Math.PI/2;hub.position.copy(tire.position)}
  for(let x of [-1.15,1.15]){box(.82,.38,.13,x,1.05,3.78,lamp,group);box(.85,.3,.13,x,1.02,-3.78,rear,group)}
  // Vehicle facelift: side mirrors, glazing, grille, trim and plates.
@@ -491,7 +517,7 @@ for(const y of [1.2,6.45])box(.11,.13,18.8,16.36,y,-29,mat('#bba995'));
 const playerCar=makeCar('#e96e5d');
 const person=new THREE.Group();scene.add(person);
 const skin=mat('#d79a72'),jacket=mat('#1c4f72'),jeans=mat('#273548');
-const torso=box(.95,1.1,.48,0,1.77,0,jacket,person);
+const torso=mesh(new THREE.CapsuleGeometry(.48,.45,5,12),jacket,person);torso.position.set(0,1.77,0);torso.scale.z=.72;
 const head=mesh(new THREE.SphereGeometry(.39,14,10),skin,person);head.position.y=2.71;
 const hair=mesh(new THREE.SphereGeometry(.4,14,8,0,Math.PI*2,0,1.15),mat('#24252a'),person);hair.position.y=2.79;
 const limbs={arms:[],legs:[]};
