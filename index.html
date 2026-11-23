@@ -193,6 +193,18 @@ body:has(#hud[style*="block"]) #lockHint{display:block}
 #chapterBanner span{font:800 10px system-ui;color:#f2c78f;letter-spacing:3px}
 #chapterBanner strong{display:block;font:900 clamp(22px,4vw,41px) system-ui;letter-spacing:-1px;margin:5px 0}
 #chapterBanner p{font:500 13px/1.6 system-ui;color:#d3e4e3;margin:5px 0}
+#missionBriefing{position:fixed;inset:0;background:#071522d9;z-index:75;display:none;align-items:center;justify-content:center;backdrop-filter:blur(7px);padding:15px;box-sizing:border-box}
+#missionBriefing.visible{display:flex}
+.briefingBox{width:min(630px,94vw);max-height:90vh;overflow:auto;padding:30px;background:linear-gradient(128deg,#133342f6,#293a4df4);border:1px solid #83d5ba;border-radius:19px;box-shadow:0 28px 90px #000b;color:#e4f2ed}
+.briefingTop{font:900 11px system-ui;letter-spacing:3px;color:#edc48e}
+#briefingChapter{font:800 12px system-ui;letter-spacing:2px;margin-top:20px;color:#b3cfd1}
+#briefingTitle{font:900 clamp(30px,5vw,50px) system-ui;letter-spacing:-1.4px;margin:8px 0 12px;color:white}
+#briefingDialogue{font:500 15px/1.6 system-ui;color:#d5e6e3;padding:14px 17px;border-left:3px solid #f3c991;background:#0a19276b}
+#briefingSteps{display:grid;gap:7px;margin:22px 0}
+#briefingSteps p{font:700 13px system-ui;margin:0;background:#254c5b8a;border:1px solid #86beb38a;border-radius:8px;padding:11px}
+#briefingReward{font:850 12px system-ui;color:#f2d39f;letter-spacing:1.4px;margin-bottom:21px}
+.briefingButtons{display:flex;gap:12px;flex-wrap:wrap}
+.briefingButtons button:first-child{background:linear-gradient(130deg,#e6c090,#c4a578);color:#142633}
 </style>
 </head>
 <body>
@@ -786,6 +798,38 @@ function showChapterBanner(i){
  document.getElementById('chapterBannerQuote').textContent=line;
  chapterBannerTime=5;chapterScreen.classList.add('show');
 }
+const missionBriefing=document.createElement('div');missionBriefing.id='missionBriefing';
+missionBriefing.innerHTML='<div class="briefingBox"><div class="briefingTop">SOLARA CITY · MISSION DOSSIER</div><div id="briefingChapter"></div><h2 id="briefingTitle"></h2><p id="briefingDialogue"></p><div id="briefingSteps"></div><div id="briefingReward"></div><div class="briefingButtons"><button id="briefingAccept">ACCEPT MISSION ➜</button><button id="briefingDecline" class="secondary">NOT NOW</button></div></div>';
+document.body.append(missionBriefing);
+function closeBriefing(){missionBriefing.classList.remove('visible');if(gameMode==='briefing')gameMode='play'}
+function offerMission(){
+ if(gameMode!=='play')return;
+ if(mission){setNotice('Finish the current chapter before speaking to Rae again.');return}
+ const n=save.completed,job=storyJobs[Math.min(n,storyJobs.length-1)];
+ const narrative=chapterBeats[Math.min(n,chapterBeats.length-1)];
+ if(document.pointerLockElement)document.exitPointerLock();
+ gameMode='briefing';for(const k in keys)keys[k]=false;
+ document.getElementById('briefingChapter').textContent='CHAPTER '+(n+1)+' · '+job.kind.toUpperCase();
+ document.getElementById('briefingTitle').textContent=job.title.replace(/CHAPTER \d+ · /,'');
+ document.getElementById('briefingDialogue').textContent=narrative[1]+' '+job.description;
+ const tasks={
+ courier:['Meet Rae','Collect the package','Deliver it to the receiving contact'],
+ vehicle:['Find a working vehicle','Drive to Solara Customs','Talk to Nico in the workshop'],
+ terminal:['Find the signal terminal','Decode its three-symbol sequence','Make the final handoff'],
+ race:['Get into a vehicle','Pass three timed checkpoints','Meet Vega at the finish'],
+ scout:['Visit three marked locations','Record a clue with F at each spot','Return to Rae'],
+ escape:['Collect the parcel','Lose the pursuing patrol','Deliver the evidence'],
+ finale:['Decode the final ledger','Escape the pursuing patrol','Meet your waterfront ally']
+ };
+ const list=document.getElementById('briefingSteps');list.innerHTML='';
+ for(const [i,description] of (tasks[job.kind]||tasks.courier).entries()){
+  const p=document.createElement('p');p.textContent=(i+1)+'. '+description;list.append(p);
+ }
+ document.getElementById('briefingReward').textContent='REWARD: $'+job.reward+' · TIME LIMIT: '+job.time+'s';
+ missionBriefing.classList.add('visible');
+}
+document.getElementById('briefingDecline').onclick=closeBriefing;
+document.getElementById('briefingAccept').onclick=()=>{closeBriefing();startMission()};
 const storyJobs=[
  {title:'CHAPTER 1 · Small Change',description:'Rae offers a legitimate first courier run while you try to get established.',kind:'courier',reward:180,time:220,heat:0},
  {title:'CHAPTER 2 · The Wrong Envelope',description:'A confidential envelope drags you into the city underworld.',kind:'courier',reward:330,time:220,heat:.35},
@@ -1291,7 +1335,7 @@ function keyState(e,on){
  if(e.code==='KeyW')k='w';if(e.code==='KeyA')k='a';if(e.code==='KeyS')k='s';if(e.code==='KeyD')k='d';
 if([' ','spacebar','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();if(on&&!e.repeat&&(k==='tab'||k==='h')){e.preventDefault();if(tutorialOpen)closeTutorial();else if(gameMode==='play')showTutorial();return}
 if(on&&!e.repeat&&k==='q'){e.preventDefault();if(wheelOpen)closeGadgetWheel();else if(gameMode==='play')openGadgetWheel();return}
-if(k==='escape'&&on){if(tutorialOpen){closeTutorial();return}if(wheelOpen){closeGadgetWheel();return}if(phoneOpen){closePhone();return}}
+if(k==='escape'&&on){if(gameMode==='briefing'){closeBriefing();return}if(tutorialOpen){closeTutorial();return}if(wheelOpen){closeGadgetWheel();return}if(phoneOpen){closePhone();return}}
 if(k==='p'&&on&&!e.repeat){if(phoneOpen)closePhone();else if(gameMode==='play')openPhone();return}
 if(gameMode!=='play'&&k!=='escape')return;keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(document.pointerLockElement)document.exitPointerLock();else if(gameMode==='play')pause();else if(gameMode==='pause')resume();}if((k===' '||k==='spacebar')&&!inCar)beginJump();if(k==='e')enterExit();if(k==='f')interact();if(k==='t')tagWall();if(k==='g')activateGadget();if(k==='c'){camMode=(camMode+1)%3;orbitOffset=0};if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;playerCar.position.copy(carPos);playerCar.rotation.y=angle;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
 addEventListener('keydown',e=>keyState(e,true));addEventListener('keyup',e=>keyState(e,false));addEventListener('blur',()=>{for(let k in keys)keys[k]=false});
@@ -1631,7 +1675,7 @@ function updatePatrolAgents(dt){
  }
  }
 }
-const cityLife=createCityLife({THREE,scene,box,mesh,mat,roadPositions,rnd,collision,onStoryContact:startMission,
+const cityLife=createCityLife({THREE,scene,box,mesh,mat,roadPositions,rnd,collision,onStoryContact:offerMission,
 getPlayer:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,inCar}),
 isPlaying:()=>gameMode==='play',onNotice:setNotice,
 onReward:amount=>{save.money+=amount;persist();updateHUD()}});
