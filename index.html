@@ -147,7 +147,7 @@ const BLOCK=92,ROAD=20,HALF=4, CITY=HALF*BLOCK, roadPositions=[];for(let i=-HALF
 plane(1600,1600,0,0,materials.grass,-.15);
 // Grid, clear sidewalks, parking stripes and boulevard center markings
 for(let i=-HALF;i<=HALF;i++){
- const p=i*BLOCK;plane(ROAD,1100,p,0,materials.asphalt,.015);plane(1100,ROAD,0,p,materials.asphalt,.018);
+ const p=i*BLOCK;plane(ROAD,1100,p,0,materials.asphalt,.015);plane(1100,ROAD,0,p,materials.asphalt,.052);
  for(let j=-HALF;j<HALF;j++){const a=j*BLOCK+BLOCK/2;
   box(.24,.035,6,p,.08,a,materials.line);box(6,.035,.24,a,.08,p,materials.line);
   for(const off of [-7,7]){box(.22,.035,3,p+off,.082,a,materials.white);box(3,.035,.22,a,.082,p+off,materials.white)}
@@ -160,8 +160,11 @@ const roadPiece=(dest,x,y,z,w,h,d)=>dest.push([x,y,z,w,h,d]);
 for(let i=-HALF;i<=HALF;i++){
  const p=i*BLOCK;
  for(const side of [-1,1]){
-   roadPiece(curbPieces,p+side*10.7,.18,0,1.05,.26,1100);
-   roadPiece(curbPieces,0,.18,p+side*10.7,1100,.26,1.05);
+   for(let block=-HALF;block<HALF;block++){
+     const c=(block+.5)*BLOCK;
+     roadPiece(curbPieces,p+side*10.7,.18,c,1.05,.26,BLOCK-26);
+     roadPiece(curbPieces,c,.18,p+side*10.7,BLOCK-26,.26,1.05);
+   }
    for(let j=-HALF;j<=HALF;j++){
      const q=j*BLOCK;
      if((i+j)%2===0){
@@ -232,7 +235,7 @@ for(let ix=-HALF;ix<HALF;ix++)for(let iz=-HALF;iz<HALF;iz++){
  plane(BLOCK-ROAD-1,BLOCK-ROAD-1,cx,cz,materials.sidewalk,.10);
  if(n%13!==2&&n%17!==4){
    plane(9.8,69,cx,cz,materials.asphalt,.14);
-   plane(69,9.8,cx,cz,materials.asphalt,.145);
+   plane(69,9.8,cx,cz,materials.asphalt,.185);
    alleys.push({x:cx,z:cz});
  }
  if(n%13===2||n%17===4){plane(59,58,cx,cz,materials.grass,.16);for(let t=0;t<10;t++){let dx=(rnd(n*13+t)-.5)*52,dz=(rnd(n*21+t)-.5)*50;addTree(cx+dx,cz+dz,rnd(n+t)*2+3)}continue}
@@ -374,7 +377,7 @@ for(let i=0;i<treeCanopies.length;i++)canopyBatch.setMatrixAt(i,treeCanopies[i])
 trunkBatch.instanceMatrix.needsUpdate=true;canopyBatch.instanceMatrix.needsUpdate=true;
 trunkBatch.frustumCulled=false;canopyBatch.frustumCulled=false;scene.add(trunkBatch,canopyBatch);
 // Coastal visual: water beyond city's western edge, elevated promenade.
-plane(425,1000,-570,0,materials.water,-.2);for(let i=-4;i<=4;i++){box(15,1.8,1,-400,1,i*92,materials.white)}
+plane(425,1000,-570,0,materials.water,-.10);for(let i=-4;i<=4;i++){box(15,1.8,1,-400,1,i*92,materials.white)}
 // Reusable driving actors and props.
 function makeCar(color='#ed636a',police=false){const group=new THREE.Group();scene.add(group);const paint=mat(color,.26,.63),dark=mat('#192735',.4,.2),lamp=mat('#fff6c5',.2),rear=mat('#e0454c',.25),wheel=mat('#101820',.92),trim=mat('#d7e5ea',.24,.65);
  const hull=box(3.65,1.05,7.5,0,1,0,paint,group);hull.castShadow=true;box(3.15,1.05,3.7,0,1.98,-.45,paint,group);box(3.2,.75,2.3,0,2.05,-.35,dark,group);box(3.23,.08,2,0,2.55,-.35,paint,group);
