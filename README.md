@@ -1,5 +1,30 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v0.9 — Solara: The Lost City
+
+**Most important fixes**
+- Walk/keyboard repair: moved the sidewalk spawn to a validated clear position, uses a smaller on-foot collision boundary, includes a fallback when the character is obstructed, and reads physical WASD key codes.
+- Post-intro camera: now starts on the roadway side of the protagonist rather than inside the building behind them.
+- Solid buildings and opaque windows: building blocks, facades and storefront glass use depth-writing nontransparent materials.
+- Pedestrian pathing: NPCs align their facing and walking cycle with their real displacement and turn when a walkway is blocked.
+
+**Original crime-fiction story** (loosely within the open-world genre, not copied from the GTA 6 plot):
+1. Small Change — meet Rae and carry a first courier package.
+2. The Wrong Envelope — encounter the first mystery.
+3. Borrowed Wheels — bring a vehicle to a mechanic.
+4. The Locked Ledger — solve an arcade three-symbol decoder puzzle at a terminal.
+5. After-Hours Sprint — drive through timed street checkpoints.
+6. False Colours — collect three fictional reconnaissance photos.
+7. Vanishing Point — collect a package, lose your pursuit and make the handoff.
+8. City of Secrets — decode the final ledger, escape the heat and reach your contact.
+
+**Additional arcade side activities:** search fictional underground supply stashes with F and leave a crew street-art mural by pressing T near a marked wall. Both give small money rewards and increase in-game wanted level; stashes have cooldowns.
+
+**Presentation and environment:** improved cinematic 3D camera movements, moving traffic during the opening, original film-like subtitles and loading gallery styling; dense markets with tables, café seating, planters, rubbish bins, and lantern details in GPU-instanced batches.
+
+**Verification:** client/server JavaScript syntax validation and successful Render deployment are verified separately. Full in-browser input and performance testing is still required. Existing account progress and multiplayer code are preserved.
+
+
 ## Cinematic Neighbourhood & Living Traffic Update (v0.8)
 
 A substantial update to the existing original Three.js game, inspired by the supplied street, sidewalk and alley references without copying their art or assets.
