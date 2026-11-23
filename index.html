@@ -185,6 +185,9 @@ body:has(#hud[style*="block"]) #lockHint{display:block}
 .customPaintChoice{border:1px solid #ffffff80;border-radius:11px;min-height:66px;padding:9px 3px;text-shadow:0 1px 4px #000;font:800 11px system-ui}
 #customExtraOptions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 #customExtraOptions button{min-height:58px;border:1px solid #79b7b0;background:linear-gradient(130deg,#2c6876,#143c4c);font:800 12px system-ui}
+#gamePhone #lifestyleList .upg{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #679c9b6a;background:#153645b0;padding:10px;border-radius:10px;margin-bottom:7px}
+#gamePhone #lifestyleList button{background:#397c7a;border:1px solid #89cabb;border-radius:7px;font-size:11px;padding:7px}
+#gamePhone #lifestyleList span{font-size:11px;color:#d4e8e0}
 #chapterBanner{position:fixed;z-index:36;left:50%;top:12%;transform:translate(-50%,-12px);width:min(620px,88vw);padding:22px 25px;background:linear-gradient(115deg,#0b1d2bed,#204456ec);border-top:3px solid #dfb987;border-bottom:1px solid #83cfb48d;box-shadow:0 16px 50px #000a;pointer-events:none;opacity:0;transition:opacity .35s,transform .35s;color:#f7f1e7}
 #chapterBanner.show{opacity:1;transform:translate(-50%,0)}
 #chapterBanner span{font:800 10px system-ui;color:#f2c78f;letter-spacing:3px}
@@ -240,6 +243,7 @@ body:has(#hud[style*="block"]) #lockHint{display:block}
   <div id="phoneCurrent"></div>
   <div class="phoneSection">CHAPTERS & CONTACTS</div>
   <div id="phoneMissions"></div>
+  <div class="phoneSection">CITY STATUS & PROPERTY</div><div id="lifestyleList"></div>
   <div class="phoneSection">MAP / DESTINATIONS</div>
   <div class="phoneLocations"><button id="phoneWaypointRae">RAE · CONTACT</button><button id="phoneWaypointGarage">GARAGE</button><button id="phoneWaypointLoot">NEAREST LOOT</button><button id="phoneWaypointClear">CLEAR PIN</button></div>
   <button id="phoneClose" class="phoneClose">CLOSE PHONE · P</button>
@@ -1535,6 +1539,7 @@ let phoneOpen=false;
 const phoneRoot=$('gamePhone');
 const phoneMissionStatus=()=>mission?({pickup:'Collect item',deliver:'Meet contact',terminal:'Decode signal',vehicle:'Find a ride',race:'Drive the route',scout:'Gather clues',escape:'Lose pursuit'}[mission.stage]||'Follow objective'):'Talk to Rae to begin';
 function renderPhone(){
+ renderLifestyle();
  $('phoneClock').textContent=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
  const current=$('phoneCurrent');current.innerHTML='';
  const active=document.createElement('div');active.className='phoneCard';
