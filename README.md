@@ -1,5 +1,17 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v1.0 — Street Controls, Mission Phone & Navigation
+
+- **Corrected A/D walking** using the actual handedness of the third-person camera: A moves left and D moves right. Mouse look remains pointer-locked when clicking the game scene.
+- **Starting scene anchored to a real building:** removed the former isolated floating wall and replaced it with brick storefront detail attached to the collision-side facade. The character starts seated beside the building and stands before exploration.
+- **Story phone:** press **P** or the on-screen PHONE button. View the active mission, next objective, eight chapter cards, completion progress, contacts and navigation pins. Phone clock displays local device time.
+- **Rotating circular minimap:** centred on the player or car, turns with camera/car bearing, displays degrees and compass directions. Marker types show story objectives, contacts, shops, loot, player car and police. Select waypoints to Rae, garage, nearest loot or current objective using the phone.
+- **Richer models and materials:** procedural surface patterns are shaded with tonal gradients; the protagonist has a rounded torso; vehicle bodies and cabin roofs use bevelled extruded shapes rather than plain boxes. Building opacity remains solid.
+- **Non-graphic arcade rival encounters:** patrol guards chase at higher heat. After two missions, **G** on foot temporarily disables the nearest patrol signal. If tagged by patrol, the player respawns at a street checkpoint with a small in-game cash penalty. No lethal weapons or explicit violence.
+- **Preserved:** online multiplayer sync, account login and save system, traffic, original campaign and existing NPCs.
+- **Verification:** JavaScript syntax and referenced UI IDs have been checked; actual 3D input, visuals and FPS still require browser playtesting.
+
+
 ## v0.9 — Solara: The Lost City
 
 **Most important fixes**
