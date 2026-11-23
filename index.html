@@ -108,7 +108,7 @@ for(let i=-HALF;i<=HALF;i++){
 function facadeTexture(){const c=document.createElement('canvas');c.width=256;c.height=512;const q=c.getContext('2d');q.fillStyle='#6e8898';q.fillRect(0,0,256,512);for(let y=7;y<512;y+=32)for(let x=6;x<256;x+=30){q.fillStyle=((x*7+y*11)%5===0)?'#ecdca4':'#304e65';q.fillRect(x,y,19,20);q.fillStyle='#a9bacc';q.fillRect(x,y,19,2)}const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t}
 const windowTex=facadeTexture();const windowMats=[new THREE.MeshStandardMaterial({map:windowTex,side:THREE.DoubleSide,roughness:.48,metalness:.12}),new THREE.MeshStandardMaterial({map:windowTex,color:0xc7d9ed,side:THREE.DoubleSide,roughness:.48,metalness:.12})];
 // GPU instancing renders many static skyline elements in four draw calls.
-const footprint=[],buildingMatrices=[],buildingTints=[],roofMatrices=[],facadeMatrices=[[],[]];
+const footprint=[],buildingMatrices=[],buildingTints=[],roofMatrices=[],facadeMatrices=[[],[]],treeTrunks=[],treeCanopies=[];
 const facadeDummy=new THREE.Object3D();
 function facadeMatrix(x,y,z,w,h,rot){facadeDummy.position.set(x,y,z);facadeDummy.rotation.set(0,rot,0);facadeDummy.scale.set(w,h,1);facadeDummy.updateMatrix();return facadeDummy.matrix.clone()}
 for(let ix=-HALF;ix<HALF;ix++)for(let iz=-HALF;iz<HALF;iz++){
@@ -141,7 +141,16 @@ roofBatch.instanceMatrix.needsUpdate=true;roofBatch.frustumCulled=false;scene.ad
 for(let g=0;g<facadeMatrices.length;g++){const inst=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1),windowMats[g],facadeMatrices[g].length);
 for(let j=0;j<facadeMatrices[g].length;j++)inst.setMatrixAt(j,facadeMatrices[g][j]);
 inst.instanceMatrix.needsUpdate=true;inst.frustumCulled=false;scene.add(inst)}
-function addTree(x,z,s){cyl(.35,.49,s*1.65,x,s*.82,z,materials.trunk);const crown=mesh(new THREE.IcosahedronGeometry(s*1.3,1),materials.leaf);crown.position.set(x,s*2.15,z)}
+function addTree(x,z,s){
+treeTrunks.push(new THREE.Matrix4().compose(new THREE.Vector3(x,s*.82,z),new THREE.Quaternion(),new THREE.Vector3(1,s*1.65,1)));
+treeCanopies.push(new THREE.Matrix4().compose(new THREE.Vector3(x,s*2.15,z),new THREE.Quaternion(),new THREE.Vector3(s*1.3,s*1.3,s*1.3)));
+}
+const trunkBatch=new THREE.InstancedMesh(new THREE.CylinderGeometry(.35,.49,1,8),materials.trunk,treeTrunks.length);
+const canopyBatch=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,1),materials.leaf,treeCanopies.length);
+for(let i=0;i<treeTrunks.length;i++)trunkBatch.setMatrixAt(i,treeTrunks[i]);
+for(let i=0;i<treeCanopies.length;i++)canopyBatch.setMatrixAt(i,treeCanopies[i]);
+trunkBatch.instanceMatrix.needsUpdate=true;canopyBatch.instanceMatrix.needsUpdate=true;
+trunkBatch.frustumCulled=false;canopyBatch.frustumCulled=false;scene.add(trunkBatch,canopyBatch);
 // Coastal visual: water beyond city's western edge, elevated promenade.
 plane(425,1200,-690,0,materials.water,-.2);for(let i=-5;i<=5;i++){box(15,1.8,1,-520,1,i*95,materials.white)}
 // Reusable driving actors and props.
