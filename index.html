@@ -138,29 +138,36 @@ for(let i=-HALF;i<=HALF;i++){
   for(const off of [-7,7]){box(.22,.035,3,p+off,.082,a,materials.white);box(3,.035,.22,a,.082,p+off,materials.white)}
  }
 }
-// Pavements with actual kerb edges, patterned crossings and pedestrian ramps.
+// Sidewalk curbs, textured crossings and ramps. All repeated boxes share four GPU batches.
 const curbMat=mat('#c4c0b7'),redCurb=mat('#a64d4b'),tactile=mat('#c9b99a');
+const curbPieces=[],stripePieces=[],rampPieces=[],redCurbPieces=[];
+const roadPiece=(dest,x,y,z,w,h,d)=>dest.push([x,y,z,w,h,d]);
 for(let i=-HALF;i<=HALF;i++){
  const p=i*BLOCK;
  for(const side of [-1,1]){
-   box(1.05,.26,1100,p+side*10.7,.18,0,curbMat);
-   box(1100,.26,1.05,0,.18,p+side*10.7,curbMat);
+   roadPiece(curbPieces,p+side*10.7,.18,0,1.05,.26,1100);
+   roadPiece(curbPieces,0,.18,p+side*10.7,1100,.26,1.05);
    for(let j=-HALF;j<=HALF;j++){
      const q=j*BLOCK;
      if((i+j)%2===0){
        for(let k=-3;k<=3;k++){
-         box(1.0,.035,2.1,p-8+k*2.6,.09,q+side*15.1,materials.white);
-         box(2.1,.035,1,p+side*15.1,.09,q-8+k*2.6,materials.white);
+         roadPiece(stripePieces,p-8+k*2.6,.09,q+side*15.1,1,.035,2.1);
+         roadPiece(stripePieces,p+side*15.1,.09,q-8+k*2.6,2.1,.035,1);
        }
-       box(3.5,.045,1.3,p+side*11.8,.25,q,tactile);
-       box(1.3,.045,3.5,p,.25,q+side*11.8,tactile);
+       roadPiece(rampPieces,p+side*11.8,.25,q,3.5,.045,1.3);
+       roadPiece(rampPieces,p,.25,q+side*11.8,1.3,.045,3.5);
      }
-     if((i+j)%3===0){
-       box(.42,.035,13,p+side*9.82,.065,q+21,redCurb);
-     }
+     if((i+j)%3===0)roadPiece(redCurbPieces,p+side*9.82,.065,q+21,.42,.035,13);
    }
  }
 }
+function batchRoadParts(list,material){
+ const m=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),material,list.length),o=new THREE.Object3D();
+ for(let i=0;i<list.length;i++){const [x,y,z,w,h,d]=list[i];o.position.set(x,y,z);o.scale.set(w,h,d);o.updateMatrix();m.setMatrixAt(i,o.matrix)}
+ m.instanceMatrix.needsUpdate=true;m.frustumCulled=false;scene.add(m);
+}
+batchRoadParts(curbPieces,curbMat);batchRoadParts(stripePieces,materials.white);
+batchRoadParts(rampPieces,tactile);batchRoadParts(redCurbPieces,redCurb);
 // City blocks: footprint, varied skyline, windows, awnings, small parks.
 // Shared procedural material maps add architectural variety without external assets.
 function patternTexture(kind,seed=0){
@@ -213,7 +220,7 @@ for(let ix=-HALF;ix<HALF;ix++)for(let iz=-HALF;iz<HALF;iz++){
   const styleSeed=rnd(n*13+bi*17),central=Math.abs(cx)<200&&Math.abs(cz)<200;
   // Low-rise shops, old warehouse flats, mid-rise apartments and downtown towers.
   const height=styleSeed<.30?10+styleSeed*43:styleSeed<.65?19+styleSeed*38:30+styleSeed*66*(central?1.3:.54);
-  const bw=22+rnd(n+bi)*6,depth=21+rnd(n*3+bi)*7;
+  const bw=21+rnd(n+bi)*3.8,depth=21+rnd(n*3+bi)*3.7;
   const colors=['#d6c6b0','#8da9b5','#b26953','#6d909e','#e6ddcb','#b48d7f','#a6a9a4','#8b6956','#a2a7ae','#e0c0a2','#567a83'];
   buildingMatrices.push(new THREE.Matrix4().compose(new THREE.Vector3(bx,height/2+.17,bz),new THREE.Quaternion(),new THREE.Vector3(bw,height,depth)));
   buildingTints.push(new THREE.Color(colors[Math.floor(rnd(n*19+bi)*colors.length)]));
