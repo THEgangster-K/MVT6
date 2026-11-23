@@ -1,5 +1,16 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v1.3 — Solara Customs, Jump Fix and Chapter Story
+
+- **Jump repaired:** Space is captured at the document level during gameplay, with an immediate visible hop, a gravity arc and landing animation. The game suppresses browser scrolling on Space. A dedicated **JUMP** touch button appears for coarse-pointer touchscreen users while on foot. Space remains brake when driving.
+- **Solara Customs:** The old pause menu no longer offers instant vehicle upgrades. Drive east to the physical garage at (184, 0) and stop in its service bay, then press **F** to open the workshop. The building includes large signage, structural pillars, lifts and repair details plus mechanic Nico.
+- **Performance and customisation:** Keep the existing engine, handling and nitro upgrade purchases. Add a paint tab with eight finishes and options for a spoiler, LED underglow and alloy rims. Vehicle customisation is stored locally under `mvt6-customs`, while regular progress continues using existing save mechanisms. Fresh resets clear customisations.
+- **Storyline:** Eight chapters remain an original fictional Solara City storyline with Rae, Nico and Vega. Each chapter now opens with a cinematic dialogue banner, sets a map waypoint automatically, and shows distance to the next objective on the HUD. Chapter success/failure messaging has been clarified. The gameplay still mixes pickups, vehicle deliveries, terminal puzzles, races, scouting and pursuit escapes.
+- **Lifestyle progression:** Housing and crew-status upgrades remain available from the mission phone rather than being tied to the vehicle garage.
+- **Controls:** **WASD** move, **Space** jump on foot/brake in vehicle, **E** get in/out, **F** interact/enter workshop, **P** phone, **Q** equipment wheel, **Tab** tutorial.
+- **Verification:** JavaScript syntax and UI ID checks were run before updating GitHub. A successful Render deployment does not itself verify gameplay FPS, physics or input responsiveness; test with a browser before treating them as proven.
+
+
 ## v1.2 — Collectible Equipment, Jumping and Cinematic HUD
 
 - **Pickup-driven eight-slot equipment wheel:** Press **Q** to view the wheel. The Hands slot is equipped by default, while the other seven slots are visibly empty. Find glowing collectible gear placed along accessible sidewalks and press **F** to pick it up. Collected equipment fills its matching wheel slot. Trying to select an empty slot displays a pickup reminder instead of equipping an unavailable item.
