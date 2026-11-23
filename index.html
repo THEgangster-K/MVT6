@@ -782,7 +782,7 @@ for(const side of [-1,1]){
 }
 box(.65,.9,.14,0,1.84,.36,mat('#395969',.73),customsMechanic);
 mesh(new THREE.CylinderGeometry(.43,.46,.16,14),mat('#28343d'),customsMechanic).position.y=3.02;
-const nicoTool=mesh(new THREE.CylinderGeometry(.07,.1,.6,9),customsMetalMat,customsMechanic);
+const nicoTool=mesh(new THREE.CylinderGeometry(.07,.1,.6,9),steelCustoms,customsMechanic);
 nicoTool.rotation.z=.65;nicoTool.position.set(.74,1.65,.35);
 // Detail-pass: physically textured workshop from original generated materials, no external downloads.
 function workshopTexture(kind){
