@@ -139,6 +139,13 @@ body:has(#hud[style*="block"]) #lockHint{display:block}
 .gadgetHub small{font:800 10px system-ui;color:#f4c994;margin-top:5px}
 #gadgetWheel>p{font:700 12px system-ui;letter-spacing:1px;color:#d1e2dd}
 @media(max-width:650px){.tutorialBody{padding:17px}.tutorialGrid{grid-template-columns:1fr}.tutorialGrid>div{padding:11px}.tutorialGrid p{font-size:12px}#help{bottom:170px;max-width:240px;flex-wrap:wrap}#wheelToggle{bottom:300px}}
+#mapWrap{width:239px!important;height:268px!important;bottom:15px!important;padding:25px 7px 16px!important;background:linear-gradient(135deg,#0d2e40,#0d1e2be9)!important}
+#minimap{width:224px!important;height:224px!important;border:3px solid #92cfc2!important;box-shadow:inset 0 0 30px #0009,0 0 20px #1c7f7b35}
+#mapCompass{font-size:14px!important;top:4px!important;color:#ffdda6!important}
+#mapLegend{font-size:9px!important;color:#d1e9e4!important;letter-spacing:.25px!important}
+#phoneToggle{bottom:295px!important}
+#wheelToggle{bottom:335px!important}
+@media(max-width:650px){#mapWrap{width:196px!important;height:225px!important}#minimap{width:180px!important;height:180px!important}#phoneToggle{bottom:233px!important}#wheelToggle{bottom:276px!important}}
 </style>
 </head>
 <body>
@@ -1205,7 +1212,7 @@ function bearingOf(radians){return ((Math.round(THREE.MathUtils.radToDeg(radians
 function compassName(b){return ['N','NE','E','SE','S','SW','W','NW'][Math.round(b/45)%8]}
 function setWaypoint(place,name){if(place){mapWaypoint={x:place.x,z:place.z};mapWaypointName=name||'USER MARKER';setNotice('MAP PIN: '+mapWaypointName)}else{mapWaypoint=null;mapWaypointName='';setNotice('Map pin cleared')} }
 function drawMap(){
- const w=map.width,h=map.height,p=inCar?carPos:playerPos,heading=inCar?angle:camYaw,zoom=.82;
+ const w=map.width,h=map.height,p=inCar?carPos:playerPos,heading=inCar?angle:camYaw,zoom=1.03;
  const bearing=bearingOf(heading);
  $('mapCompass').textContent=compassName(bearing)+'  '+String(bearing).padStart(3,'0')+'°';
  ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,w,h);
@@ -1216,13 +1223,13 @@ function drawMap(){
  ctx.translate(w/2,h/2);ctx.rotate(-heading);ctx.translate(-p.x*zoom,p.z*zoom);
  for(let i=-HALF;i<HALF;i++)for(let j=-HALF;j<HALF;j++){
   const cx=(i+.5)*BLOCK,cz=(j+.5)*BLOCK;
-  ctx.fillStyle=(i+j)%3===0?'#638a74':'#66867b';
+  ctx.fillStyle=(i+j)%3===0?'#67876f':'#7a947a';
   ctx.fillRect((cx-(BLOCK-ROAD)/2)*zoom,-(cz+(BLOCK-ROAD)/2)*zoom,(BLOCK-ROAD)*zoom,(BLOCK-ROAD)*zoom);
-  ctx.strokeStyle='#a9bba499';ctx.lineWidth=1;ctx.strokeRect((cx-34)*zoom,-(cz+34)*zoom,68*zoom,68*zoom);
+  ctx.strokeStyle='#d5ddbd66';ctx.lineWidth=.7;ctx.strokeRect((cx-34)*zoom,-(cz+34)*zoom,68*zoom,68*zoom);
  }
- ctx.fillStyle='#28465a';
+ ctx.fillStyle='#243949';
  for(let i=-HALF;i<=HALF;i++){ctx.fillRect((i*BLOCK-ROAD/2)*zoom,-390*zoom,ROAD*zoom,780*zoom);ctx.fillRect(-390*zoom,-(i*BLOCK+ROAD/2)*zoom,780*zoom,ROAD*zoom)}
- ctx.strokeStyle='#d9d0a064';ctx.lineWidth=1.15;ctx.setLineDash([7,9]);
+ ctx.strokeStyle='#d7d4bc82';ctx.lineWidth=1.45;ctx.setLineDash([8,11]);
  for(let i=-HALF;i<=HALF;i++){ctx.beginPath();ctx.moveTo(i*BLOCK*zoom,-390*zoom);ctx.lineTo(i*BLOCK*zoom,390*zoom);ctx.moveTo(-390*zoom,-i*BLOCK*zoom);ctx.lineTo(390*zoom,-i*BLOCK*zoom);ctx.stroke()}
  ctx.setLineDash([]);
  const dot=(x,z,color,rad=5,diamond=false)=>{
@@ -1233,12 +1240,21 @@ function drawMap(){
    else ctx.arc(xx,yy,rad,0,Math.PI*2);
    ctx.stroke();ctx.fill();
  };
- for(const stash of streetStashes)dot(stash.x,stash.z,'#e5c58c',3.5,false);
- for(const shop of shopFronts)if(Math.hypot(shop.x-p.x,shop.z-p.z)<160)dot(shop.x,shop.z,'#8ccbd4',2.8,false);
+ // Reduce clutter: show only four closest caches and three nearby shops.
+ const nearStashes=streetStashes.slice().sort((a,b)=>Math.hypot(a.x-p.x,a.z-p.z)-Math.hypot(b.x-p.x,b.z-p.z)).slice(0,4);
+ for(const stash of nearStashes)dot(stash.x,stash.z,'#f4c17c',5,false);
+ const nearShops=shopFronts.slice().sort((a,b)=>Math.hypot(a.x-p.x,a.z-p.z)-Math.hypot(b.x-p.x,b.z-p.z)).slice(0,3);
+ for(const shop of nearShops)if(Math.hypot(shop.x-p.x,shop.z-p.z)<120)dot(shop.x,shop.z,'#95dce3',4,false);
  dot(cityLife.fixer.root.position.x,cityLife.fixer.root.position.z,'#c3e0a4',5);
  dot(184,0,'#d9b378',5);
- if(mission){const target=missionObjective();if(target)dot(target.x,target.z,'#f3df8e',8,true)}
- if(mapWaypoint)dot(mapWaypoint.x,mapWaypoint.z,'#ff96cb',7,true);
+ if(mission){const target=missionObjective();if(target){
+   ctx.strokeStyle='#ffdf8c';ctx.lineWidth=2.9;ctx.setLineDash([5,8]);ctx.beginPath();
+   ctx.moveTo(p.x*zoom,-p.z*zoom);ctx.lineTo(target.x*zoom,-target.z*zoom);ctx.stroke();ctx.setLineDash([]);
+   dot(target.x,target.z,'#ffda79',10,true);
+ }}
+ if(mapWaypoint){dot(mapWaypoint.x,mapWaypoint.z,'#ff9ed9',8,true);
+ if(!mission){ctx.strokeStyle='#ffb0dd';ctx.setLineDash([4,7]);ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p.x*zoom,-p.z*zoom);ctx.lineTo(mapWaypoint.x*zoom,-mapWaypoint.z*zoom);ctx.stroke();ctx.setLineDash([])}
+ }
  for(const pol of police)if(pol.active)dot(pol.pos.x,pol.pos.z,'#f56b74',4.5);
  if(!inCar)dot(carPos.x,carPos.z,'#8ed5fa',5);
  ctx.restore();
