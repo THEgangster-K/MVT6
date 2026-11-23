@@ -151,13 +151,13 @@ for(let i=-HALF;i<=HALF;i++){
      const q=j*BLOCK;
      if((i+j)%2===0){
        for(let k=-3;k<=3;k++){
-         roadPiece(stripePieces,p-8+k*2.6,.09,q+side*15.1,1,.035,2.1);
-         roadPiece(stripePieces,p+side*15.1,.09,q-8+k*2.6,2.1,.035,1);
+         roadPiece(stripePieces,p-8+k*2.6,.34,q+side*15.1,1,.035,2.1);
+         roadPiece(stripePieces,p+side*15.1,.34,q-8+k*2.6,2.1,.035,1);
        }
-       roadPiece(rampPieces,p+side*11.8,.25,q,3.5,.045,1.3);
-       roadPiece(rampPieces,p,.25,q+side*11.8,1.3,.045,3.5);
+       roadPiece(rampPieces,p+side*11.8,.333,q,3.5,.045,1.3);
+       roadPiece(rampPieces,p,.333,q+side*11.8,1.3,.045,3.5);
      }
-     if((i+j)%3===0)roadPiece(redCurbPieces,p+side*9.82,.065,q+21,.42,.035,13);
+     if((i+j)%3===0)roadPiece(redCurbPieces,p+side*9.82,.345,q+21,.42,.035,13);
    }
  }
 }
@@ -380,6 +380,12 @@ function makeCar(color='#ed636a',police=false){const group=new THREE.Group();sce
  return group}
 let save;const defaultSave=()=>({money:45,completed:0,speed:0,handling:0,nitro:0,lifeTier:0});try{save={...defaultSave(),...JSON.parse(localStorage.getItem('mvt6-save')||'{}')}}catch{save=defaultSave()}
 function persist(){try{localStorage.setItem('mvt6-save',JSON.stringify(save))}catch{};if(network)network.save(save)}
+// Prologue wall behind the seated character, with brick trim and a shop poster.
+const startWall=box(.22,5.7,8.2,17.65,2.85,-29,mat('#a78e7d',.95));
+box(.26,.28,8.3,17.49,4.7,-29,mat('#ddc8aa'));
+for(let y=1.2;y<4.5;y+=1.25)box(.18,.065,8.0,17.46,y,-29,mat('#856f67'));
+const posterA=mesh(new THREE.PlaneGeometry(1.65,2.12),new THREE.MeshBasicMaterial({map:signTextures[1],side:THREE.DoubleSide}));
+posterA.position.set(17.41,2.47,-32);posterA.rotation.y=-Math.PI/2;
 const playerCar=makeCar('#e96e5d');
 const person=new THREE.Group();scene.add(person);
 const skin=mat('#d79a72'),jacket=mat('#1c4f72'),jeans=mat('#273548');
@@ -391,6 +397,27 @@ for(const side of [-1,1]){
  const arm=new THREE.Group();arm.position.set(side*.62,2.14,0);person.add(arm);box(.26,.96,.32,0,-.48,0,jacket,arm);box(.26,.24,.32,0,-1.01,0,skin,arm);limbs.arms.push(arm);
  const leg=new THREE.Group();leg.position.set(side*.26,1.25,0);person.add(leg);box(.34,1.12,.36,0,-.55,0,jeans,leg);box(.38,.23,.65,0,-1.17,.13,mat('#1e2935'),leg);limbs.legs.push(leg);
 }
+// Clothing material grain and articulated-looking details.
+const knitCanvas=document.createElement('canvas');knitCanvas.width=128;knitCanvas.height=128;
+const kt=knitCanvas.getContext('2d');kt.fillStyle='#eee9e1';kt.fillRect(0,0,128,128);
+for(let x=0;x<128;x+=5){kt.strokeStyle=x%2?'#b1aeb08a':'#ffffff79';kt.beginPath();kt.moveTo(x,0);kt.lineTo(x,128);kt.stroke()}
+for(let y=0;y<128;y+=5){kt.strokeStyle='#aaaaaa50';kt.beginPath();kt.moveTo(0,y);kt.lineTo(128,y);kt.stroke()}
+const knitTex=new THREE.CanvasTexture(knitCanvas);knitTex.colorSpace=THREE.SRGBColorSpace;
+jacket.map=knitTex;jacket.needsUpdate=true;jeans.map=knitTex;jeans.needsUpdate=true;
+const seam=mat('#b5b3b1'),hood=mat('#2b475d'),hairDetails=mat('#2b262a');
+box(.24,.76,.07,0,1.75,.275,seam,person);
+box(.13,.25,.13,-.12,2.24,.26,mat('#e8daca'),person);
+box(.13,.25,.13,.12,2.24,.26,mat('#e8daca'),person);
+box(.83,.22,.40,0,2.26,-.08,hood,person);
+box(.83,.10,.47,0,1.27,0,mat('#263240'),person);
+for(const side of [-1,1]){
+ const eye=mesh(new THREE.SphereGeometry(.043,8,6),hairDetails,person);eye.position.set(side*.145,2.73,.355);
+ box(.16,.04,.06,side*.15,2.82,.354,hairDetails,person);
+ box(.10,.14,.11,side*.39,2.60,0,skin,person);
+ box(.22,.06,.035,side*.18,1.70,.275,mat('#6c879a'),person);
+}
+box(.12,.13,.1,0,2.62,.36,skin,person);
+box(.23,.028,.035,0,2.47,.342,mat('#91655e'),person);
 // Original street-level prologue props: cardboard sign, blanket, and donation cup.
 const prologueProps=new THREE.Group();scene.add(prologueProps);prologueProps.position.set(16,0,-29);
 const blanket=box(2.3,.075,2.9,.2,.13,.25,mat('#516e70',.98),prologueProps);
@@ -685,7 +712,7 @@ function updateTakeover(dt){
  const t=takeoverTarget;
  const approach=t.pos.clone().add(new THREE.Vector3(t.east?0:-3.4,0,t.east?-3.4:0));
  if(takeoverElapsed<.75){
-   person.position.lerp(approach,Math.min(1,dt*8));
+   person.position.lerp(approach,Math.min(1,dt*8));playerPos.set(person.position.x,0,person.position.z);
    person.rotation.y+=dt*3;
    limbs.arms[0].rotation.x=-1.1;
  }else if(takeoverElapsed<1.25){
@@ -693,7 +720,7 @@ function updateTakeover(dt){
    if(!t.exited){t.exited=true;exitedDriver(t)}
    limbs.arms[0].rotation.x=-.7;
  }else if(takeoverElapsed<2.1){
-   person.position.lerp(t.pos,Math.min(1,dt*7));
+   person.position.lerp(t.pos,Math.min(1,dt*7));playerPos.set(person.position.x,0,person.position.z);
    person.position.y=-Math.min(1,(takeoverElapsed-1.25)/.85)*1.25;
  }
  else{
