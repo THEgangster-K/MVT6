@@ -291,7 +291,7 @@ body:has(#hud[style*="block"]) #lockHint{display:block}
   <div class="phoneTop"><b>SOLARA OS</b><span id="phoneClock">12:00</span></div>
   <div class="phoneHero"><span>STORY NETWORK</span><h2>My Missions</h2><p>Your next move starts here.</p></div>
   <div id="phoneCurrent"></div>
-  <div class="phoneSection">CHAPTERS & CONTACTS</div>
+  <div class="phoneSection">CITY JOB · TAXI DISPATCH</div><div id="phoneTaxiJob"></div><div class="phoneSection">CHAPTERS & CONTACTS</div>
   <div id="phoneMissions"></div>
   <div class="phoneSection">CITY STATUS & PROPERTY</div><div id="lifestyleList"></div>
   <div class="phoneSection">MAP / DESTINATIONS</div>
@@ -1092,6 +1092,41 @@ const missionBriefing=document.createElement('div');missionBriefing.id='missionB
 missionBriefing.innerHTML='<div class="briefingBox"><div class="briefingTop">SOLARA CITY · MISSION DOSSIER</div><div id="briefingChapter"></div><h2 id="briefingTitle"></h2><p id="briefingDialogue"></p><div id="briefingSteps"></div><div id="briefingReward"></div><div class="briefingButtons"><button id="briefingAccept">ACCEPT MISSION ➜</button><button id="briefingDecline" class="secondary">NOT NOW</button></div></div>';
 document.body.append(missionBriefing);
 function closeBriefing(){missionBriefing.classList.remove('visible');if(gameMode==='briefing')gameMode='play'}
+// Repeatable city job: Solara taxi dispatch.
+const taxiStops=[
+ {name:'Harbor Coffee',x:12.5,z:-105},{name:'North Market',x:104,z:12.5},
+ {name:'South Promenade',x:12.5,z:196},{name:'West Apartments',x:-104,z:12.5},
+ {name:'Arts Quarter',x:-196,z:104},{name:'Solara Customs',x:196,z:-12.5}
+];
+let taxiJob=null,taxiRuns=0;
+function taxiObjective(){return !taxiJob?null:taxiJob.stage==='pickup'?taxiJob.from:taxiJob.to}
+function startTaxiJob(){
+ if(!inCar||mission||taxiJob){setNotice('Taxi jobs require a car and no active story mission.');return}
+ const nearby=taxiStops.slice().sort((a,b)=>Math.hypot(a.x-carPos.x,a.z-carPos.z)-Math.hypot(b.x-carPos.x,b.z-carPos.z));
+ const from=nearby[(taxiRuns+1)%3];
+ const distant=taxiStops.filter(v=>v!==from).sort((a,b)=>Math.hypot(b.x-from.x,b.z-from.z)-Math.hypot(a.x-from.x,a.z-from.z));
+ const to=distant[taxiRuns%3];taxiRuns++;
+ taxiJob={from,to,stage:'pickup',time:210,pay:120+Math.round(Math.hypot(to.x-from.x,to.z-from.z)*1.15)};
+ setWaypoint(from,'TAXI PICKUP');setNotice('Collect passenger at '+from.name);if(phoneOpen)closePhone();
+}
+function updateTaxiJob(dt){
+ if(!taxiJob)return;
+ taxiJob.time-=dt;if(taxiJob.time<=0){taxiJob=null;mapWaypoint=null;setNotice('Taxi fare expired');return}
+ if(!inCar||Math.abs(velocity)>3.5)return;
+ const target=taxiObjective();if(Math.hypot(carPos.x-target.x,carPos.z-target.z)>13)return;
+ if(taxiJob.stage==='pickup'){taxiJob.stage='dropoff';setWaypoint(taxiJob.to,'TAXI DESTINATION');setNotice('Passenger aboard. Deliver to '+taxiJob.to.name)}
+ else{const pay=taxiJob.pay;save.money+=pay;persist();taxiJob=null;mapWaypoint=null;setNotice('Taxi fare complete · +$'+pay);updateHUD()}
+}
+function renderTaxiPhone(){
+ const area=$('phoneTaxiJob');area.innerHTML='';
+ const card=document.createElement('div');card.className='phoneCard';
+ const title=document.createElement('b'),desc=document.createElement('p'),status=document.createElement('small'),button=document.createElement('button');
+ if(taxiJob){title.textContent='ACTIVE TAXI FARE';desc.textContent=taxiJob.from.name+' → '+taxiJob.to.name;
+ status.textContent='$'+taxiJob.pay+' · '+Math.ceil(taxiJob.time)+'s REMAINING';button.textContent='TRACK FARE';button.onclick=()=>{setWaypoint(taxiObjective(),'TAXI');closePhone()}}
+ else{title.textContent='SOLARA CITY TAXI';desc.textContent='Collect passengers at marked curbs and drive them across the city.';
+ status.textContent='REPEATABLE CITY JOB · CAR REQUIRED';button.textContent='ACCEPT FARE';button.disabled=!inCar||!!mission;button.onclick=startTaxiJob}
+ card.append(title,desc,status,document.createElement('br'),button);area.append(card);
+}
 function offerMission(){
  if(gameMode!=='play')return;
  if(mission){setNotice('Finish the current chapter before speaking to Rae again.');return}
