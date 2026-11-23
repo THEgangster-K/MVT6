@@ -241,6 +241,8 @@ body:has(#hud[style*="block"]) #lockHint{display:block}
 .jailReceipt strong{color:#f3cd90;font-size:17px}
 #jailStatus{color:#f1bb9a!important;font-weight:800!important}
 #jailScene button{pointer-events:auto;display:block;width:100%;padding:13px;margin-top:11px;background:linear-gradient(115deg,#91d8bf,#64adac);color:#112936;font:900 12px system-ui;border-radius:10px}
+#speed .vehicleConditionMini{color:#b6ecdf!important}
+#heat{filter:drop-shadow(0 0 5px #f4b37c77)}
 </style>
 </head>
 <body>
@@ -1053,7 +1055,7 @@ function safeWalkingPosition(){
 
 function setNotice(t){$('notice').textContent=t;$('notice').style.opacity='1';clearTimeout(setNotice.timer);setNotice.timer=setTimeout(()=>$('notice').style.opacity='0',2800)}
 function getRank(){if(save.lifeTier>=4)return 'CITY LEGEND';if(save.lifeTier>=3)return 'HIGH SOCIETY';if(save.lifeTier>=2)return 'CREW LEADER';if(save.lifeTier>=1||save.completed>=2)return 'STREET RUNNER';return 'NEW TO THE STREETS'}
-function updateHUD(){ $('streetRank').textContent=getRank();$('money').textContent='$'+Math.floor(save.money).toLocaleString();$('heat').textContent='★'.repeat(Math.ceil(heat))+'☆'.repeat(5-Math.ceil(heat));$('speed').innerHTML=(inCar?Math.round(Math.abs(velocity)*3.6):0)+' <small>KM/H</small>'+(inCar?'<div class="vehicleConditionMini">'+Math.round(vehicleCondition)+'% CONDITION · J HORN · L LIGHTS</div>':'');const p=inCar?carPos:playerPos;$('district').textContent=p.x<-185?'WEST HAVEN':p.x>185?'EAST SOLARA':p.z>185?'SOUTH PIER':p.z< -185?'NORTH QUARTER':'DOWNTOWN';if(mission){$('missionTitle').textContent=mission.title;$('missionText').textContent=({
+function updateHUD(){ $('streetRank').textContent=getRank();$('money').textContent='$'+Math.floor(save.money).toLocaleString();$('heat').textContent='★'.repeat(Math.ceil(heat))+'☆'.repeat(5-Math.ceil(heat));$('speed').innerHTML=(inCar?Math.round(Math.abs(velocity)*3.6):0)+' <small>KM/H</small>'+(inCar?'<div class="vehicleConditionMini">'+Math.round(vehicleCondition)+'% CONDITION · '+(keys.shift?'DRIFTING · ':'')+'J HORN · L LIGHTS</div>':'');const p=inCar?carPos:playerPos;$('district').textContent=p.x<-185?'WEST HAVEN':p.x>185?'EAST SOLARA':p.z>185?'SOUTH PIER':p.z< -185?'NORTH QUARTER':'DOWNTOWN';if(mission){$('missionTitle').textContent=mission.title;$('missionText').textContent=({
  pickup:'Find the package and press F to collect.',
  deliver:'Meet your contact and press F.',
  terminal:'Find the terminal and press F for the decoder puzzle.',
@@ -1691,68 +1693,32 @@ function drivingHorn(){
    osc.connect(gain);gain.connect(audio.destination);osc.start();osc.stop(audio.currentTime+.29)}
  }catch{}
 }
+// Arcade vehicle/pedestrian interaction: contacts trigger a visible stumble and wanted heat.
 function checkPedestrianTraffic(dt){
- if(!inCar||Math.abs(velocity)<.1)return;
- let closest=Infinity;
+ if(!inCar||Math.abs(velocity)<.2)return;
+ let closest=Infinity,nearest=null;
  for(const n of cityLife.citizens){
   if(!n.root.visible)continue;
   const d=Math.hypot(n.root.position.x-carPos.x,n.root.position.z-carPos.z);
-  if(d<closest)closest=d;
+  if(d<closest){closest=d;nearest=n}
  }
- if(closest<6.5){
-  velocity*=Math.exp(-12*dt);
-  if(clockTime>nearMissCooldown){nearMissCooldown=clockTime+5;heat=Math.min(5,heat+.3);setNotice('PEDESTRIAN ALERT · BRAKING ASSIST ACTIVE')}
- }
-}
-// Pooled procedural VFX: road spray, drift smoke, sparkle, safe impact puffs.
-const particleCanvas=document.createElement('canvas');particleCanvas.width=64;particleCanvas.height=64;
-const pc=particleCanvas.getContext('2d'),pg=pc.createRadialGradient(32,32,2,32,32,32);
-pg.addColorStop(0,'#ffffffdd');pg.addColorStop(.26,'#ffffffb9');pg.addColorStop(.7,'#ffffff36');pg.addColorStop(1,'#ffffff00');
-pc.fillStyle=pg;pc.fillRect(0,0,64,64);
-const particleTexture=new THREE.CanvasTexture(particleCanvas);
-const effects=new THREE.Group();scene.add(effects);
-const particles=Array.from({length:45},()=>{
- const material=new THREE.SpriteMaterial({map:particleTexture,color:0x9cc5d3,transparent:true,depthWrite:false,opacity:0});
- const sprite=new THREE.Sprite(material);sprite.visible=false;effects.add(sprite);
- return {sprite,life:0,total:1,vx:0,vy:0,vz:0};
-});
-let particleCursor=0,driftElapsed=0,driftIntensity=0,driftDistance=0,driftChain=0,driftCombo=0;
-function emitVfx(x,y,z,color=0xabb7c3,size=1.0,vx=0,vy=1.2,vz=0,ttl=.7){
- const part=particles[particleCursor++%particles.length],o=part.sprite;
- part.life=ttl;part.total=ttl;part.vx=vx;part.vy=vy;part.vz=vz;
- o.position.set(x,y,z);o.scale.set(size,size,size);o.material.color.set(color);
- o.material.opacity=.58;o.visible=true;
-}
-function updateVfx(dt){
- for(const p of particles){
-  if(p.life<=0)continue;
-  p.life=Math.max(0,p.life-dt);const t=1-p.life/p.total;
-  p.sprite.position.x+=p.vx*dt;p.sprite.position.y+=p.vy*dt;p.sprite.position.z+=p.vz*dt;
-  p.sprite.scale.multiplyScalar(1+dt*1.1);
-  p.sprite.material.opacity=(1-t)*.6;
-  if(p.life<=0)p.sprite.visible=false;
- }
-}
-function impactFx(x,z,kind='dust'){
- for(let i=0;i<10;i++){
-  const a=i*Math.PI/5,speed=2+rnd(i+clockTime)*3;
-  emitVfx(x,.8,z,kind==='spark'?0xffc287:0xb6c7cc,.35+rnd(i)*.65,
-   Math.sin(a)*speed,.3+rnd(i+5)*1.7,Math.cos(a)*speed,.35+rnd(i+9)*.4);
- }
-}
-function driftFx(dt,turning){
- if(!inCar||!keys.shift||Math.abs(velocity)<7||!turning){driftElapsed=0;driftIntensity=Math.max(0,driftIntensity-dt*2);return}
- driftElapsed+=dt;driftIntensity=Math.min(1,driftIntensity+dt*2.2);
- driftDistance+=Math.abs(velocity)*dt;
- if(driftElapsed>.11){
-  driftElapsed=0;
-  for(const side of [-1,1]){
-   const x=carPos.x-Math.sin(angle)*2.5+Math.cos(angle)*side*1.3;
-   const z=carPos.z-Math.cos(angle)*2.5-Math.sin(angle)*side*1.3;
-   emitVfx(x,.43,z,0xc0c7c9,1.3+driftIntensity*.8,-Math.sin(angle)*2,.55,-Math.cos(angle)*2,.6);
+ if(closest<6.0){
+  // Braking assist responds while pedestrians dodge; near contact produces a
+  // non-graphic bump animation and a police response, not a reward or injury.
+  velocity*=Math.exp(-5.4*dt);
+  if(closest<3.65&&Math.abs(velocity)>2.3&&clockTime>nearMissCooldown){
+    nearMissCooldown=clockTime+2.8;
+    if(cityLife.reactToVehicle(carPos.x,carPos.z,1)){
+      impactFx(carPos.x,carPos.z,'dust');
+      heat=Math.min(5,Math.max(heat,1)+.7);heatTimer=0;
+      vehicleCondition=Math.max(5,vehicleCondition-4);saveVehicleCondition();
+      velocity*=.38;
+      setNotice('PEDESTRIAN CONTACT · Patrol dispatched · Drive carefully');
+    }
+  }else if(closest<5.4&&clockTime>nearMissCooldown){
+    nearMissCooldown=clockTime+4;setNotice('PEDESTRIAN CROSSING · SLOW DOWN');
   }
  }
- if(driftDistance>95){driftDistance=0;driftCombo++;setNotice('DRIFT CHAIN · '+driftCombo+' · NICE CONTROL');}
 }
 function moveCar(dt){
  const accel=26+save.speed*4,maxSpeed=(31+save.speed*5.2)*(1+Math.max(0,(save.lifeTier||0)-1)*.06);
