@@ -224,7 +224,7 @@ materialsTexture.pavement.repeat.set(6,6);
 materialsTexture.grass.wrapS=materialsTexture.grass.wrapT=THREE.RepeatWrapping;
 materialsTexture.grass.repeat.set(36,36);
 const windowMats=['tower','old','loft','modern'].map((type,i)=>new THREE.MeshStandardMaterial({
- map:patternTexture(type,i),side:THREE.DoubleSide,roughness:i===1?.85:.37,metalness:i===1?0:.15
+ map:patternTexture(type,i),side:THREE.FrontSide,transparent:false,opacity:1,depthWrite:true,roughness:i===1?.85:.37,metalness:i===1?0:.15
 }));
 // GPU instancing renders many static skyline elements in four draw calls.
 const alleys=[],footprint=[],buildingMatrices=[],buildingTints=[],roofMatrices=[],facadeMatrices=[[],[],[],[]],treeTrunks=[],treeCanopies=[];
@@ -259,7 +259,7 @@ for(let ix=-HALF;ix<HALF;ix++)for(let iz=-HALF;iz<HALF;iz++){
  }
  for(let t=0;t<3;t++){let v=t%2?29:-29;addTree(cx+v,cz-30+t*28,2.5)}
 }
-const buildingMaterial=mat('#ffffff',.88);buildingMaterial.map=materialsTexture.concrete;buildingMaterial.needsUpdate=true;
+const buildingMaterial=mat('#ffffff',.92);buildingMaterial.map=materialsTexture.concrete;buildingMaterial.transparent=false;buildingMaterial.opacity=1;buildingMaterial.side=THREE.FrontSide;buildingMaterial.depthWrite=true;buildingMaterial.needsUpdate=true;
 const buildingBatch=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),buildingMaterial,buildingMatrices.length);
 for(let i=0;i<buildingMatrices.length;i++){buildingBatch.setMatrixAt(i,buildingMatrices[i]);buildingBatch.setColorAt(i,buildingTints[i])}
 buildingBatch.instanceMatrix.needsUpdate=true;buildingBatch.instanceColor.needsUpdate=true;buildingBatch.frustumCulled=false;scene.add(buildingBatch);
@@ -308,7 +308,7 @@ const signTextures=shopNames.map((name,i)=>{
  ctx.font='bold '+(name.length>15?39:49)+'px system-ui';ctx.textBaseline='middle';ctx.textAlign='center';ctx.fillStyle='#f7e9ce';ctx.fillText(name,256,65);
  const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;return tex;
 });
-const glassShop=new THREE.MeshStandardMaterial({color:0x8bbac2,transparent:true,opacity:.74,roughness:.18,metalness:.22,side:THREE.DoubleSide});
+const glassShop=new THREE.MeshStandardMaterial({color:0x668d9a,transparent:false,roughness:.25,metalness:.24,side:THREE.FrontSide,depthWrite:true});
 const doorMat=mat('#394a4e',.37,.38),metalAwning=mat('#d6cec2',.61),potMat=mat('#a77e61');
 for(let i=0;i<buildingMatrices.length;i++){
  const position=new THREE.Vector3(),q=new THREE.Quaternion(),scale=new THREE.Vector3();
@@ -405,11 +405,11 @@ function makeCar(color='#ed636a',police=false){const group=new THREE.Group();sce
 let save;const defaultSave=()=>({money:45,completed:0,speed:0,handling:0,nitro:0,lifeTier:0});try{save={...defaultSave(),...JSON.parse(localStorage.getItem('mvt6-save')||'{}')}}catch{save=defaultSave()}
 function persist(){try{localStorage.setItem('mvt6-save',JSON.stringify(save))}catch{};if(network)network.save(save)}
 // Prologue wall behind the seated character, with brick trim and a shop poster.
-const startWall=box(.22,5.7,8.2,17.65,2.85,-29,mat('#a78e7d',.95));
-box(.26,.28,8.3,17.49,4.7,-29,mat('#ddc8aa'));
-for(let y=1.2;y<4.5;y+=1.25)box(.18,.065,8.0,17.46,y,-29,mat('#856f67'));
+const startWall=box(.22,5.7,8.2,14.85,2.85,-29,mat('#a78e7d',.95));
+box(.26,.28,8.3,14.69,4.7,-29,mat('#ddc8aa'));
+for(let y=1.2;y<4.5;y+=1.25)box(.18,.065,8.0,14.66,y,-29,mat('#856f67'));
 const posterA=mesh(new THREE.PlaneGeometry(1.65,2.12),new THREE.MeshBasicMaterial({map:signTextures[1],side:THREE.DoubleSide}));
-posterA.position.set(17.41,2.47,-32);posterA.rotation.y=-Math.PI/2;
+posterA.position.set(14.61,2.47,-32);posterA.rotation.y=-Math.PI/2;
 const playerCar=makeCar('#e96e5d');
 const person=new THREE.Group();scene.add(person);
 const skin=mat('#d79a72'),jacket=mat('#1c4f72'),jeans=mat('#273548');
@@ -443,7 +443,7 @@ for(const side of [-1,1]){
 box(.12,.13,.1,0,2.62,.36,skin,person);
 box(.23,.028,.035,0,2.47,.342,mat('#91655e'),person);
 // Original street-level prologue props: cardboard sign, blanket, and donation cup.
-const prologueProps=new THREE.Group();scene.add(prologueProps);prologueProps.position.set(16,0,-29);
+const prologueProps=new THREE.Group();scene.add(prologueProps);prologueProps.position.set(12.6,0,-29);
 const blanket=box(2.3,.075,2.9,.2,.13,.25,mat('#516e70',.98),prologueProps);
 const paper=box(2.1,.13,.07,.05,1.16,-2.05,mat('#79604b',.96),prologueProps);
 paper.rotation.y=-Math.PI/2;
@@ -466,7 +466,7 @@ function setSeatPose(amount){
  limbs.legs[0].rotation.x=-1.27*a;limbs.legs[1].rotation.x=-1.27*a;
  limbs.arms[0].rotation.x=-.5*a;limbs.arms[1].rotation.x=-.5*a;
 }
-let carPos=new THREE.Vector3(5,0,36),playerPos=new THREE.Vector3(16,0,-29),angle=0,walkAngle=0,velocity=0,inCar=false,gameMode='menu',camMode=0,clockTime=0,heat=0,heatTimer=0,mission=null,missionCount=0,missionTime=0,missionCooldown=0,nearGarage=false;
+let carPos=new THREE.Vector3(5,0,36),playerPos=new THREE.Vector3(12.6,0,-29),angle=0,walkAngle=0,velocity=0,inCar=false,gameMode='menu',camMode=0,clockTime=0,heat=0,heatTimer=0,mission=null,missionCount=0,missionTime=0,missionCooldown=0,nearGarage=false;
 const traffic=[],police=[];for(let i=0;i<18;i++){const car=makeCar(['#5f9ac9','#eab76e','#94beb5','#e2e4e4','#657489'][i%5]);let q=roadPositions[Math.floor(rnd(i+10)*roadPositions.length)];const east=i%2===0;const pos=east?new THREE.Vector3((rnd(i+71)-.5)*720,0,q+(i%4===0?5:-5)):new THREE.Vector3(q+(i%3===0?5:-5),0,(rnd(i+88)-.5)*720);
  const baseSpeed=8+rnd(i+94)*7;
  // Visible seated driver with hair, face and moving steering arm.
@@ -483,7 +483,18 @@ const traffic=[],police=[];for(let i=0;i<18;i++){const car=makeCar(['#5f9ac9','#
 for(let i=0;i<4;i++){const c=makeCar('#e4edf2',true);c.visible=false;police.push({car:c,pos:new THREE.Vector3(),angle:0,active:false})}
 const depot={x:12.5,z:-16};const depotMark=cyl(6,6,.3,depot.x,.26,depot.z,mat('#65e2ac',.35));depotMark.visible=false;const garageMarker=cyl(7,7,.28,184,.28,0,mat('#edc66f'));const depotBeacon=mesh(new THREE.TorusGeometry(4.8,.37,8,32),new THREE.MeshBasicMaterial({color:0x6df5b5}));depotBeacon.rotation.x=Math.PI/2;depotBeacon.position.set(depot.x,.72,depot.z);const garageBeacon=depotBeacon.clone();garageBeacon.material=new THREE.MeshBasicMaterial({color:0xf5cb72});garageBeacon.position.set(184,.72,0);scene.add(depotBeacon,garageBeacon);depotBeacon.visible=false;
 const destinations=[{x:370,z:0,name:'Sunset Marina'},{x:-370,z:276,name:'West Haven'},{x:0,z:-370,name:'Old Quarter'},{x:276,z:276,name:'Emerald Heights'},{x:-276,z:-276,name:'Industrial Point'},{x:0,z:370,name:'South Pier'}];const targetRing=mesh(new THREE.TorusGeometry(7,.7,8,40),new THREE.MeshBasicMaterial({color:0xffdc77}));targetRing.rotation.x=Math.PI/2;targetRing.position.y=.8;targetRing.visible=false;scene.add(targetRing);
-function collision(x,z){if(Math.abs(x)>389||Math.abs(z)>389)return true;for(const b of footprint)if(Math.abs(x-b.x)<b.w+1.4&&Math.abs(z-b.z)<b.d+1.4)return true;return false}
+// Vehicle collision uses wider clearance; walkers use tighter geometry and an escape safeguard.
+function collision(x,z,margin=1.0){
+ if(!Number.isFinite(x)||!Number.isFinite(z)||Math.abs(x)>389||Math.abs(z)>389)return true;
+ for(const b of footprint)if(Math.abs(x-b.x)<b.w+margin&&Math.abs(z-b.z)<b.d+margin)return true;
+ return false;
+}
+function safeWalkingPosition(){
+ if(!collision(playerPos.x,playerPos.z,.35))return;
+ const attempts=[[12.4,-29],[12.4,-24],[0,-29],[0,-18],[0,0],[12.4,0],[0,-92]];
+ for(const [x,z] of attempts)if(!collision(x,z,.35)){playerPos.set(x,0,z);person.position.copy(playerPos);return}
+}
+
 function setNotice(t){$('notice').textContent=t;$('notice').style.opacity='1';clearTimeout(setNotice.timer);setNotice.timer=setTimeout(()=>$('notice').style.opacity='0',2800)}
 function getRank(){if(save.lifeTier>=4)return 'CITY LEGEND';if(save.lifeTier>=3)return 'HIGH SOCIETY';if(save.lifeTier>=2)return 'CREW LEADER';if(save.lifeTier>=1||save.completed>=2)return 'STREET RUNNER';return 'NEW TO THE STREETS'}
 function updateHUD(){ $('streetRank').textContent=getRank();$('money').textContent='$'+Math.floor(save.money).toLocaleString();$('heat').textContent='★'.repeat(Math.ceil(heat))+'☆'.repeat(5-Math.ceil(heat));$('speed').innerHTML=(inCar?Math.round(Math.abs(velocity)*3.6):0)+' <small>KM/H</small>';const p=inCar?carPos:playerPos;$('district').textContent=p.x<-185?'WEST HAVEN':p.x>185?'EAST SOLARA':p.z>185?'SOUTH PIER':p.z< -185?'NORTH QUARTER':'DOWNTOWN';if(mission){$('missionTitle').textContent=mission.title;$('missionText').textContent=(mission.stage==='pickup'?'Find the parcel beside the alley and press F.':'Meet the receiving NPC and press F to deliver.')+' · '+Math.max(0,Math.ceil(missionTime))+'s remaining'}else{$('missionTitle').textContent='The city is yours';$('missionText').textContent='Talk to Rae on the pavement, collect a parcel and deliver it to another NPC. Two jobs unlock a car.'}}
@@ -586,11 +597,11 @@ const introShots=[
  {duration:4.1,from:[-92,17,-290],to:[-92,11,-137],lookFrom:[-92,11,-154],lookTo:[-92,6,-61],title:'SOLARA CITY',copy:'A maze of storefronts, old brick alleys, and modern towers.'},
  {duration:4.2,from:[0,12,-190],to:[0,8,-64],lookFrom:[0,8,-104],lookTo:[0,5,26],title:'CHAPTER ONE',copy:'Some arrive with everything. You arrive with almost nothing.'},
  {duration:4.0,from:[0,8,-44],to:[0,5,-18],lookFrom:[0,5,-4],lookTo:[12.4,2,-6],title:'NO SHORTCUTS',copy:'The next opportunity is just down the street.'},
- {duration:5.0,from:[0,6,-44],to:[4.0,3.5,-29],lookFrom:[16,2,-29],lookTo:[16,1.3,-29],title:'YOUR STORY BEGINS',copy:'One small sign on the pavement. An entire city ahead.'}
+ {duration:5.0,from:[0,6,-44],to:[4.0,3.5,-29],lookFrom:[12.6,2,-29],lookTo:[12.6,1.3,-29],title:'YOUR STORY BEGINS',copy:'One small sign on the pavement. An entire city ahead.'}
 ];
 const introDuration=introShots.reduce((a,x)=>a+x.duration,0);
 function startIntro(){
- gameMode='intro';introTime=0;introStage=-1;
+ safeWalkingPosition();gameMode='intro';introTime=0;introStage=-1;
  $('menu').style.display='none';$('hud').style.display='none';$('storyIntro').style.display='block';
  person.visible=true;setSeatPose(save.completed===0?1:0);
  playerCar.visible=save.completed>=2||hasTakenVehicle;cinematicCamera(0);
@@ -598,6 +609,7 @@ function startIntro(){
 let standTimer=0;
 function endIntro(){
  if(gameMode!=='intro')return;
+ safeWalkingPosition();
  for(const k in keys)keys[k]=false;
  $('storyIntro').style.display='none';$('hud').style.display='block';
  orbitOffset=0;camYaw=-Math.PI/2;camTarget.set(playerPos.x,2,playerPos.z);
@@ -659,7 +671,12 @@ document.addEventListener('mousemove',e=>{
  else camYaw-=e.movementX*sensitivity;
  orbitPitch=THREE.MathUtils.clamp(orbitPitch+e.movementY*.0016,-.12,.35);
 });
-function keyState(e,on){if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;let k=e.key.toLowerCase();if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();if(gameMode!=='play'&&k!=='escape')return;keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(document.pointerLockElement)document.exitPointerLock();else if(gameMode==='play')pause();else if(gameMode==='pause')resume();else if(gameMode==='garage')closeGarage()}if(k==='e')enterExit();if(k==='f')interact();if(k==='c'){camMode=(camMode+1)%3;orbitOffset=0};if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;playerCar.position.copy(carPos);playerCar.rotation.y=angle;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
+function keyState(e,on){
+ const editable=['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName);
+ if(editable){if(!on)for(const k of ['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'])keys[k]=false;return}
+ let k=String(e.key||'').toLowerCase();
+ if(e.code==='KeyW')k='w';if(e.code==='KeyA')k='a';if(e.code==='KeyS')k='s';if(e.code==='KeyD')k='d';
+if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();if(gameMode!=='play'&&k!=='escape')return;keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(document.pointerLockElement)document.exitPointerLock();else if(gameMode==='play')pause();else if(gameMode==='pause')resume();else if(gameMode==='garage')closeGarage()}if(k==='e')enterExit();if(k==='f')interact();if(k==='c'){camMode=(camMode+1)%3;orbitOffset=0};if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;playerCar.position.copy(carPos);playerCar.rotation.y=angle;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
 addEventListener('keydown',e=>keyState(e,true));addEventListener('keyup',e=>keyState(e,false));addEventListener('blur',()=>{for(let k in keys)keys[k]=false});
 function pause(){if(document.pointerLockElement)document.exitPointerLock();gameMode='pause';$('paused').style.display='flex'}function resume(){gameMode='play';$('paused').style.display='none';$('garage').style.display='none'}function closeGarage(){gameMode='play';$('garage').style.display='none'}
 $('play').onclick=()=>{startIntro()};$('resetSave').onclick=()=>{if(confirm('Reset your MVT 6 cash, upgrades and contracts?')){save=defaultSave();persist();setNotice('Save reset')}};$('resume').onclick=resume;$('openGarage').onclick=openGarage;$('closeGarage').onclick=closeGarage;$('toMenu').onclick=()=>{gameMode='menu';$('paused').style.display='none';$('hud').style.display='none';$('menu').style.display='flex'};
@@ -688,8 +705,11 @@ function movePerson(dt){
  const dx=(Math.sin(camYaw)*forward+Math.cos(camYaw)*sideways)/length*speed;
  const dz=(Math.cos(camYaw)*forward-Math.sin(camYaw)*sideways)/length*speed;
  // Separate axis collision enables movement alongside walls.
- if(!collision(playerPos.x+dx,playerPos.z)){playerPos.x+=dx;walkMotion=1}
- if(!collision(playerPos.x,playerPos.z+dz)){playerPos.z+=dz;walkMotion=1}
+ if(collision(playerPos.x,playerPos.z,.35))safeWalkingPosition();
+ if(!collision(playerPos.x+dx,playerPos.z,.35)){playerPos.x+=dx;walkMotion=1}
+ if(!collision(playerPos.x,playerPos.z+dz,.35)){playerPos.z+=dz;walkMotion=1}
+ // This fallback stops the character being trapped by any malformed block.
+ if(!walkMotion&&collision(playerPos.x,playerPos.z,.35))safeWalkingPosition();
  if(walkMotion){const desired=Math.atan2(dx,dz);person.rotation.y+=Math.atan2(Math.sin(desired-person.rotation.y),Math.cos(desired-person.rotation.y))*(1-Math.exp(-15*dt));walkAngle=person.rotation.y}
  }
  person.position.copy(playerPos);
