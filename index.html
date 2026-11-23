@@ -71,6 +71,23 @@
 #carHint{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9;color:#efdbb4;background:#182334d9;border:1px solid #f1c48199;border-radius:9px;padding:10px 17px;font:800 13px system-ui;letter-spacing:2px;pointer-events:none;display:none}
 #lockHint{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:9;pointer-events:none;color:#f0f1e8;background:#111c2dbb;border:1px solid #ffffff3d;padding:7px 13px;border-radius:8px;font:700 10px/1.5 system-ui;letter-spacing:1.4px;display:none}
 body:has(#hud[style*="block"]) #lockHint{display:block}
+/* v0.9 cinematic polish: angled art gallery, film grain and editorial typography */
+.bootArtwork{inset:0 0 0 39%;transform:skewX(-8deg) scale(1.13);transform-origin:center;filter:contrast(1.07) saturate(1.2)}
+.bootArtwork:before{content:"";position:absolute;inset:0;z-index:4;pointer-events:none;background:repeating-linear-gradient(0deg,#ffffff05 0 1px,transparent 1px 5px);mix-blend-mode:overlay}
+.bootInside{position:relative}
+.bootEdition{font-size:10px;color:#c5d6df;letter-spacing:2.5px;font-weight:800;margin-bottom:12px}
+.bootIssue{position:absolute;right:0;top:5%;writing-mode:vertical-rl;letter-spacing:5px;color:#f6c3a0;font-size:10px;font-weight:900}
+.bootLogo{font-size:clamp(105px,19vw,210px);color:#faf1e6;text-shadow:0 14px 60px #040b16}
+.bootSubtitle{color:#e2f3f2;text-shadow:0 0 30px #e3af8e}
+.bootFeatureStrip{display:flex;flex-wrap:wrap;gap:15px;margin-top:26px}
+.bootFeatureStrip span{font-size:9px;font-weight:900;letter-spacing:2px;color:#f0e4cf;border:1px solid #f6c5a75c;padding:7px 9px;background:#1526397d}
+.loadingTrack{height:7px;background:#ffffff30}
+#loadingFill{box-shadow:0 0 22px #f3bb84}
+.menuChapter{color:#f1be8c!important;font-weight:900;font-size:10px;border-bottom:1px solid #f6cb8a55;padding-top:20px!important}
+#introCue{letter-spacing:3.6px;font:800 10px/1.6 system-ui;color:#f6cc9e;margin-top:12px}
+#storyIntro #introShade{background:linear-gradient(0deg,#06101ecf,transparent 54%,#07121e73)}
+#storyIntro:before,#storyIntro:after{height:clamp(25px,5.6vh,72px);background:#040609}
+@media(max-width:720px){.bootArtwork{inset:0;transform:none;opacity:.43}.bootEdition{max-width:200px}.bootFeatureStrip{gap:5px}.bootFeatureStrip span{font-size:8px}}
 </style>
 </head>
 <body>
@@ -88,19 +105,19 @@ body:has(#hud[style*="block"]) #lockHint{display:block}
 <div id="authPanel"><h2>Online account</h2><p id="authInfo">You can drive as a guest.</p><div id="authActions"><input id="username" maxlength="20" autocomplete="username" placeholder="Username"><input id="password" type="password" maxlength="128" autocomplete="current-password" placeholder="Password (10+ characters)"><button id="authLogin">SIGN IN</button><button id="authRegister" class="secondary">REGISTER</button></div><button id="logout" class="secondary" style="display:none">SIGN OUT</button><button class="secondary" onclick="document.getElementById('authPanel').style.display='none'">CLOSE</button></div>
 <div id="boot" role="status" aria-live="polite"><div class="bootSky"></div><div class="bootArtwork" aria-hidden="true"><div class="artCard artCoast"><svg viewBox="0 0 800 900" preserveAspectRatio="xMidYMid slice" role="presentation"><defs><linearGradient id="sunset" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#efa175"/><stop offset=".48" stop-color="#fbc5a5"/><stop offset="1" stop-color="#485f87"/></linearGradient><linearGradient id="water" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#608db0"/><stop offset="1" stop-color="#102c49"/></linearGradient></defs><rect width="800" height="900" fill="url(#sunset)"/><circle cx="550" cy="280" r="138" fill="#ffe9ae" opacity=".87"/><path d="M0 480 70 440 95 370 150 370 150 455 210 455 210 300 275 300 275 460 330 460 330 395 395 395 395 465 460 465 460 328 520 328 520 470 584 470 584 370 645 370 645 455 700 455 700 340 750 340 750 478 800 478 800 900 0 900Z" fill="#354968"/><path d="M0 550 Q180 520 350 557 T800 537V900H0Z" fill="url(#water)"/><path d="M0 625 Q170 611 390 628 T800 620" stroke="#fff4cc" stroke-width="5" fill="none" opacity=".45"/><path d="M0 680 Q220 660 430 688 T800 690" stroke="#fff4cc" stroke-width="3" fill="none" opacity=".3"/><path d="M0 752 800 682 800 900 0 900Z" fill="#273243"/><path d="M0 786 800 708" stroke="#ffd5a7" stroke-width="5" stroke-dasharray="45 50" opacity=".75"/><g fill="none" stroke="#1d3440" stroke-linecap="round"><path d="M100 850Q146 650 120 432" stroke-width="19"/><path d="M120 432Q27 344 5 332M120 432Q207 325 273 350M120 432Q133 309 92 277M120 432Q29 430 0 451" stroke-width="17"/><path d="M684 900Q659 705 676 430" stroke-width="21"/><path d="M676 430Q600 320 531 338M676 430Q737 350 800 363M676 430Q674 335 640 299" stroke-width="16"/></g><g fill="#254b43"><path d="M5 332Q110 311 120 432Q50 420 5 332M273 350Q168 316 120 432Q200 408 273 350M92 277Q154 320 120 432Q91 372 92 277M531 338Q648 331 676 430Q599 422 531 338M800 363Q703 336 676 430Q748 428 800 363M640 299Q690 334 676 430Q641 373 640 299"/></g><g transform="translate(295 690)"><ellipse cx="130" cy="135" rx="187" ry="25" fill="#061726" opacity=".55"/><path d="M0 95 Q13 45 62 39 L170 35Q218 39 248 83 L277 90V118H-10V96Z" fill="#e6a96d"/><path d="M69 43 100 2 176 0 211 46Z" fill="#1d3445"/><path d="M91 40 106 12 167 12 188 41Z" fill="#75a4b9"/><rect x="2" y="90" width="38" height="13" rx="4" fill="#ffe6ae"/><rect x="232" y="90" width="37" height="13" rx="4" fill="#ffba7a"/><circle cx="49" cy="115" r="30" fill="#182531"/><circle cx="214" cy="115" r="30" fill="#182531"/><circle cx="49" cy="115" r="15" fill="#a7b5b6"/><circle cx="214" cy="115" r="15" fill="#a7b5b6"/></g></svg></div>
 <div class="artCard artNight"><svg viewBox="0 0 800 900" preserveAspectRatio="xMidYMid slice" role="presentation"><defs><linearGradient id="night" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#193d68"/><stop offset="1" stop-color="#6d345c"/></linearGradient></defs><rect width="800" height="900" fill="url(#night)"/><circle cx="577" cy="190" r="95" fill="#eb8bb5" opacity=".55"/><path d="M0 490H58V160H130V495H169V252H240V490H290V60H378V490H421V240H495V490H532V130H610V490H650V313H733V490H800V900H0Z" fill="#101d36"/><g fill="#4be2dc" opacity=".77"><path d="M77 205h16v33H77zm0 70h16v33H77zm0 70h16v33H77zm230-220h12v25h-12zm0 56h12v25h-12zm0 56h12v25h-12zm58-110h11v25h-11zm0 56h11v25h-11zm0 56h11v25h-11zm188-46h13v31h-13zm0 67h13v31h-13zm0 67h13v31h-13z"/></g><path d="M0 590 800 500V900H0Z" fill="#20273d"/><path d="M0 820 800 680" stroke="#f9ceaf" stroke-width="7" stroke-dasharray="55 55" opacity=".65"/><path d="M0 650 800 568" stroke="#fc6aa1" stroke-width="7" opacity=".5"/><path d="M625 700q30-140 10-314" stroke="#16182d" stroke-width="17" fill="none"/><path d="M635 390q-100-73-160-42m160 42q93-94 165-66m-165 66q-1-102-50-138" stroke="#183f43" stroke-width="27" fill="none" stroke-linecap="round"/><g transform="translate(90 620)"><ellipse cx="190" cy="210" rx="215" ry="25" fill="#080c19" opacity=".6"/><path d="M0 155 50 76 150 60 280 80 351 140V184H-15v-29Z" fill="#6ed6d5"/><path d="M90 75 120 22 215 22 260 83Z" fill="#142e45"/><path d="M116 67 132 36 205 35 238 72Z" fill="#a7dcda"/><circle cx="65" cy="183" r="36" fill="#0f1725"/><circle cx="285" cy="183" r="36" fill="#0f1725"/><circle cx="65" cy="183" r="17" fill="#d6dedb"/><circle cx="285" cy="183" r="17" fill="#d6dedb"/><rect x="-10" y="150" width="32" height="16" fill="#fef5bf"/><rect x="318" y="150" width="32" height="16" fill="#ec7296"/></g></svg></div>
-<div class="artCard artDawn"><svg viewBox="0 0 800 900" preserveAspectRatio="xMidYMid slice" role="presentation"><defs><linearGradient id="dawn" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#b8dbde"/><stop offset="1" stop-color="#e9c28d"/></linearGradient></defs><rect width="800" height="900" fill="url(#dawn)"/><circle cx="580" cy="260" r="138" fill="#fdf0cc" opacity=".9"/><path d="M0 380 100 380 100 230 210 230 210 393 300 393 300 140 395 140 395 382 455 382 455 210 555 210 555 380 620 380 620 285 710 285 710 375 800 375V900H0Z" fill="#648e93"/><path d="M0 510 800 450V900H0Z" fill="#284b57"/><path d="M0 720 800 550V900H0Z" fill="#e7ba88"/><path d="M0 760 800 590" stroke="#fff2c3" stroke-width="8" stroke-dasharray="50 55"/><g transform="translate(450 415)" fill="#1a3043"><path d="M46 94q25-95 22-172" stroke="#1c3a42" stroke-width="14" fill="none"/><circle cx="67" cy="-118" r="32" fill="#563d3e"/><path d="M17-76q-17 48-13 102l35 8 10-54 10 54 34-10q3-55-11-99Z"/><path d="M8 26-7 139h37L55 40l21 100h37L93 25Z"/></g><g transform="translate(100 690)"><rect width="270" height="48" rx="20" fill="#312a39"/><rect x="25" y="-28" width="190" height="45" rx="12" fill="#c55e51"/><rect x="74" y="-63" width="118" height="47" rx="12" fill="#385768"/><circle cx="45" cy="42" r="25" fill="#182e33"/><circle cx="235" cy="42" r="25" fill="#182e33"/></g></svg></div></div><div class="bootInside">
+<div class="artCard artDawn"><svg viewBox="0 0 800 900" preserveAspectRatio="xMidYMid slice" role="presentation"><defs><linearGradient id="dawn" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#b8dbde"/><stop offset="1" stop-color="#e9c28d"/></linearGradient></defs><rect width="800" height="900" fill="url(#dawn)"/><circle cx="580" cy="260" r="138" fill="#fdf0cc" opacity=".9"/><path d="M0 380 100 380 100 230 210 230 210 393 300 393 300 140 395 140 395 382 455 382 455 210 555 210 555 380 620 380 620 285 710 285 710 375 800 375V900H0Z" fill="#648e93"/><path d="M0 510 800 450V900H0Z" fill="#284b57"/><path d="M0 720 800 550V900H0Z" fill="#e7ba88"/><path d="M0 760 800 590" stroke="#fff2c3" stroke-width="8" stroke-dasharray="50 55"/><g transform="translate(450 415)" fill="#1a3043"><path d="M46 94q25-95 22-172" stroke="#1c3a42" stroke-width="14" fill="none"/><circle cx="67" cy="-118" r="32" fill="#563d3e"/><path d="M17-76q-17 48-13 102l35 8 10-54 10 54 34-10q3-55-11-99Z"/><path d="M8 26-7 139h37L55 40l21 100h37L93 25Z"/></g><g transform="translate(100 690)"><rect width="270" height="48" rx="20" fill="#312a39"/><rect x="25" y="-28" width="190" height="45" rx="12" fill="#c55e51"/><rect x="74" y="-63" width="118" height="47" rx="12" fill="#385768"/><circle cx="45" cy="42" r="25" fill="#182e33"/><circle cx="235" cy="42" r="25" fill="#182e33"/></g></svg></div></div><div class="bootInside"><div class="bootEdition">SOLARA CITY · STORY MODE · ONLINE WORLD</div><div class="bootIssue">VOL. 01 / THE LOST CITY</div>
 <div class="kicker">SOLARA CITY STUDIOS PRESENTS</div><div class="bootLogo">MVT <span>6</span></div><div class="bootSubtitle">MOTOR VEHICLE THEFT</div>
 <div class="loadingInfo"><span id="bootStatus">Preparing Solara City...</span><span id="bootPct">0%</span></div>
-<div class="loadingTrack"><div id="loadingFill"></div></div><p id="bootError">Three original Solara City chapters • A world to make your own</p><div class="artDots"><i></i><i></i><i></i></div>
+<div class="loadingTrack"><div id="loadingFill"></div></div><p id="bootError">Three original Solara City chapters • A world to make your own</p><div class="artDots"><i></i><i></i><i></i></div><div class="bootFeatureStrip"><span>NO MONEY</span><span>NO CONNECTIONS</span><span>EVERYTHING TO BUILD</span></div>
 <button id="bootRetry" style="display:none" onclick="location.reload()">RETRY</button></div></div>
 <div id="menu" class="overlay movieMenu"><div class="menuCity"></div><div class="menuContent">
 <div class="kicker">WELCOME TO SOLARA CITY</div><h1 class="movieLogo">MVT <span>6</span></h1>
-<div class="movieSubtitle">MOTOR VEHICLE THEFT</div><h2>YOUR CITY. YOUR STORY.</h2>
-<p>Hit the boulevard. Meet the locals. Take on contracts, build your garage, and drive with friends in this original online world.</p>
+<div class="movieSubtitle">MOTOR VEHICLE THEFT</div><h2>THE CITY OWES YOU NOTHING.</h2>
+<p>One lonely pavement. A borrowed city. Meet Rae, build your crew, uncover the lost ledger and take control of your future.</p>
 <div class="menuActions"><button id="play">BEGIN YOUR STORY ➜</button><button id="resetSave" class="secondary">START OVER</button></div>
 <div class="movieControls">WASD · MOVE &nbsp;&nbsp; CLICK · MOUSE LOOK &nbsp;&nbsp; F · INTERACT</div></div>
-<div class="menuDecor"><div>01 / EXPLORE THE CITY</div><div>02 / MEET THE LOCALS</div><div>03 / DRIVE WITH FRIENDS</div><div>04 / BUILD YOUR GARAGE</div></div></div>
-<div id="storyIntro" aria-live="polite" style="display:none"><div id="introShade"></div><div id="introContent"><div id="introChapter">SOLARA CITY · CHAPTER ONE</div><h2 id="introTitle">START WITH NOTHING.</h2><p id="introCopy">New city. Empty pockets. Every choice counts.</p></div><button id="introSkip">SKIP INTRO →</button></div>
+<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="menuChapter">A NEW ORIGINAL STORY</div></div></div>
+<div id="storyIntro" aria-live="polite" style="display:none"><div id="introShade"></div><div id="introContent"><div id="introChapter">SOLARA CITY · CHAPTER ONE</div><div id="introCue">AN ORIGINAL MVT 6 FILM</div><h2 id="introTitle">START WITH NOTHING.</h2><p id="introCopy">New city. Empty pockets. Every choice counts.</p></div><button id="introSkip">SKIP INTRO →</button></div>
 <div id="paused" class="overlay"><div class="panel"><div class="eyebrow">SOLARA CITY</div><h2>PAUSED</h2><p>Explore at your own pace. Your cash, upgrades and completed contracts are automatically saved.</p><button id="resume">RESUME</button><button id="openGarage" class="secondary">UPGRADES</button><button id="toMenu" class="secondary">MAIN MENU</button></div></div>
 <div id="garage" class="overlay"><div class="panel"><div class="eyebrow">SOLARA AUTO WORKS</div><h2>Vehicle upgrades</h2><p>Money available: <b id="garageMoney" style="color:#66e2ad"></b></p><div id="upgradeList"></div><h3 style="margin-top:23px;color:#efc18c">RISE THROUGH SOLARA</h3><div id="lifestyleList"></div><button id="closeGarage">BACK TO GAME</button></div></div>
 <script>
@@ -708,11 +725,12 @@ function enterExit(){if(gameMode!=='play')return;if(inCar){if(Math.abs(velocity)
 let introTime=0;
 const introCameraLook=new THREE.Vector3();
 const introShots=[
- // Camera travels only along open road centre-lines and clear sidewalk paths.
- {duration:4.1,from:[-92,17,-290],to:[-92,11,-137],lookFrom:[-92,11,-154],lookTo:[-92,6,-61],title:'SOLARA CITY',copy:'A maze of storefronts, old brick alleys, and modern towers.'},
- {duration:4.2,from:[0,12,-190],to:[0,8,-64],lookFrom:[0,8,-104],lookTo:[0,5,26],title:'CHAPTER ONE',copy:'Some arrive with everything. You arrive with almost nothing.'},
- {duration:4.0,from:[0,8,-44],to:[0,5,-18],lookFrom:[0,5,-4],lookTo:[12.4,2,-6],title:'NO SHORTCUTS',copy:'The next opportunity is just down the street.'},
- {duration:5.0,from:[0,6,-44],to:[4.0,3.5,-29],lookFrom:[12.6,2,-29],lookTo:[12.6,1.3,-29],title:'YOUR STORY BEGINS',copy:'One small sign on the pavement. An entire city ahead.'}
+ // Each shot follows an actual open roadway; final shot approaches the sidewalk wall.
+
+ {duration:4.7,from:[-92,19,-280],to:[-92,10,-115],lookFrom:[-92,10,-173],lookTo:[-92,5,-46],title:'SOLARA CITY',copy:'Where streetlights glow through the fog, everybody has a price.'},
+ {duration:4.8,from:[0,14,-182],to:[0,7,-74],lookFrom:[0,6,-75],lookTo:[0,5,15],title:'THE LOST CITY',copy:'You came for another chance. The city had other plans.'},
+ {duration:4.4,from:[0,7,-55],to:[0,5,-30],lookFrom:[0,5,-14],lookTo:[12.6,2,-29],title:'NO SHORTCUTS',copy:'Then a voice calls from the corner. Her name is Rae.'},
+ {duration:5.2,from:[0,5.8,-29],to:[7.5,3.8,-29],lookFrom:[12.6,2,-29],lookTo:[12.6,1.35,-29],title:'START WITH NOTHING',copy:'The sign reads Please donate. But your story will not end here.'}
 ];
 const introDuration=introShots.reduce((a,x)=>a+x.duration,0);
 function startIntro(){
@@ -724,7 +742,7 @@ function startIntro(){
 let standTimer=0;
 function endIntro(){
  if(gameMode!=='intro')return;
- safeWalkingPosition();
+ camera.fov=65;camera.updateProjectionMatrix();safeWalkingPosition();
  for(const k in keys)keys[k]=false;
  $('storyIntro').style.display='none';$('hud').style.display='block';
  orbitOffset=0;camYaw=-Math.PI/2;camTarget.set(playerPos.x,2,playerPos.z);
@@ -753,7 +771,7 @@ function cubicEase(t){return t*t*(3-2*t)}
 function cinematicCamera(time){
  let rest=time,index=0;
  while(index<introShots.length-1&&rest>introShots[index].duration){rest-=introShots[index].duration;index++}
- const shot=introShots[index],p=cubicEase(Math.min(1,rest/shot.duration));
+ const shot=introShots[index],p=cubicEase(Math.min(1,rest/shot.duration));camera.fov=THREE.MathUtils.lerp(69,59,p);camera.updateProjectionMatrix();
  const at=(a,b)=>a+(b-a)*p;
  camera.position.set(at(shot.from[0],shot.to[0]),at(shot.from[1],shot.to[1]),at(shot.from[2],shot.to[2]));
  introCameraLook.set(at(shot.lookFrom[0],shot.lookTo[0]),at(shot.lookFrom[1],shot.lookTo[1]),at(shot.lookFrom[2],shot.lookTo[2]));
@@ -770,7 +788,7 @@ function cinematicCamera(time){
 }
 function updateIntroCamera(dt){
  cinematicCamera(introTime);
- if(introTime>=introDuration)endIntro();
+ advanceTraffic(dt);if(introTime>=introDuration){camera.fov=65;camera.updateProjectionMatrix();endIntro()}
 }
 let gestureTime=0;
 const keys={};let orbitOffset=0,orbitPitch=.06,camYaw=0,walkMotion=0,qualityPixelRatio=Math.min(devicePixelRatio,1.25),mouseLocked=false;
