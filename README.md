@@ -1,5 +1,16 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v1.2 — Collectible Equipment, Jumping and Cinematic HUD
+
+- **Pickup-driven eight-slot equipment wheel:** Press **Q** to view the wheel. The Hands slot is equipped by default, while the other seven slots are visibly empty. Find glowing collectible gear placed along accessible sidewalks and press **F** to pick it up. Collected equipment fills its matching wheel slot. Trying to select an empty slot displays a pickup reminder instead of equipping an unavailable item.
+- **Equipment persistence:** Collected gadgets save in the browser's local storage (key `mvt6-gear-v2`) separately from multiplayer account progress. Gear is **not yet synchronised to the cloud**. Current collectible gadget types are signal tagger, loot scanner, flash distraction, repair kit, route beacon, city camera, and emergency radio.
+- **New jump:** Press **Space** while walking to jump. The character has a gravity-based jump arc, midair arm and leg poses, a short landing bend and safe reset on vehicle entry. Space remains the brake key when driving.
+- **Cleaner interface:** Updated gradient glass-style status, mission and notification panels, a larger eight-direction radial wheel, contextual pickup instructions, active gadget indicator and collectible markers on the circular minimap. Fixed pointer-event handling so the tutorial, mission phone and equipment buttons can be clicked.
+- **Genre rather than imitation:** The cinematic presentation is an original MVT 6 open-world visual style, not a reproduction of GTA 6's protected artwork, characters, UI or storyline.
+
+**Testing note:** JavaScript parsing and Render build checks were performed; the updated game still needs an interactive in-browser QA pass to verify movement, jumps, equipment collection and FPS.
+
+
 ## v1.1 — Takeover Stability & Clean HUD
 
 **Vehicle freeze fix:** Replaced the takeover animation state with a short, bounded transition that always returns controls to driving mode. Added safe checks for the exiting driver's animation parts and resets for the camera, player car, movement input and takeover state. An animation exception is caught to allow a safe transition to finish.
