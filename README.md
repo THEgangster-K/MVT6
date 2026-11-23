@@ -1,5 +1,18 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v1.1 — Takeover Stability & Clean HUD
+
+**Vehicle freeze fix:** Replaced the takeover animation state with a short, bounded transition that always returns controls to driving mode. Added safe checks for the exiting driver's animation parts and resets for the camera, player car, movement input and takeover state. An animation exception is caught to allow a safe transition to finish.
+
+**Tutorial:** The old stack of keyboard instructions is removed from the bottom of the screen. A new full-screen, dismissible guide explains walking, camera, driving, story interaction, phone, maps and gadgets. It appears after the first opening unless the player opts out, and can be reopened with **Tab**, **H**, or **? CONTROLS**.
+
+**Radial equipment wheel:** Use **Q** or the **GADGETS** HUD button and select Hands, Signal Tagger, Loot Scanner, or Flash Distraction. The non-graphic equipment has progression unlocks. Press **G** to activate the selected item on foot. Hands instead use **F** for regular interactions.
+
+**Improved circular minimap:** A slightly larger readable round map follows the player, rotates with heading, shows bearings and major points of interest, reduces clutter to nearby markers, and draws a dotted route to the current mission. The mission phone can set navigation pins for contacts, garage and loot.
+
+The code has passed JavaScript parsing and the UI ID/reference checks. Render deployment can be confirmed in the service dashboard. Full movement, visuals and responsiveness still need a hands-on browser test.
+
+
 ## v1.0 — Street Controls, Mission Phone & Navigation
 
 - **Corrected A/D walking** using the actual handedness of the third-person camera: A moves left and D moves right. Mouse look remains pointer-locked when clicking the game scene.
