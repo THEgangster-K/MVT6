@@ -2,6 +2,17 @@
 
 An original 3D open-world browser driving game. This is an independent GTA-style prototype, not GTA 6.
 
+## City Life + Controls Update (v0.3)
+
+- Third-person follow camera turns with the direction of travel, with drag-to-orbit camera input.
+- Faster, more responsive acceleration, braking, and steering; body tilt when cornering.
+- On-foot WASD movement, sprinting and articulated walking animation.
+- 28 roaming pedestrians; approach on foot and press **F** to talk, hear unique dialogue, and sometimes earn a small reward.
+- Procedural streetlights, benches, and improved vehicle mirrors, windows, headlights, grille and plates.
+- Adaptive rendering pixel ratio for weak GPUs and fewer building shadow casters.
+
+**Performance note:** Actual FPS varies by device and browser. This release has JavaScript syntax checks and Render deploy checks, but full graphical QA must be done in a real browser.
+
 ## Multiplayer release (v0.2)
 
 - Shared online city with up to **32 simultaneous connections per server instance**
@@ -60,6 +71,8 @@ Open http://localhost:3000. To test persistent accounts locally, set `DATABASE_U
 | C | Change camera |
 | R | Recover car |
 | Escape | Pause |
+| Mouse drag | Look around |
+| F near an NPC | Talk |
 
 ## Security and infrastructure limitations
 
