@@ -680,7 +680,9 @@ trunkBatch.frustumCulled=false;canopyBatch.frustumCulled=false;scene.add(trunkBa
 // Coastal visual: water beyond city's western edge, elevated promenade.
 plane(425,1000,-570,0,materials.water,-.10);for(let i=-4;i<=4;i++){box(15,1.8,1,-400,1,i*92,materials.white)}
 // Reusable driving actors and props.
-function makeCar(color='#ed636a',police=false){const group=new THREE.Group();scene.add(group);const paint=mat(color,.26,.63),dark=mat('#192735',.4,.2),lamp=mat('#fff6c5',.2),rear=mat('#e0454c',.25),wheel=mat('#101820',.92),trim=mat('#d7e5ea',.24,.65);
+function makeCar(color='#ed636a',police=false){const group=new THREE.Group();scene.add(group);
+ const paint=new THREE.MeshPhysicalMaterial({color,roughness:.24,metalness:.54,clearcoat:.9,clearcoatRoughness:.12});
+ const dark=mat('#192735',.4,.2),lamp=mat('#fff6c5',.2),rear=mat('#e0454c',.25),wheel=mat('#101820',.92),trim=mat('#d7e5ea',.24,.65);
  // Bevelled vehicle body and curved roofline; reused geometry keeps draw costs moderate.
  const hullShape=new THREE.Shape();
  hullShape.moveTo(-1.53,.5);hullShape.lineTo(1.53,.5);
@@ -714,7 +716,16 @@ function makeCar(color='#ed636a',police=false){const group=new THREE.Group();sce
   wheelAssemblies.push({steering,spin,front:along>0});
  } 
  group.userData.wheels=wheelAssemblies;group.userData.wheelRotation=0;
- for(let x of [-1.15,1.15]){box(.82,.38,.13,x,1.05,3.78,lamp,group);box(.85,.3,.13,x,1.02,-3.78,rear,group)}
+ const brakeTailLights=[],turnSignals=[];
+ for(let x of [-1.15,1.15]){
+  const front=box(.82,.38,.13,x,1.05,3.78,lamp,group);
+  const back=box(.85,.3,.13,x,1.02,-3.78,rear.clone(),group);brakeTailLights.push(back);
+  const blinkMat=new THREE.MeshBasicMaterial({color:0xffb86e});
+  const turnFront=box(.22,.18,.14,x*1.5,1.04,3.81,blinkMat.clone(),group);
+  const turnBack=box(.22,.18,.14,x*1.5,1.03,-3.81,blinkMat.clone(),group);
+  turnSignals.push({side:Math.sign(x),front:turnFront,back:turnBack});
+ }
+ group.userData.brakeLights=brakeTailLights;group.userData.turnSignals=turnSignals;
  // Vehicle facelift: side mirrors, glazing, grille, trim and plates.
  const glass=new THREE.MeshStandardMaterial({color:0x1b4353,roughness:.15,metalness:.3,transparent:true,opacity:.82,side:THREE.DoubleSide});
  for(const side of [-1,1]){
@@ -1649,8 +1660,17 @@ function moveCar(dt){
  playerCar.rotation.z=THREE.MathUtils.lerp(playerCar.rotation.z,-turning*Math.min(Math.abs(velocity)/38,1)*.045,Math.min(1,dt*5));
  playerCar.rotation.x=THREE.MathUtils.lerp(playerCar.rotation.x,throttle*-.012,Math.min(1,dt*4));
  if(detailingShine>0&&playerCar.children[0]?.material){
-  playerCar.children[0].material.roughness=THREE.MathUtils.lerp(playerCar.children[0].material.roughness,.15,Math.min(1,dt*2));
+  playerCar.children[0].material.roughness=THREE.MathUtils.lerp(playerCar.children[0].material.roughness,.12,Math.min(1,dt*2));
  }else if(playerCar.children[0]?.material)playerCar.children[0].material.roughness=THREE.MathUtils.lerp(playerCar.children[0].material.roughness,.26,Math.min(1,dt));
+ const braking=Boolean(keys[' ']||throttle<0&&velocity>1);
+ for(const rearLight of playerCar.userData.brakeLights||[]){
+  rearLight.material.emissive.set(braking?'#ff6b52':'#4a1018');
+  rearLight.material.emissiveIntensity=braking?2.3:.45;
+ }
+ for(const signal of playerCar.userData.turnSignals||[]){
+  const visible=(turning===-signal.side)&&Math.sin(clockTime*9)>0;
+  signal.front.visible=visible;signal.back.visible=visible;
+ }
  for(const wheel of playerCar.userData.wheels||[]){
   wheel.spin.rotation.x+=velocity*dt/.87;
   if(wheel.front)wheel.steering.rotation.y=THREE.MathUtils.lerp(wheel.steering.rotation.y,turning*.27,Math.min(1,dt*8));
