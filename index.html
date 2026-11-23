@@ -284,6 +284,28 @@ for(const side of [-1,1]){
  const arm=new THREE.Group();arm.position.set(side*.62,2.14,0);person.add(arm);box(.26,.96,.32,0,-.48,0,jacket,arm);box(.26,.24,.32,0,-1.01,0,skin,arm);limbs.arms.push(arm);
  const leg=new THREE.Group();leg.position.set(side*.26,1.25,0);person.add(leg);box(.34,1.12,.36,0,-.55,0,jeans,leg);box(.38,.23,.65,0,-1.17,.13,mat('#1e2935'),leg);limbs.legs.push(leg);
 }
+// Original street-level prologue props: cardboard sign, blanket, and donation cup.
+const prologueProps=new THREE.Group();scene.add(prologueProps);prologueProps.position.set(11.5,0,-6);
+const blanket=box(2.3,.075,2.9,.2,.13,.25,mat('#516e70',.98),prologueProps);
+const paper=box(2.1,.13,.07,.05,1.16,-2.05,mat('#79604b',.96),prologueProps);
+const backing=box(2.48,1.19,.11,.05,1.03,-2.1,mat('#ab8c62',.96),prologueProps);
+const signCanvas=document.createElement('canvas');signCanvas.width=512;signCanvas.height=256;
+const signCtx=signCanvas.getContext('2d');signCtx.fillStyle='#d5b389';signCtx.fillRect(0,0,512,256);
+signCtx.strokeStyle='#92704b';signCtx.lineWidth=12;signCtx.strokeRect(8,8,496,240);
+signCtx.fillStyle='#302a26';signCtx.textAlign='center';signCtx.font='bold 61px Georgia,serif';
+signCtx.fillText('Please',256,105);signCtx.fillText('donate',256,187);
+const signTx=new THREE.CanvasTexture(signCanvas);signTx.colorSpace=THREE.SRGBColorSpace;
+const writing=mesh(new THREE.PlaneGeometry(2.35,1.12),new THREE.MeshBasicMaterial({map:signTx,side:THREE.DoubleSide}),prologueProps);
+writing.position.set(.05,1.04,-2.18);
+const cup=cyl(.18,.13,.36,-.83,.31,-1.35,mat('#bf9e7d',.83),prologueProps,12);
+const cupTop=mesh(new THREE.TorusGeometry(.18,.033,6,16),mat('#e8d7b4'),prologueProps);cupTop.rotation.x=Math.PI/2;cupTop.position.set(-.83,.52,-1.35);
+function setSeatPose(amount){
+ const a=THREE.MathUtils.clamp(amount,0,1);
+ person.position.set(playerPos.x,-.72*a,playerPos.z);
+ person.rotation.y=-Math.PI/2;
+ limbs.legs[0].rotation.x=-1.27*a;limbs.legs[1].rotation.x=-1.27*a;
+ limbs.arms[0].rotation.x=-.5*a;limbs.arms[1].rotation.x=-.5*a;
+}
 let carPos=new THREE.Vector3(5,0,36),playerPos=new THREE.Vector3(11.5,0,-6),angle=0,walkAngle=0,velocity=0,inCar=false,gameMode='menu',camMode=0,clockTime=0,heat=0,heatTimer=0,mission=null,missionCount=0,missionTime=0,missionCooldown=0,nearGarage=false;
 const traffic=[],police=[];for(let i=0;i<14;i++){const car=makeCar(['#5f9ac9','#eab76e','#94beb5','#e2e4e4','#657489'][i%5]);let q=roadPositions[Math.floor(rnd(i+10)*roadPositions.length)];const east=i%2===0;const pos=east?new THREE.Vector3((rnd(i+71)-.5)*950,0,q+(i%4===0?5:-5)):new THREE.Vector3(q+(i%3===0?5:-5),0,(rnd(i+88)-.5)*950);traffic.push({car,pos,east,dir:i%4<2?1:-1,speed:7+rnd(i+94)*8});car.position.copy(pos)}
 for(let i=0;i<4;i++){const c=makeCar('#e4edf2',true);c.visible=false;police.push({car:c,pos:new THREE.Vector3(),angle:0,active:false})}
@@ -346,22 +368,39 @@ const introShots=[
  {duration:4.1,from:[-437,30,-178],to:[-430,19,-35],lookFrom:[-280,35,-76],lookTo:[-215,34,0],title:'SOLARA CITY',copy:'A coast of glass towers, quiet streets and restless ambition.'},
  {duration:4.2,from:[0,11,-194],to:[0,8,-55],lookFrom:[0,7,-60],lookTo:[0,6,55],title:'CHAPTER ONE',copy:'Everyone starts somewhere. Tonight, you begin with nothing.'},
  {duration:4.0,from:[-42,8,-1],to:[-10,5,4],lookFrom:[36,4,1],lookTo:[0,2,0],title:'NO SHORTCUTS',copy:'Take the small jobs. Meet the right people. Make a name for yourself.'},
- {duration:4.2,from:[18,8,-8],to:[4,4,-9],lookFrom:[0,3,0],lookTo:[0,2,0],title:'YOUR STORY BEGINS',copy:'A few dollars in your pocket. The entire city ahead.'}
+ {duration:5.0,from:[27,7,-18],to:[15,3.7,-13],lookFrom:[11.5,1.7,-6],lookTo:[11.5,1.4,-6],title:'YOUR STORY BEGINS',copy:'A cold pavement. A small sign. One decision to get up and begin again.'}
 ];
 const introDuration=introShots.reduce((a,x)=>a+x.duration,0);
 function startIntro(){
  gameMode='intro';introTime=0;introStage=-1;
  $('menu').style.display='none';$('hud').style.display='none';$('storyIntro').style.display='block';
- person.visible=true;person.position.copy(playerPos);
+ person.visible=true;setSeatPose(save.completed===0?1:0);
  playerCar.visible=save.completed>=2;cinematicCamera(0);
 }
+let standTimer=0;
 function endIntro(){
  if(gameMode!=='intro')return;
  for(const k in keys)keys[k]=false;
- gameMode='play';$('storyIntro').style.display='none';$('hud').style.display='block';
- orbitOffset=0;camYaw=0;camTarget.set(playerPos.x,2,playerPos.z);
- camera.position.set(playerPos.x,5,playerPos.z-9);
- setNotice(save.completed?'Welcome back to Solara City':'You are starting with $45. Find the green street contact marker to the west and press F.');
+ $('storyIntro').style.display='none';$('hud').style.display='block';
+ orbitOffset=0;camYaw=-Math.PI/2;camTarget.set(playerPos.x,2,playerPos.z);
+ camera.position.set(playerPos.x-8,4.4,playerPos.z-6);
+ if(save.completed===0){
+   gameMode='standing';standTimer=0;setSeatPose(1);
+ }else{
+   gameMode='play';setSeatPose(0);
+   setNotice('Welcome back to Solara City. Click the game to lock your mouse.');
+ }
+}
+function updateStanding(dt){
+ standTimer+=dt;
+ const t=Math.min(1,standTimer/1.7),ease=t*t*(3-2*t);
+ setSeatPose(1-ease);
+ camera.position.lerp(new THREE.Vector3(playerPos.x-7.5,4.3,playerPos.z-5),Math.min(1,dt*5));
+ camera.lookAt(playerPos.x,1.6,playerPos.z);
+ if(t>=1){
+   setSeatPose(0);gameMode='play';camYaw=-Math.PI/2;
+   setNotice('You stood up. Walk freely with WASD, click to lock your mouse, and find work to the west.');
+ }
 }
 $('introSkip').onclick=endIntro;
 let introStage=-1;
@@ -386,6 +425,7 @@ function cinematicCamera(time){
 }
 function updateIntroCamera(dt){
  cinematicCamera(introTime);
+ if(save.completed===0&&introTime>introDuration-2){const t=(introTime-(introDuration-2))/2;setSeatPose(1-THREE.MathUtils.smoothstep(t,0,1))}
  if(introTime>=introDuration)endIntro();
 }
 const keys={};let orbitOffset=0,orbitPitch=.06,camYaw=0,walkMotion=0,qualityPixelRatio=Math.min(devicePixelRatio,1.25),mouseLocked=false;
@@ -459,8 +499,8 @@ getPlayer:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,inCar}
 isPlaying:()=>gameMode==='play',onNotice:setNotice,
 onReward:amount=>{save.money+=amount;persist();updateHUD()}});
 let network=multiplayer({THREE,scene,makeCar,box,mat,mesh,getState:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,angle:inCar?angle:person.rotation.y,inCar}),onAccount:progress=>{if(progress){save={...defaultSave(),...progress};updateHUD()}},onMessage:message=>setNotice(message)});
-let last=performance.now(),fpsCounter=0,fpsTime=0;function frame(now){requestAnimationFrame(frame);const dt=Math.min(.04,(now-last)/1000);last=now;if(gameMode==='play'){clockTime+=dt;if(inCar)moveCar(dt);else movePerson(dt);advanceTraffic(dt);advancePolice(dt);if(mission){missionTime-=dt;const p=inCar?carPos:playerPos;if(Math.hypot(p.x-mission.place.x,p.z-mission.place.z)<14){if(mission.title!=='Evasive Driving'||heat<1.1)finishMission();else if(clockTime%3<dt)setNotice('Lose your wanted level before arriving!')}else if(missionTime<=0)failMission()}cityLife.update(dt,now);updateHUD();updateCamera(dt);drawMap()}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='menu'){cityLife.update(dt,now);const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;fpsTime+=dt;if(fpsTime>1){const fps=Math.round(fpsCounter/fpsTime);$('fps').textContent=fps+' FPS';if(gameMode==='play'&&fps<37&&qualityPixelRatio>.8){qualityPixelRatio=Math.max(.8,qualityPixelRatio-.1);renderer.setPixelRatio(qualityPixelRatio)}fpsTime=0;fpsCounter=0}}
-person.visible=true;person.position.copy(playerPos);playerCar.visible=save.completed>=2;playerCar.position.copy(carPos);$('hud').style.display='none';requestAnimationFrame(frame);if(window.__mvtLoaded)window.__mvtLoaded();addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
+let last=performance.now(),fpsCounter=0,fpsTime=0;function frame(now){requestAnimationFrame(frame);const dt=Math.min(.04,(now-last)/1000);last=now;if(gameMode==='play'){clockTime+=dt;if(inCar)moveCar(dt);else movePerson(dt);advanceTraffic(dt);advancePolice(dt);if(mission){missionTime-=dt;const p=inCar?carPos:playerPos;if(Math.hypot(p.x-mission.place.x,p.z-mission.place.z)<14){if(mission.title!=='Evasive Driving'||heat<1.1)finishMission();else if(clockTime%3<dt)setNotice('Lose your wanted level before arriving!')}else if(missionTime<=0)failMission()}cityLife.update(dt,now);updateHUD();updateCamera(dt);drawMap()}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='menu'){cityLife.update(dt,now);const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;fpsTime+=dt;if(fpsTime>1){const fps=Math.round(fpsCounter/fpsTime);$('fps').textContent=fps+' FPS';if(gameMode==='play'&&fps<37&&qualityPixelRatio>.8){qualityPixelRatio=Math.max(.8,qualityPixelRatio-.1);renderer.setPixelRatio(qualityPixelRatio)}fpsTime=0;fpsCounter=0}}
+person.visible=true;setSeatPose(save.completed===0?1:0);playerCar.visible=save.completed>=2;playerCar.position.copy(carPos);$('hud').style.display='none';requestAnimationFrame(frame);if(window.__mvtLoaded)window.__mvtLoaded();addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
 </script>
 </body>
 </html>
