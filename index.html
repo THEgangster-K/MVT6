@@ -185,6 +185,11 @@ body:has(#hud[style*="block"]) #lockHint{display:block}
 .customPaintChoice{border:1px solid #ffffff80;border-radius:11px;min-height:66px;padding:9px 3px;text-shadow:0 1px 4px #000;font:800 11px system-ui}
 #customExtraOptions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 #customExtraOptions button{min-height:58px;border:1px solid #79b7b0;background:linear-gradient(130deg,#2c6876,#143c4c);font:800 12px system-ui}
+#chapterBanner{position:fixed;z-index:36;left:50%;top:12%;transform:translate(-50%,-12px);width:min(620px,88vw);padding:22px 25px;background:linear-gradient(115deg,#0b1d2bed,#204456ec);border-top:3px solid #dfb987;border-bottom:1px solid #83cfb48d;box-shadow:0 16px 50px #000a;pointer-events:none;opacity:0;transition:opacity .35s,transform .35s;color:#f7f1e7}
+#chapterBanner.show{opacity:1;transform:translate(-50%,0)}
+#chapterBanner span{font:800 10px system-ui;color:#f2c78f;letter-spacing:3px}
+#chapterBanner strong{display:block;font:900 clamp(22px,4vw,41px) system-ui;letter-spacing:-1px;margin:5px 0}
+#chapterBanner p{font:500 13px/1.6 system-ui;color:#d3e4e3;margin:5px 0}
 </style>
 </head>
 <body>
@@ -754,8 +759,29 @@ function updateHUD(){ $('streetRank').textContent=getRank();$('money').textConte
  race:'Drive through the marked street checkpoints.',
  scout:'Photograph all three clues with F.',
  escape:'Keep moving and lose the patrol.'
-}[mission.stage]||'Follow the next story objective.')+' · '+Math.max(0,Math.ceil(missionTime))+'s remaining'}else{$('missionTitle').textContent='The city is yours';$('missionText').textContent='Talk to Rae on the pavement, collect a parcel and deliver it to another NPC. Two jobs unlock a car.'}}
+}[mission.stage]||'Follow the next story objective.')+
+ ' · '+Math.round(Math.hypot(p.x-missionObjective().x,p.z-missionObjective().z))+'m TO TARGET'+
+ ' · '+Math.max(0,Math.ceil(missionTime))+'s'}else{$('missionTitle').textContent='The city is yours';$('missionText').textContent='Talk to Rae to start the next chapter. Follow the yellow mission marker and your phone.'}}
 // Original crime-fiction campaign: Lost Solara, a city of rival crews and secret debts.
+const chapterBeats=[
+ ['A PLACE TO START','Rae: Everyone starts somewhere. Meet me near the alley.'],
+ ['THE WRONG NAME','Rae: That envelope contains something people are afraid to talk about.'],
+ ['NICO AND THE KEYS','Nico: Bring a car to Solara Customs. Then we can do business.'],
+ ['A HIDDEN CONNECTION','Rae: The terminal hides the truth about the city.'],
+ ['VEGA SETS THE PACE','Vega: Think you can race? Prove it on my route.'],
+ ['THREE SIDES OF SOLARA','Rae: Photograph three landmarks. The pattern is the clue.'],
+ ['THE HEAT IS ON','Nico: Keep moving after the pickup. Lose the patrol.'],
+ ['WHO OWNS THE CITY?','Rae: Find the ledger and the final connection.']
+];
+const chapterScreen=document.createElement('div');chapterScreen.id='chapterBanner';
+chapterScreen.innerHTML='<span>NEW STORY CHAPTER</span><strong id="chapterBannerTitle"></strong><p id="chapterBannerQuote"></p>';document.body.append(chapterScreen);
+let chapterBannerTime=0;
+function showChapterBanner(i){
+ const [title,line]=chapterBeats[Math.min(i,chapterBeats.length-1)];
+ document.getElementById('chapterBannerTitle').textContent=title;
+ document.getElementById('chapterBannerQuote').textContent=line;
+ chapterBannerTime=5;chapterScreen.classList.add('show');
+}
 const storyJobs=[
  {title:'CHAPTER 1 · Small Change',description:'Rae offers a legitimate first courier run while you try to get established.',kind:'courier',reward:180,time:220,heat:0},
  {title:'CHAPTER 2 · The Wrong Envelope',description:'A confidential envelope drags you into the city underworld.',kind:'courier',reward:330,time:220,heat:.35},
@@ -884,17 +910,17 @@ function startMission(){
   needEscape:kind==='escape',route:missionRoutes[n%missionRoutes.length],routeIndex:0,photoIndex:0,escapeSeconds:0};
  missionTime=base.time;targetRing.visible=false;
  heat=Math.max(heat,base.heat);heatTimer=0;refreshMissionProps();
- setNotice(crewDialogue[Math.min(n,crewDialogue.length-1)]);updateHUD();
+ showChapterBanner(n);setWaypoint(missionObjective(),mission.title);updateHUD();
 }
 function finishMission(){
  if(!mission)return;
  const wasLocked=save.completed<2;save.money+=mission.reward;save.completed++;missionCount=save.completed;persist();
- setNotice('DELIVERY COMPLETE · +$'+mission.reward+' · '+getRank());
- mission=null;parcelMesh.visible=false;courierMesh.visible=false;jobTerminal.visible=false;targetRing.visible=false;heat=Math.max(0,heat-.9);
+ setNotice('CHAPTER COMPLETE · +$'+mission.reward+' · '+getRank());
+ mission=null;mapWaypoint=null;mapWaypointName='';parcelMesh.visible=false;courierMesh.visible=false;jobTerminal.visible=false;targetRing.visible=false;heat=Math.max(0,heat-.9);
  if(wasLocked&&save.completed===2){playerCar.visible=true;setTimeout(()=>setNotice('YOUR FIRST RIDE IS READY! Find your parked car and press E.'),700)}
 }
 function failMission(){
- setNotice('The contact left. Talk to Rae to retry.');
+ setNotice('CHAPTER FAILED · Return to Rae to retry. Progress kept.');
  mission=null;targetRing.visible=false;parcelMesh.visible=false;courierMesh.visible=false;jobTerminal.visible=false;closeHack();
 }
 // Solara Customs is a physical drive-in workshop. Esc no longer grants remote upgrades.
@@ -1539,7 +1565,7 @@ function closePhone(){if(!phoneOpen)return;phoneOpen=false;phoneRoot.classList.r
 $('phoneToggle').onclick=()=>phoneOpen?closePhone():openPhone();
 $('phoneClose').onclick=closePhone;
 $('phoneWaypointRae').onclick=()=>{setWaypoint({x:cityLife.fixer.root.position.x,z:cityLife.fixer.root.position.z},'RAE · STORY CONTACT');closePhone()};
-$('phoneWaypointGarage').onclick=()=>{setWaypoint({x:184,z:0},'SOLARA GARAGE');closePhone()};
+$('phoneWaypointGarage').onclick=()=>{setWaypoint({x:184,z:0},'SOLARA CUSTOMS');closePhone()};
 $('phoneWaypointLoot').onclick=()=>{const pos=inCar?carPos:playerPos;let nearest=null,best=Infinity;for(const stash of streetStashes){const d=Math.hypot(stash.x-pos.x,stash.z-pos.z);if(d<best){nearest=stash;best=d}}if(nearest)setWaypoint(nearest,'NEAREST LOOT');closePhone()};
 $('phoneWaypointClear').onclick=()=>{setWaypoint(null);closePhone()};
 // Safe, non-graphic arcade adversaries: guards chase on high heat.
@@ -1605,7 +1631,7 @@ getPlayer:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,inCar}
 isPlaying:()=>gameMode==='play',onNotice:setNotice,
 onReward:amount=>{save.money+=amount;persist();updateHUD()}});
 let network=multiplayer({THREE,scene,makeCar,box,mat,mesh,getState:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,angle:inCar?angle:person.rotation.y,inCar}),onAccount:progress=>{if(progress){save={...defaultSave(),...progress};updateHUD()}},onMessage:message=>setNotice(message)});
-let last=performance.now(),fpsCounter=0,fpsTime=0,lastShopUpdate=0;function frame(now){requestAnimationFrame(frame);if(now-lastShopUpdate>600){lastShopUpdate=now;touchJump.style.display=gameMode==='play'&&!inCar&&matchMedia('(pointer:coarse)').matches?'block':'none';const gearNear=gameMode==='play'&&!inCar?nearestEquipment():null;$('pickupPrompt').style.display=gearNear?'block':'none';if(gearNear)$('pickupPrompt').textContent='F · COLLECT '+gadgetNames[gearNear.id];carHint.style.display=(gameMode==='play'&&!inCar&&nearestTrafficCar())?'block':'none';const px=inCar?carPos.x:playerPos.x,pz=inCar?carPos.z:playerPos.z;for(const sh of shopBuildings){sh.root.visible=gameMode==='intro'||gameMode==='menu'||Math.hypot(px-sh.x,pz-sh.z)<155}}const dt=Math.min(.04,(now-last)/1000);last=now;if(gameMode==='play'){clockTime+=dt;updateEquipmentWorld(dt);if(inCar)moveCar(dt);else movePerson(dt);advanceTraffic(dt);advancePolice(dt);updatePatrolAgents(dt);if(mission){missionTime-=dt;updateMissionActivity(dt);if(missionTime<=0)failMission()}cityLife.update(dt,now);updateHUD();updateCamera(dt);drawMap()}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='takeover'){clockTime+=dt;updateTakeover(dt);advanceTraffic(dt);cityLife.update(dt,now);updateCamera(dt);drawMap()}else if(gameMode==='menu'){cityLife.update(dt,now);const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;fpsTime+=dt;if(fpsTime>1){const fps=Math.round(fpsCounter/fpsTime);$('fps').textContent=fps+' FPS';if(gameMode==='play'&&fps<37&&qualityPixelRatio>.8){qualityPixelRatio=Math.max(.8,qualityPixelRatio-.1);renderer.setPixelRatio(qualityPixelRatio)}fpsTime=0;fpsCounter=0}}
+let last=performance.now(),fpsCounter=0,fpsTime=0,lastShopUpdate=0;function frame(now){requestAnimationFrame(frame);if(now-lastShopUpdate>600){lastShopUpdate=now;touchJump.style.display=gameMode==='play'&&!inCar&&matchMedia('(pointer:coarse)').matches?'block':'none';const gearNear=gameMode==='play'&&!inCar?nearestEquipment():null;$('pickupPrompt').style.display=gearNear?'block':'none';if(gearNear)$('pickupPrompt').textContent='F · COLLECT '+gadgetNames[gearNear.id];carHint.style.display=(gameMode==='play'&&!inCar&&nearestTrafficCar())?'block':'none';const px=inCar?carPos.x:playerPos.x,pz=inCar?carPos.z:playerPos.z;for(const sh of shopBuildings){sh.root.visible=gameMode==='intro'||gameMode==='menu'||Math.hypot(px-sh.x,pz-sh.z)<155}}const dt=Math.min(.04,(now-last)/1000);last=now;if(gameMode==='play'){clockTime+=dt;if(chapterBannerTime>0){chapterBannerTime-=dt;if(chapterBannerTime<=0)chapterScreen.classList.remove('show')}updateEquipmentWorld(dt);if(inCar)moveCar(dt);else movePerson(dt);advanceTraffic(dt);advancePolice(dt);updatePatrolAgents(dt);if(mission){missionTime-=dt;updateMissionActivity(dt);if(missionTime<=0)failMission()}cityLife.update(dt,now);updateHUD();updateCamera(dt);drawMap()}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='takeover'){clockTime+=dt;updateTakeover(dt);advanceTraffic(dt);cityLife.update(dt,now);updateCamera(dt);drawMap()}else if(gameMode==='menu'){cityLife.update(dt,now);const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;fpsTime+=dt;if(fpsTime>1){const fps=Math.round(fpsCounter/fpsTime);$('fps').textContent=fps+' FPS';if(gameMode==='play'&&fps<37&&qualityPixelRatio>.8){qualityPixelRatio=Math.max(.8,qualityPixelRatio-.1);renderer.setPixelRatio(qualityPixelRatio)}fpsTime=0;fpsCounter=0}}
 person.visible=true;setSeatPose(save.completed===0?1:0);playerCar.visible=save.completed>=2;playerCar.position.copy(carPos);$('hud').style.display='none';requestAnimationFrame(frame);if(window.__mvtLoaded)window.__mvtLoaded();addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
 </script>
 </body>
