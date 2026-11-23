@@ -1,5 +1,23 @@
 # MVT 6 — Motor Vehicle Theft
 
+## Cinematic Neighbourhood & Living Traffic Update (v0.8)
+
+A substantial update to the existing original Three.js game, inspired by the supplied street, sidewalk and alley references without copying their art or assets.
+
+- **Mouse look repaired:** moving the mouse right now rotates the camera in the opposite direction from the previous implementation. WASD strafe direction was adjusted to match.
+- **Pavement start:** your protagonist begins seated against a textured building wall with the existing "Please donate" sign, then rises to start exploring.
+- **More detailed pedestrians:** fabric-grain clothing, layered outfits, belts, backpacks or accessories, facial eyes, hair and shoes. Approximately 48 NPCs are distributed across sidewalks and move in the local neighbourhood; Rae still provides missions.
+- **Visible traffic drivers:** more local cars drive through the street grid, with modeled drivers and steering motion.
+- **Pedestrian-aware traffic:** approaching NPCs or the player in the roadway causes traffic to brake and slow.
+- **Vehicle takeover:** approach a passing car on foot and press **E**. A short non-graphic scene shows the vehicle door opening, its original driver getting out and walking away, and your character entering. The wanted level rises. The vehicle remains usable when you exit. This is a fictional arcade game mechanic, not a simulation of real-world conduct.
+- **Neighbourhood shops:** textured signboards, framed glass storefronts, awnings, planters and shops you can interact with using **F**. The shop reward is a one-time small contribution per shop per game session.
+- **Compact playable world:** trimmed the outer four blocks in each direction, leaving a denser 8×8 block city that retains existing mission locations.
+- **Cinematic environment:** sky gradients, cloud forms, repeated pavement and asphalt surface maps, glass and masonry, coloured shopfronts, landscaping and visible coast.
+- **Rendering fixes:** increased near clipping distance for depth precision; separated overlapping road and alley surfaces; segmented kerbs and raised crossing markings to reduce z-fighting; periodically hides distant shopfront details.
+
+**Verification:** JavaScript syntax and Render build/deploy can be checked automatically. The game needs a real in-browser graphics and input test to confirm behaviour and actual FPS, especially on lower-powered laptops.
+
+
 ## Sidewalk, Alley & Mission Overhaul (v0.7)
 
 The new visual layout draws from the supplied screenshots showing an older brick retail alley, textured suburban pavement and an urban street junction. The screenshots are **references only**; no proprietary artwork, buildings or game assets were copied.
