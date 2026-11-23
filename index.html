@@ -176,6 +176,15 @@ body:has(#hud[style*="block"]) #lockHint{display:block}
 #phoneToggle,#wheelToggle{transition:transform .13s ease,filter .15s ease}
 #phoneToggle:hover,#wheelToggle:hover{transform:translateY(-2px);filter:brightness(1.15)}
 @media(max-width:650px){#pickupPrompt{bottom:190px;max-width:70vw;text-align:center}#equippedStatus{right:10px;bottom:320px;font-size:9px}}
+.customsPanel{width:min(760px,94vw)!important;max-height:90vh!important;overflow:auto;background:linear-gradient(132deg,#102c37f5,#1a4051f2 61%,#213444fa)!important;border:1px solid #a5d6c27e!important}
+.customsPanel h2{font-size:clamp(32px,5vw,53px)!important;letter-spacing:-2px;margin:8px 0}
+.customsMeta{display:flex;justify-content:space-between;gap:10px;align-items:center;background:#0b1e2e8f;border:1px solid #7da2a678;border-radius:12px;padding:13px 16px;color:#cbdedd;font:850 11px system-ui}
+#garageMoney{color:#9df0c0;font-size:16px}.customsTabs{display:flex;gap:10px;margin:17px 0}
+.customsTabs button{flex:1;border:1px solid #74b3ac;background:#2b6870;color:#f2f7f4}
+#customPaintOptions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
+.customPaintChoice{border:1px solid #ffffff80;border-radius:11px;min-height:66px;padding:9px 3px;text-shadow:0 1px 4px #000;font:800 11px system-ui}
+#customExtraOptions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#customExtraOptions button{min-height:58px;border:1px solid #79b7b0;background:linear-gradient(130deg,#2c6876,#143c4c);font:800 12px system-ui}
 </style>
 </head>
 <body>
@@ -249,8 +258,16 @@ body:has(#hud[style*="block"]) #lockHint{display:block}
 <div class="movieControls">WASD · MOVE &nbsp;&nbsp; CLICK · MOUSE LOOK &nbsp;&nbsp; F · INTERACT</div></div>
 <div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="menuChapter">A NEW ORIGINAL STORY</div></div></div>
 <div id="storyIntro" aria-live="polite" style="display:none"><div id="introShade"></div><div id="introContent"><div id="introChapter">SOLARA CITY · CHAPTER ONE</div><div id="introCue">AN ORIGINAL MVT 6 FILM</div><h2 id="introTitle">START WITH NOTHING.</h2><p id="introCopy">New city. Empty pockets. Every choice counts.</p></div><button id="introSkip">SKIP INTRO →</button></div>
-<div id="paused" class="overlay"><div class="panel"><div class="eyebrow">SOLARA CITY</div><h2>PAUSED</h2><p>Explore at your own pace. Your cash, upgrades and completed contracts are automatically saved.</p><button id="resume">RESUME</button><button id="openGarage" class="secondary">UPGRADES</button><button id="toMenu" class="secondary">MAIN MENU</button></div></div>
-<div id="garage" class="overlay"><div class="panel"><div class="eyebrow">SOLARA AUTO WORKS</div><h2>Vehicle upgrades</h2><p>Money available: <b id="garageMoney" style="color:#66e2ad"></b></p><div id="upgradeList"></div><h3 style="margin-top:23px;color:#efc18c">RISE THROUGH SOLARA</h3><div id="lifestyleList"></div><button id="closeGarage">BACK TO GAME</button></div></div>
+<div id="paused" class="overlay"><div class="panel"><div class="eyebrow">SOLARA CITY</div><h2>PAUSED</h2><p>Explore at your own pace. Your cash, upgrades and completed contracts are automatically saved.</p><button id="resume">RESUME</button><button id="pauseMap" class="secondary">MAP & MISSIONS</button><button id="toMenu" class="secondary">MAIN MENU</button></div></div>
+<div id="garage" class="overlay"><div class="panel customsPanel">
+ <div class="eyebrow">NICO'S WORKSHOP · EAST SOLARA</div><h2>SOLARA <span style="color:#edc38a">CUSTOMS</span></h2>
+ <p>Park in the service bay, then visit Nico for vehicle upgrades and customisation.</p>
+ <div class="customsMeta"><span>AVAILABLE BALANCE <b id="garageMoney"></b></span><span id="customsVehicle">PERSONAL VEHICLE</span></div>
+ <div class="customsTabs"><button id="tabPerformance">PERFORMANCE</button><button id="tabAppearance" class="secondary">CUSTOMISE</button></div>
+ <div id="upgradeList"></div>
+ <div id="customPaintPanel" style="display:none"><h3>BODY PAINT</h3><div id="customPaintOptions"></div><h3>BODY AND STYLE</h3><div id="customExtraOptions"></div></div>
+ <button id="closeGarage">LEAVE SOLARA CUSTOMS</button>
+ </div></div>
 <script>
 (function(){const startedAt=performance.now(),root=document.getElementById('boot'),fill=document.getElementById('loadingFill'),pct=document.getElementById('bootPct'),label=document.getElementById('bootStatus'),error=document.getElementById('bootError'),retry=document.getElementById('bootRetry');let value=3,complete=false;
 const timer=setInterval(()=>{if(complete)return;value=Math.min(92,value+(value<50?5:2));pct.textContent=value+'%';fill.style.width=value+'%';label.textContent=value<50?'Loading city geometry...':value<80?'Preparing traffic and residents...':'Starting multiplayer world...'},350);
@@ -685,6 +702,35 @@ const traffic=[],police=[];for(let i=0;i<18;i++){const car=makeCar(['#5f9ac9','#
  traffic.push({car,pos,east,dir:i%4<2?1:-1,speed:baseSpeed,baseSpeed,driver,steeringArm,doorPivot,taken:false,id:i});car.position.copy(pos)}
 for(let i=0;i<4;i++){const c=makeCar('#e4edf2',true);c.visible=false;police.push({car:c,pos:new THREE.Vector3(),angle:0,active:false})}
 const depot={x:12.5,z:-16};const depotMark=cyl(6,6,.3,depot.x,.26,depot.z,mat('#65e2ac',.35));depotMark.visible=false;const garageMarker=cyl(7,7,.28,184,.28,0,mat('#edc66f'));const depotBeacon=mesh(new THREE.TorusGeometry(4.8,.37,8,32),new THREE.MeshBasicMaterial({color:0x6df5b5}));depotBeacon.rotation.x=Math.PI/2;depotBeacon.position.set(depot.x,.72,depot.z);const garageBeacon=depotBeacon.clone();garageBeacon.material=new THREE.MeshBasicMaterial({color:0xf5cb72});garageBeacon.position.set(184,.72,0);scene.add(depotBeacon,garageBeacon);depotBeacon.visible=false;
+// Modelled open-sided tuning workshop: floor markings, service lifts, signage and tools.
+const customsRoot=new THREE.Group();scene.add(customsRoot);customsRoot.position.set(184,0,0);
+const steelCustoms=mat('#334857',.48,.38),goldCustoms=mat('#d59f64',.5,.25),floorCustoms=mat('#66747a',.91),lampCustoms=new THREE.MeshBasicMaterial({color:0xffe2ae});
+box(29,.24,29,0,-.02,0,floorCustoms,customsRoot);
+for(const xx of [-13.3,13.3])for(const zz of [-13.3,13.3])box(.75,8.5,.75,xx,4.25,zz,steelCustoms,customsRoot);
+for(const zz of [-13.3,13.3])box(28,.65,.65,0,8.5,zz,steelCustoms,customsRoot);
+for(const xx of [-13.3,13.3])box(.65,.65,28,xx,8.5,0,steelCustoms,customsRoot);
+box(29,.33,29,0,8.86,0,mat('#354454',.67),customsRoot);
+for(let xx of [-6,6])for(let zz of [-6,6]){
+ box(.9,.65,5.5,xx,.28,zz,goldCustoms,customsRoot);
+ box(.25,.1,5.5,xx,.71,zz,steelCustoms,customsRoot);
+}
+for(let xx of [-8,8])for(let zz of [-11,11])box(2,.12,.7,xx,8.15,zz,lampCustoms,customsRoot);
+for(const xx of [-12,12])for(let zz=-8;zz<=8;zz+=5)box(1.25,1.25,1.05,xx,.74,zz,mat('#6d7d85'),customsRoot);
+const customsLabel=document.createElement('canvas');customsLabel.width=1024;customsLabel.height=220;
+const sl=customsLabel.getContext('2d');sl.fillStyle='#102e3b';sl.fillRect(0,0,1024,220);
+sl.fillStyle='#ebc58b';sl.font='900 94px system-ui';sl.textAlign='center';sl.fillText('SOLARA CUSTOMS',512,135);
+sl.fillStyle='#8fd0cf';sl.font='700 26px system-ui';sl.fillText('NICO · ENGINEERING · PAINT · REPAIRS',512,188);
+const customSignTexture=new THREE.CanvasTexture(customsLabel);customSignTexture.colorSpace=THREE.SRGBColorSpace;
+const customSign=mesh(new THREE.PlaneGeometry(19,4.1),new THREE.MeshBasicMaterial({map:customSignTexture,side:THREE.DoubleSide}),customsRoot);
+customSign.position.set(0,6.1,13.8);
+const customsMechanic=new THREE.Group();customsRoot.add(customsMechanic);customsMechanic.position.set(9.7,0,7.7);
+const jacketNico=mat('#b98d5c',.75),faceNico=mat('#c08a6c');
+mesh(new THREE.CapsuleGeometry(.44,.8,5,11),jacketNico,customsMechanic).position.y=1.78;
+mesh(new THREE.SphereGeometry(.35,14,10),faceNico,customsMechanic).position.y=2.72;
+for(const side of [-1,1]){box(.3,1.1,.4,side*.27,.7,0,mat('#263b47'),customsMechanic);box(.28,.9,.34,side*.57,1.78,0,jacketNico,customsMechanic)}
+// Pin and beacon lead you to the physical service entrance.
+const customsEntryRing=mesh(new THREE.TorusGeometry(8,.33,8,30),new THREE.MeshBasicMaterial({color:0x77ddd0,transparent:true,opacity:.55}));
+customsEntryRing.position.set(184,.32,0);customsEntryRing.rotation.x=Math.PI/2;
 const destinations=[{x:370,z:0,name:'Sunset Marina'},{x:-370,z:276,name:'West Haven'},{x:0,z:-370,name:'Old Quarter'},{x:276,z:276,name:'Emerald Heights'},{x:-276,z:-276,name:'Industrial Point'},{x:0,z:370,name:'South Pier'}];const targetRing=mesh(new THREE.TorusGeometry(7,.7,8,40),new THREE.MeshBasicMaterial({color:0xffdc77}));targetRing.rotation.x=Math.PI/2;targetRing.position.y=.8;targetRing.visible=false;scene.add(targetRing);
 // Vehicle collision uses wider clearance; walkers use tighter geometry and an escape safeguard.
 function collision(x,z,margin=1.0){
@@ -851,7 +897,19 @@ function failMission(){
  setNotice('The contact left. Talk to Rae to retry.');
  mission=null;targetRing.visible=false;parcelMesh.visible=false;courierMesh.visible=false;jobTerminal.visible=false;closeHack();
 }
-function openGarage(){if(gameMode==='menu')return;if(document.pointerLockElement)document.exitPointerLock();gameMode='garage';$('paused').style.display='none';$('garage').style.display='flex';renderGarage()}
+// Solara Customs is a physical drive-in workshop. Esc no longer grants remote upgrades.
+const customsLocation={x:184,z:0},customsBay={x:184,z:0},customsNico={x:192,z:10.5};
+function nearCustoms(){return Math.hypot(carPos.x-customsBay.x,carPos.z-customsBay.z)<17}
+function openGarage(){
+ if(gameMode!=='play')return;
+ if(!inCar){setNotice('Bring a vehicle into the Solara Customs service bay first.');return}
+ if(!nearCustoms()){setNotice('Drive to Solara Customs at East Solara to upgrade your vehicle.');setWaypoint(customsLocation,'SOLARA CUSTOMS');return}
+ if(Math.abs(velocity)>2.6){setNotice('Stop your car inside the marked service bay.');return}
+ if(document.pointerLockElement)document.exitPointerLock();
+ for(const k in keys)keys[k]=false;velocity=0;
+ gameMode='garage';$('paused').style.display='none';$('garage').style.display='flex';
+ showCustomsTab('performance');renderGarage();
+}
 const upgrades=[{id:'speed',name:'Performance engine',desc:'Raise top speed and acceleration',cost:l=>450*(l+1)},{id:'handling',name:'Sport suspension',desc:'Sharpen steering control',cost:l=>350*(l+1)},{id:'nitro',name:'Boost system',desc:'Increase boost strength',cost:l=>500*(l+1)}];
 function renderGarage(){$('garageMoney').textContent='$'+save.money.toLocaleString();$('upgradeList').innerHTML='';for(const u of upgrades){const level=save[u.id],cost=u.cost(level),div=document.createElement('div');div.className='upg';const desc=document.createElement('span');desc.innerHTML='<b>'+u.name+'</b> <span style="color:#68e2ae">Lv '+level+'/5</span><br>'+u.desc;const b=document.createElement('button');b.textContent=level>=5?'MAXED':'$'+cost;b.disabled=level>=5||save.money<cost;b.onclick=()=>{if(save.money>=cost&&save[u.id]<5){save.money-=cost;save[u.id]++;persist();renderGarage();updateHUD()}};div.append(desc,b);$('upgradeList').append(div)}renderLifestyle()}
 const lifestyle=[
@@ -920,11 +978,12 @@ function tagWall(){
 }
 function interact(){
  if(gameMode!=='play')return;
+ if(inCar&&nearCustoms()){openGarage();return}
  if(collectEquipment())return;
  if(interactMission()){gestureTime=.65;return;}
  if(streetSideActivity())return;
  const p=inCar?carPos:playerPos;
- if(Math.hypot(p.x-184,p.z)<16){openGarage();return}
+ if(Math.hypot(p.x-184,p.z)<16){setNotice('SOLARA CUSTOMS · Drive inside the bay, stop, and press F to customise your ride.');return}
  if(!inCar&&interactShop(p.x,p.z))return;
  if(cityLife.interact()){gestureTime=.65;return;}
  setNotice(mission?'Collect the parcel or speak to the receiving NPC.':'Talk to Rae near the starting pavement to find work.');
@@ -1156,10 +1215,10 @@ if([' ','spacebar','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e
 if(on&&!e.repeat&&k==='q'){e.preventDefault();if(wheelOpen)closeGadgetWheel();else if(gameMode==='play')openGadgetWheel();return}
 if(k==='escape'&&on){if(tutorialOpen){closeTutorial();return}if(wheelOpen){closeGadgetWheel();return}if(phoneOpen){closePhone();return}}
 if(k==='p'&&on&&!e.repeat){if(phoneOpen)closePhone();else if(gameMode==='play')openPhone();return}
-if(gameMode!=='play'&&k!=='escape')return;keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(document.pointerLockElement)document.exitPointerLock();else if(gameMode==='play')pause();else if(gameMode==='pause')resume();else if(gameMode==='garage')closeGarage()}if((k===' '||k==='spacebar')&&!inCar)beginJump();if(k==='e')enterExit();if(k==='f')interact();if(k==='t')tagWall();if(k==='g')activateGadget();if(k==='c'){camMode=(camMode+1)%3;orbitOffset=0};if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;playerCar.position.copy(carPos);playerCar.rotation.y=angle;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
+if(gameMode!=='play'&&k!=='escape')return;keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(document.pointerLockElement)document.exitPointerLock();else if(gameMode==='play')pause();else if(gameMode==='pause')resume();}if((k===' '||k==='spacebar')&&!inCar)beginJump();if(k==='e')enterExit();if(k==='f')interact();if(k==='t')tagWall();if(k==='g')activateGadget();if(k==='c'){camMode=(camMode+1)%3;orbitOffset=0};if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;playerCar.position.copy(carPos);playerCar.rotation.y=angle;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
 addEventListener('keydown',e=>keyState(e,true));addEventListener('keyup',e=>keyState(e,false));addEventListener('blur',()=>{for(let k in keys)keys[k]=false});
-function pause(){if(document.pointerLockElement)document.exitPointerLock();gameMode='pause';$('paused').style.display='flex'}function resume(){gameMode='play';$('paused').style.display='none';$('garage').style.display='none'}function closeGarage(){gameMode='play';$('garage').style.display='none'}
-$('play').onclick=()=>{startIntro()};$('resetSave').onclick=()=>{if(confirm('Reset all MVT 6 money, chapters, gear and upgrades?')){save=defaultSave();collectedGear=[];selectedGadget=0;try{localStorage.removeItem('mvt6-gear-v2')}catch{};updateGadgetWheel();persist();setNotice('New campaign started · Equipment wheel cleared')}};$('resume').onclick=resume;$('openGarage').onclick=openGarage;$('closeGarage').onclick=closeGarage;$('toMenu').onclick=()=>{gameMode='menu';$('paused').style.display='none';$('hud').style.display='none';$('menu').style.display='flex'};
+function pause(){if(document.pointerLockElement)document.exitPointerLock();gameMode='pause';$('paused').style.display='flex'}function resume(){gameMode='play';$('paused').style.display='none';$('garage').style.display='none'}function closeGarage(){gameMode='play';$('garage').style.display='none';setNotice('Thanks for visiting Solara Customs!')}
+$('play').onclick=()=>{startIntro()};$('resetSave').onclick=()=>{if(confirm('Reset all MVT 6 money, chapters, gear and upgrades?')){save=defaultSave();collectedGear=[];selectedGadget=0;try{localStorage.removeItem('mvt6-gear-v2')}catch{};updateGadgetWheel();persist();setNotice('New campaign started · Equipment wheel cleared')}};$('resume').onclick=resume;$('pauseMap').onclick=()=>{ $('paused').style.display='none';gameMode='play';openPhone() };$('closeGarage').onclick=closeGarage;$('toMenu').onclick=()=>{gameMode='menu';$('paused').style.display='none';$('hud').style.display='none';$('menu').style.display='flex'};
 const touchJump=document.createElement('button');touchJump.id='touchJump';touchJump.textContent='JUMP';touchJump.setAttribute('aria-label','Jump');
 touchJump.style.cssText='position:fixed;right:18px;bottom:445px;z-index:14;background:#3d7e84;color:white;border:1px solid #ade0cf;border-radius:12px;padding:12px;font:900 12px system-ui;display:none';
 document.body.append(touchJump);
