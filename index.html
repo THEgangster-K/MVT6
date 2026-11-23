@@ -118,7 +118,7 @@ body:has(#hud[style*="block"]) #lockHint{display:block}
  <div id="fps"></div>
  <div id="objective"><b>ACTIVE CONTRACT</b><strong id="missionTitle">—</strong><p id="missionText">—</p></div>
  <div id="notice"></div><div id="speed">0 <small>KM/H</small></div>
- <div id="help"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Drive / walk &nbsp; <kbd>Shift</kbd> Sprint / boost &nbsp; <kbd>Space</kbd> Brake<br><kbd>E</kbd> Enter / exit / take vehicle &nbsp; <kbd>F</kbd> Talk / collect / interact &nbsp; <kbd>T</kbd> Street art &nbsp; <kbd>P</kbd> Mission phone &nbsp; <kbd>C</kbd> Camera &nbsp; <kbd>Esc</kbd> Pause &nbsp; <kbd>R</kbd> Reset car &nbsp; <kbd>Click</kbd> Lock mouse <kbd>Esc</kbd> Unlock &nbsp; <kbd>F</kbd> Talk to NPCs</div>
+ <div id="help"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Drive / walk &nbsp; <kbd>Shift</kbd> Sprint / boost &nbsp; <kbd>Space</kbd> Brake<br><kbd>E</kbd> Enter / exit / take vehicle &nbsp; <kbd>F</kbd> Talk / collect / interact &nbsp; <kbd>T</kbd> Street art &nbsp; <kbd>P</kbd> Mission phone &nbsp; <kbd>G</kbd> Signal tagger &nbsp; <kbd>C</kbd> Camera &nbsp; <kbd>Esc</kbd> Pause &nbsp; <kbd>R</kbd> Reset car &nbsp; <kbd>Click</kbd> Lock mouse <kbd>Esc</kbd> Unlock &nbsp; <kbd>F</kbd> Talk to NPCs</div>
  <div id="mapWrap"><div id="mapCompass">N 000°</div><canvas id="minimap" width="320" height="320"></canvas><div id="mapLegend">◆ MISSION　● CONTACT　■ LOOT</div></div>
  <button id="phoneToggle" title="Open your mission phone (P)">▣ PHONE · P</button>
  <div id="gamePhone" aria-label="Solara mission phone">
@@ -892,7 +892,7 @@ function keyState(e,on){
  if(editable){if(!on)for(const k of ['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'])keys[k]=false;return}
  let k=String(e.key||'').toLowerCase();
  if(e.code==='KeyW')k='w';if(e.code==='KeyA')k='a';if(e.code==='KeyS')k='s';if(e.code==='KeyD')k='d';
-if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();if(k==='p'&&on&&!e.repeat){if(phoneOpen)closePhone();else if(gameMode==='play')openPhone();return}if(gameMode!=='play'&&k!=='escape')return;keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(document.pointerLockElement)document.exitPointerLock();else if(gameMode==='play')pause();else if(gameMode==='pause')resume();else if(gameMode==='garage')closeGarage()}if(k==='e')enterExit();if(k==='f')interact();if(k==='t')tagWall();if(k==='c'){camMode=(camMode+1)%3;orbitOffset=0};if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;playerCar.position.copy(carPos);playerCar.rotation.y=angle;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
+if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();if(k==='p'&&on&&!e.repeat){if(phoneOpen)closePhone();else if(gameMode==='play')openPhone();return}if(gameMode!=='play'&&k!=='escape')return;keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(document.pointerLockElement)document.exitPointerLock();else if(gameMode==='play')pause();else if(gameMode==='pause')resume();else if(gameMode==='garage')closeGarage()}if(k==='e')enterExit();if(k==='f')interact();if(k==='t')tagWall();if(k==='g')useArcadeGadget();if(k==='c'){camMode=(camMode+1)%3;orbitOffset=0};if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;playerCar.position.copy(carPos);playerCar.rotation.y=angle;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
 addEventListener('keydown',e=>keyState(e,true));addEventListener('keyup',e=>keyState(e,false));addEventListener('blur',()=>{for(let k in keys)keys[k]=false});
 function pause(){if(document.pointerLockElement)document.exitPointerLock();gameMode='pause';$('paused').style.display='flex'}function resume(){gameMode='play';$('paused').style.display='none';$('garage').style.display='none'}function closeGarage(){gameMode='play';$('garage').style.display='none'}
 $('play').onclick=()=>{startIntro()};$('resetSave').onclick=()=>{if(confirm('Reset your MVT 6 cash, upgrades and contracts?')){save=defaultSave();persist();setNotice('Save reset')}};$('resume').onclick=resume;$('openGarage').onclick=openGarage;$('closeGarage').onclick=closeGarage;$('toMenu').onclick=()=>{gameMode='menu';$('paused').style.display='none';$('hud').style.display='none';$('menu').style.display='flex'};
@@ -1135,12 +1135,70 @@ $('phoneWaypointRae').onclick=()=>{setWaypoint({x:cityLife.fixer.root.position.x
 $('phoneWaypointGarage').onclick=()=>{setWaypoint({x:184,z:0},'SOLARA GARAGE');closePhone()};
 $('phoneWaypointLoot').onclick=()=>{const pos=inCar?carPos:playerPos;let nearest=null,best=Infinity;for(const stash of streetStashes){const d=Math.hypot(stash.x-pos.x,stash.z-pos.z);if(d<best){nearest=stash;best=d}}if(nearest)setWaypoint(nearest,'NEAREST LOOT');closePhone()};
 $('phoneWaypointClear').onclick=()=>{setWaypoint(null);closePhone()};
+// Safe, non-graphic arcade adversaries: guards chase on high heat.
+// Player's signal tagger temporarily disables drones/guards; being caught resets to a checkpoint.
+const patrolAgents=[];
+for(let i=0;i<5;i++){
+ const root=new THREE.Group();scene.add(root);
+ const seeds=[[92,-10],[-93,-90],[184,94],[-94,185],[12,185]];
+ root.position.set(seeds[i][0],0,seeds[i][1]);
+ const coat=mat(['#466478','#5b687b','#49697e'][i%3],.75),face=mat('#c99c83');
+ const body=mesh(new THREE.CapsuleGeometry(.42,.85,4,9),coat,root);body.position.y=1.77;
+ const head=mesh(new THREE.SphereGeometry(.37,12,10),face,root);head.position.y=2.74;
+ const hat=mesh(new THREE.CylinderGeometry(.42,.46,.15,12),mat('#203b4e'),root);hat.position.y=3.03;
+ const legParts=[];
+ for(const side of [-1,1]){
+ const leg=new THREE.Group();root.add(leg);leg.position.set(side*.24,1.23,0);
+ const calf=mesh(new THREE.CapsuleGeometry(.16,.77,3,7),mat('#293847'),leg);calf.position.y=-.55;legParts.push(leg);
+ }
+ root.visible=false;patrolAgents.push({root,home:new THREE.Vector3(seeds[i][0],0,seeds[i][1]),legs:legParts,disabledUntil:0,phase:i*1.7});
+}
+let taggerCooldown=0,guardCatchCooldown=0;
+const checkpoint=new THREE.Vector3(12.6,0,-29);
+function useArcadeGadget(){
+ if(gameMode!=='play'||inCar)return;
+ if(save.completed<2){setNotice('Complete two story jobs to unlock the signal tagger.');return}
+ if(clockTime<taggerCooldown){setNotice('Signal tagger recharging...');return}
+ const nearby=patrolAgents.filter(g=>g.root.visible&&clockTime>=g.disabledUntil&&g.root.position.distanceTo(playerPos)<18);
+ if(!nearby.length){setNotice('No active patrol signal in range.');return}
+ nearby.sort((a,b)=>a.root.position.distanceTo(playerPos)-b.root.position.distanceTo(playerPos));
+ const target=nearby[0];
+ target.disabledUntil=clockTime+8;taggerCooldown=clockTime+12;gestureTime=.7;
+ setNotice('PATROL SIGNAL DISABLED · 8 seconds to get clear!');
+}
+function updatePatrolAgents(dt){
+ const player=inCar?carPos:playerPos,active=heat>=1.5&&gameMode==='play';
+ for(const g of patrolAgents){
+ const distance=Math.hypot(player.x-g.root.position.x,player.z-g.root.position.z);
+ const disabled=clockTime<g.disabledUntil;
+ g.root.visible=active&&distance<110;
+ if(!g.root.visible)continue;
+ const tx=disabled?g.root.position.x:player.x,tz=disabled?g.root.position.z:player.z;
+ const dx=tx-g.root.position.x,dz=tz-g.root.position.z,length=Math.hypot(dx,dz);
+ if(!disabled&&length>3.2){
+   const step=Math.min(length,dt*3.9),nx=g.root.position.x+dx/length*step,nz=g.root.position.z+dz/length*step;
+   if(!collision(nx,g.root.position.z,.25))g.root.position.x=nx;
+   if(!collision(g.root.position.x,nz,.25))g.root.position.z=nz;
+   const heading=Math.atan2(dx,dz),turn=Math.atan2(Math.sin(heading-g.root.rotation.y),Math.cos(heading-g.root.rotation.y));
+   g.root.rotation.y+=turn*Math.min(1,dt*8);
+ }
+ const phase=Math.sin(clockTime*9+g.phase)*(disabled?0:.48);
+ g.legs[0].rotation.x=phase;g.legs[1].rotation.x=-phase;
+ if(!inCar&&!disabled&&distance<2.4&&clockTime>guardCatchCooldown){
+   guardCatchCooldown=clockTime+15;
+   save.money=Math.max(0,save.money-35);persist();
+   heat=Math.max(0,heat-1.8);
+   playerPos.copy(checkpoint);person.position.copy(playerPos);
+   setNotice('PATROL CAUGHT YOU · Returned to your street checkpoint. -$35');
+ }
+ }
+}
 const cityLife=createCityLife({THREE,scene,box,mesh,mat,roadPositions,rnd,collision,onStoryContact:startMission,
 getPlayer:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,inCar}),
 isPlaying:()=>gameMode==='play',onNotice:setNotice,
 onReward:amount=>{save.money+=amount;persist();updateHUD()}});
 let network=multiplayer({THREE,scene,makeCar,box,mat,mesh,getState:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,angle:inCar?angle:person.rotation.y,inCar}),onAccount:progress=>{if(progress){save={...defaultSave(),...progress};updateHUD()}},onMessage:message=>setNotice(message)});
-let last=performance.now(),fpsCounter=0,fpsTime=0,lastShopUpdate=0;function frame(now){requestAnimationFrame(frame);if(now-lastShopUpdate>600){lastShopUpdate=now;carHint.style.display=(gameMode==='play'&&!inCar&&nearestTrafficCar())?'block':'none';const px=inCar?carPos.x:playerPos.x,pz=inCar?carPos.z:playerPos.z;for(const sh of shopBuildings){sh.root.visible=gameMode==='intro'||gameMode==='menu'||Math.hypot(px-sh.x,pz-sh.z)<155}}const dt=Math.min(.04,(now-last)/1000);last=now;if(gameMode==='play'){clockTime+=dt;if(inCar)moveCar(dt);else movePerson(dt);advanceTraffic(dt);advancePolice(dt);if(mission){missionTime-=dt;updateMissionActivity(dt);if(missionTime<=0)failMission()}cityLife.update(dt,now);updateHUD();updateCamera(dt);drawMap()}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='takeover'){updateTakeover(dt);advanceTraffic(dt);cityLife.update(dt,now);updateCamera(dt)}else if(gameMode==='menu'){cityLife.update(dt,now);const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;fpsTime+=dt;if(fpsTime>1){const fps=Math.round(fpsCounter/fpsTime);$('fps').textContent=fps+' FPS';if(gameMode==='play'&&fps<37&&qualityPixelRatio>.8){qualityPixelRatio=Math.max(.8,qualityPixelRatio-.1);renderer.setPixelRatio(qualityPixelRatio)}fpsTime=0;fpsCounter=0}}
+let last=performance.now(),fpsCounter=0,fpsTime=0,lastShopUpdate=0;function frame(now){requestAnimationFrame(frame);if(now-lastShopUpdate>600){lastShopUpdate=now;carHint.style.display=(gameMode==='play'&&!inCar&&nearestTrafficCar())?'block':'none';const px=inCar?carPos.x:playerPos.x,pz=inCar?carPos.z:playerPos.z;for(const sh of shopBuildings){sh.root.visible=gameMode==='intro'||gameMode==='menu'||Math.hypot(px-sh.x,pz-sh.z)<155}}const dt=Math.min(.04,(now-last)/1000);last=now;if(gameMode==='play'){clockTime+=dt;if(inCar)moveCar(dt);else movePerson(dt);advanceTraffic(dt);advancePolice(dt);updatePatrolAgents(dt);if(mission){missionTime-=dt;updateMissionActivity(dt);if(missionTime<=0)failMission()}cityLife.update(dt,now);updateHUD();updateCamera(dt);drawMap()}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='takeover'){updateTakeover(dt);advanceTraffic(dt);cityLife.update(dt,now);updateCamera(dt)}else if(gameMode==='menu'){cityLife.update(dt,now);const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;fpsTime+=dt;if(fpsTime>1){const fps=Math.round(fpsCounter/fpsTime);$('fps').textContent=fps+' FPS';if(gameMode==='play'&&fps<37&&qualityPixelRatio>.8){qualityPixelRatio=Math.max(.8,qualityPixelRatio-.1);renderer.setPixelRatio(qualityPixelRatio)}fpsTime=0;fpsCounter=0}}
 person.visible=true;setSeatPose(save.completed===0?1:0);playerCar.visible=save.completed>=2;playerCar.position.copy(carPos);$('hud').style.display='none';requestAnimationFrame(frame);if(window.__mvtLoaded)window.__mvtLoaded();addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
 </script>
 </body>
