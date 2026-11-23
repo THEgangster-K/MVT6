@@ -1694,6 +1694,61 @@ function drivingHorn(){
    osc.connect(gain);gain.connect(audio.destination);osc.start();osc.stop(audio.currentTime+.29)}
  }catch{}
 }
+// Reusable low-overhead VFX pool for drifting, dust, non-graphic collisions.
+const particleCanvas=document.createElement('canvas');particleCanvas.width=64;particleCanvas.height=64;
+const particleContext=particleCanvas.getContext('2d');
+const particleGradient=particleContext.createRadialGradient(32,32,2,32,32,32);
+particleGradient.addColorStop(0,'#ffffffdd');particleGradient.addColorStop(.26,'#ffffffb9');
+particleGradient.addColorStop(.7,'#ffffff36');particleGradient.addColorStop(1,'#ffffff00');
+particleContext.fillStyle=particleGradient;particleContext.fillRect(0,0,64,64);
+const particleTexture=new THREE.CanvasTexture(particleCanvas);
+const effectGroup=new THREE.Group();scene.add(effectGroup);
+const particles=Array.from({length:42},()=>{
+ const m=new THREE.SpriteMaterial({map:particleTexture,color:0x9cc5d3,transparent:true,depthWrite:false,opacity:0});
+ const sprite=new THREE.Sprite(m);sprite.visible=false;effectGroup.add(sprite);
+ return {sprite,life:0,total:1,vx:0,vy:0,vz:0};
+});
+let particleCursor=0,driftElapsed=0,driftIntensity=0,driftDistance=0,driftCombo=0;
+function emitVfx(x,y,z,color=0xabb7c3,size=1.0,vx=0,vy=1.2,vz=0,ttl=.7){
+ const p=particles[particleCursor++%particles.length],o=p.sprite;
+ p.life=ttl;p.total=ttl;p.vx=vx;p.vy=vy;p.vz=vz;
+ o.position.set(x,y,z);o.scale.set(size,size,size);
+ o.material.color.set(color);o.material.opacity=.58;o.visible=true;
+}
+function updateVfx(dt){
+ for(const p of particles){
+  if(p.life<=0)continue;
+  p.life=Math.max(0,p.life-dt);
+  p.sprite.position.x+=p.vx*dt;p.sprite.position.y+=p.vy*dt;p.sprite.position.z+=p.vz*dt;
+  p.sprite.scale.multiplyScalar(1+dt*1.1);
+  p.sprite.material.opacity=(p.life/p.total)*.6;
+  if(p.life<=0)p.sprite.visible=false;
+ }
+}
+function impactFx(x,z,kind='dust'){
+ for(let i=0;i<8;i++){
+  const a=i*Math.PI/4,sp=1.5+rnd(i+clockTime)*2.2;
+  emitVfx(x,.8,z,kind==='spark'?0xffc287:0xb6c7cc,.4+rnd(i)*.6,
+   Math.sin(a)*sp,.3+rnd(i+5)*1.3,Math.cos(a)*sp,.4+rnd(i+9)*.3);
+ }
+}
+function driftFx(dt,turning){
+ if(!inCar||!keys.shift||Math.abs(velocity)<7||!turning){
+  driftElapsed=0;driftIntensity=Math.max(0,driftIntensity-dt*2);
+  if(!keys.shift)driftDistance=0;
+  return;
+ }
+ driftElapsed+=dt;driftIntensity=Math.min(1,driftIntensity+dt*2.2);driftDistance+=Math.abs(velocity)*dt;
+ if(driftElapsed>.12){
+  driftElapsed=0;
+  for(const side of [-1,1]){
+   const x=carPos.x-Math.sin(angle)*2.5+Math.cos(angle)*side*1.3;
+   const z=carPos.z-Math.cos(angle)*2.5-Math.sin(angle)*side*1.3;
+   emitVfx(x,.43,z,0xc0c7c9,1.3+driftIntensity*.7,-Math.sin(angle)*1.5,.55,-Math.cos(angle)*1.5,.6);
+  }
+ }
+ if(driftDistance>95){driftDistance=0;driftCombo++;setNotice('DRIFT CHAIN · '+driftCombo+' · NICE CONTROL')}
+}
 // Arcade vehicle/pedestrian interaction: contacts trigger a visible stumble and wanted heat.
 function checkPedestrianTraffic(dt){
  if(!inCar||Math.abs(velocity)<.2)return;
