@@ -539,7 +539,7 @@ const roofBatch=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),mat('#e8e5d
 for(let i=0;i<roofMatrices.length;i++)roofBatch.setMatrixAt(i,roofMatrices[i]);
 roofBatch.instanceMatrix.needsUpdate=true;roofBatch.frustumCulled=false;scene.add(roofBatch);
 // Varied buildings: rooftop machinery, water towers, stepped crowns and shop awnings.
-const roofModules=[],ventStacks=[],awningModules=[],balconyModules=[],signModules=[];
+const roofModules=[],ventStacks=[],awningModules=[],balconyModules=[],signModules=[],solarModules=[],parapetModules=[];
 const d=new THREE.Object3D(),dq=new THREE.Quaternion();
 function matrixBox(out,x,y,z,w,h,depth){d.position.set(x,y,z);d.rotation.set(0,0,0);d.scale.set(w,h,depth);d.updateMatrix();out.push(d.matrix.clone())}
 for(let k=0;k<buildingMatrices.length;k++){
@@ -547,6 +547,16 @@ for(let k=0;k<buildingMatrices.length;k++){
  buildingMatrices[k].decompose(pos,rot,scale);
  const bx=pos.x,bz=pos.z,height=scale.y,depth=scale.z,bw=scale.x,y=height+.4;
  const type=k%7;
+ // Distinct silhouettes from street-level and in the cinematic city flyover.
+ if(k%9===2 && height>24){
+   for(const side of [-1,1]){
+     matrixBox(parapetModules,bx+side*(bw/2-.45),y+.43,bz,.4,.86,depth-.8);
+     matrixBox(parapetModules,bx,y+.43,bz+side*(depth/2-.45),bw-.8,.86,.4);
+   }
+   for(const ix of [-1,0,1])for(const iz of [-1,1]){
+     matrixBox(solarModules,bx+ix*3.6,y+.39,bz+iz*3.9,3,.11,2.6);
+   }
+ }
  if(type===0||type===4){matrixBox(roofModules,bx,y+2.1,bz,bw*.45,4.2,depth*.42);
     matrixBox(roofModules,bx,y+4.45,bz,bw*.25,.55,depth*.24)}
  if(type===1||type===3){matrixBox(roofModules,bx+5,y+.85,bz-3,4.8,1.7,7.2);
@@ -566,6 +576,8 @@ detailBatch(ventStacks,new THREE.CylinderGeometry(.5,.5,1,8),mat('#728d9b',.45,.
 detailBatch(awningModules,new THREE.BoxGeometry(1,1,1),mat('#e7a97a',.62));
 detailBatch(balconyModules,new THREE.BoxGeometry(1,1,1),mat('#adbdc1',.55,.1));
 detailBatch(signModules,new THREE.BoxGeometry(1,1,1),mat('#295970',.4,.16));
+detailBatch(solarModules,new THREE.BoxGeometry(1,1,1),mat('#254a5c',.2,.55));
+detailBatch(parapetModules,new THREE.BoxGeometry(1,1,1),mat('#9a9b98',.88));
 for(let g=0;g<facadeMatrices.length;g++){const inst=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1),windowMats[g],facadeMatrices[g].length);
 for(let j=0;j<facadeMatrices[g].length;j++)inst.setMatrixAt(j,facadeMatrices[g][j]);
 inst.instanceMatrix.needsUpdate=true;inst.frustumCulled=false;scene.add(inst)}
