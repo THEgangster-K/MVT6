@@ -18,6 +18,13 @@ for(const moduleName of ['city-life.js','client.js','game-core.js']){
 }
 const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
 assert.equal(ids.length,new Set(ids).size,'Duplicate HTML IDs');
+assert.ok(html.includes('<option value="auto">AUTO · TARGET 60 FPS</option>'),'Adaptive quality option exists');
+assert.ok(html.includes("graphicsPreset='auto'"),'Auto quality is the default for new players');
+assert.ok(html.includes('fpsCounter*1000/elapsed'),'FPS uses real elapsed time, not clamped physics dt');
+assert.ok(html.includes('autoQualityGoodWindows>=3'),'Adaptive quality recovery uses hysteresis');
+assert.ok(html.includes('autoQualityLastChange>=1800'),'Adaptive quality changes are rate limited');
+assert.ok(!html.includes('fpsTime+=dt'),'Old FPS calculation is removed');
+
 const builtAtRuntime=new Set(['hackCode','hackProgress','hackButtons','hackCancel','carHint','lockHint','citizenDialog','citizenPrompt']);
 for(const match of matches[1][1].matchAll(/\$\('([^']+)'\)/g)){
  assert.ok(ids.includes(match[1])||builtAtRuntime.has(match[1]),'Missing UI element: '+match[1]);
