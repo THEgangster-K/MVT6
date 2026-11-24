@@ -36,6 +36,9 @@ assert.ok(html.includes('if(playerCar.userData.detail)playerCar.userData.detail.
 assert.ok(html.includes('detail.visible=(t.pos.x-px)**2+(t.pos.z-pz)**2<78*78'),'Traffic vehicle details are distance culled');
 assert.ok(html.includes('detail.visible=p.active&&(p.pos.x-px)**2+(p.pos.z-pz)**2<78*78'),'Police vehicle details are distance culled');
 assert.ok(html.includes('group.userData.wheels=wheelAssemblies'),'Vehicle wheel physics interface is retained');
+assert.ok(html.includes('detailBatch(solarModules'),'Instanced rooftop solar arrays exist');
+assert.ok(html.includes('detailBatch(parapetModules'),'Instanced rooftop parapets exist');
+
 assert.ok(html.includes('group.userData.brakeLights=brakeTailLights'),'Brake light interface is retained');
 
 assert.ok(!html.includes('fpsTime+=dt'),'Old FPS calculation is removed');
