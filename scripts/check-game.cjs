@@ -16,6 +16,14 @@ for(const moduleName of ['city-life.js','client.js','game-core.js']){
  const plain=read(moduleName).replace(/^import .*;$/gm,'').replace(/^export /gm,'');
  new vm.Script(plain,{filename:moduleName});
 }
+// Rendering regression checks: pedestrian models retain dialogue and interaction,
+// while detail groups and street props are distance-cullable.
+const cityLifeSource=read('city-life.js');
+assert.ok(cityLifeSource.includes('const fineDetail=new THREE.Group()'),'Pedestrians have close-up detail groups');
+assert.ok(cityLifeSource.includes('n.fineDetail.visible=distanceSq<35*35'),'Close-up detail is distance culled');
+assert.ok(cityLifeSource.includes('const animateDetail=distanceSq<65*65'),'Distant limb animation is limited');
+assert.ok(cityLifeSource.includes('prop.visible=!sceneActive||dx*dx+dz*dz<190*190'),'Street props are culled');
+assert.ok(cityLifeSource.includes('onStoryContact?.()'),'Story contact interaction remains available');
 const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
 assert.equal(ids.length,new Set(ids).size,'Duplicate HTML IDs');
 assert.ok(html.includes('<option value="auto">AUTO · TARGET 60 FPS</option>'),'Adaptive quality option exists');
