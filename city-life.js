@@ -164,11 +164,19 @@ const pop=document.createElement('div');pop.id='citizenPrompt';pop.style.cssText
 const dialog=document.createElement('div');dialog.id='citizenDialog';dialog.style.cssText='display:none;position:fixed;bottom:205px;left:50%;transform:translateX(-50%);z-index:8;max-width:min(480px,90vw);background:#112439f2;border:1px solid #73e6b7b0;border-radius:14px;padding:15px 19px;color:#f5fbff;box-shadow:0 14px 50px #0009;font:14px/1.55 system-ui';document.body.appendChild(dialog);
 function nearest(){const p=getPlayer();if(p.inCar)return null;let best=null,d=5.2;for(const n of [fixer,...citizens]){const distance=Math.hypot(p.x-n.root.position.x,p.z-n.root.position.z);if(distance<d){best=n;d=distance}}return best}
 function interact(){const n=nearest();if(!n)return false;if(n.role==='fixer'){onStoryContact?.();return true}active=n;n.chatUntil=performance.now()+2200;const story=stories[n.id%stories.length];const first=n.chatIndex++===0;dialog.innerHTML='<b style="color:#6ee8ba">'+n.name+'</b><div style="margin-top:5px">'+(first?story[0]:story[1])+'</div><small style="color:#a7c4cf">Press F to talk again · Walk away to close</small>';dialog.style.display='block';dialogUntil=performance.now()+6500;if(first){onReward(story[2]);onNotice(n.name+' gave you $'+story[2]+' for helping around town')}return true}
-let lastNpc=0;
+let lastNpc=0,lastPropCull=0;
 function update(dt,now){
  if(now-lastNpc>33){
    const step=Math.min(.065,(now-lastNpc)/1000||dt);lastNpc=now;
    const player=getPlayer();
+   if(now-lastPropCull>500){
+     lastPropCull=now;
+     const sceneActive=isPlaying();
+     for(const prop of props){
+       const dx=prop.position.x-player.x,dz=prop.position.z-player.z;
+       prop.visible=!sceneActive||dx*dx+dz*dz<190*190;
+     }
+   }
    for(const n of citizens){
      const px=n.root.position.x,pz=n.root.position.z;
      const distanceSq=(px-player.x)**2+(pz-player.z)**2;
