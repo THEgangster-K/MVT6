@@ -31,6 +31,13 @@ assert.ok(html.includes("graphicsPreset='auto'"),'Auto quality is the default fo
 assert.ok(html.includes('fpsCounter*1000/elapsed'),'FPS uses real elapsed time, not clamped physics dt');
 assert.ok(html.includes('autoQualityGoodWindows>=3'),'Adaptive quality recovery uses hysteresis');
 assert.ok(html.includes('autoQualityLastChange>=1800'),'Adaptive quality changes are rate limited');
+assert.ok(html.includes('group.userData.detail=vehicleDetail'),'Vehicles keep optional close-up detail groups');
+assert.ok(html.includes('if(playerCar.userData.detail)playerCar.userData.detail.visible=true'),'Player vehicle detail is retained');
+assert.ok(html.includes('detail.visible=(t.pos.x-px)**2+(t.pos.z-pz)**2<78*78'),'Traffic vehicle details are distance culled');
+assert.ok(html.includes('detail.visible=p.active&&(p.pos.x-px)**2+(p.pos.z-pz)**2<78*78'),'Police vehicle details are distance culled');
+assert.ok(html.includes('group.userData.wheels=wheelAssemblies'),'Vehicle wheel physics interface is retained');
+assert.ok(html.includes('group.userData.brakeLights=brakeTailLights'),'Brake light interface is retained');
+
 assert.ok(!html.includes('fpsTime+=dt'),'Old FPS calculation is removed');
 
 const builtAtRuntime=new Set(['hackCode','hackProgress','hackButtons','hackCancel','carHint','lockHint','citizenDialog','citizenPrompt']);
