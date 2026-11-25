@@ -1,6 +1,6 @@
 // MVT 6 City Life Update — low-poly detailed props, street residents and dialogue.
 // No copyrighted assets. All geometry is procedural.
-import {clearsStreet} from './game-core.js';
+import {clearsStreet,residentRoutine} from './game-core.js';
 export function createCityLife({THREE,scene,box,mesh,mat,roadPositions,rnd,collision,publicSpaces=[],getPlayer,isPlaying,onNotice,onReward,onStoryContact}){
 const citizens=[],props=[],clock=new THREE.Clock(),npcNames=['Ava','Mason','Nia','Kai','Sofia','Jordan','Riley','Sam','Aria','Luca','Noah','Maya','Zoe','Max','Ellie','Leo','Ivy','Finn','Nova','Alex','Charlie','Harper','Jules','Jamie'];
 const stories=[
@@ -209,6 +209,7 @@ function update(dt,now){
      const stumbling=now<n.stumbleUntil;
      const dodging=!stumbling&&now<n.dodgeUntil&&dist<15;
      const chatting=!stumbling&&now<n.chatUntil;
+     const routine=residentRoutine(now/1000,n.id);n.routine=routine;
      let nx=px,nz=pz,walking=false;
      if(stumbling){
        // Abstract, non-graphic impact reaction: step aside, crouch, recover.
@@ -220,7 +221,7 @@ function update(dt,now){
        nx=px+(dxFromCar/len*1.5-dzFromCar/len*.35*side)*speed;
        nz=pz+(dzFromCar/len*1.5+dxFromCar/len*.35*side)*speed;
        if(!collision(nx,nz,.3)){n.root.position.set(nx,0,nz);walking=true}
-     }else if(!chatting){
+     }else if(!chatting&&routine==='walk'){
        const speed=n.pace*step*n.direction,axis=n.pathAxis;
        nx=axis==='x'?px+speed:px;nz=axis==='z'?pz+speed:pz;
        const dFromBase=Math.abs((axis==='x'?nx-n.baseX:nz-n.baseZ));
@@ -241,7 +242,7 @@ function update(dt,now){
      const wave=chatting?Math.sin(now*.014)*.2:0;
      n.arms[0].rotation.x=dodging?-.45:-stride*.7;
      n.arms[1].rotation.x=chatting?-1.15+wave:dodging?-.55:stride*.7;
-     n.head.rotation.y=chatting?.12*Math.sin(now*.003):dodging?-.22:Math.sin(now*.00065+n.phase)*.12;
+     n.head.rotation.y=chatting?.12*Math.sin(now*.003):dodging?-.22:routine==='browse'?.35*Math.sin(now*.001+n.phase):Math.sin(now*.00065+n.phase)*.12;
      n.root.position.y=walking?Math.abs(stride)*.029:Math.sin(now*.002+n.phase)*.009;
      const stumblePhase=stumbling?1-Math.max(0,n.stumbleUntil-now)/800:0;
      if(n.torso)n.torso.rotation.x=stumbling?.55*Math.sin(stumblePhase*Math.PI):Math.sin(now*.004+n.phase)*.016;
