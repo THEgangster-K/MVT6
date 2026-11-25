@@ -1,5 +1,17 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v1.9 — CITY LIFE | District & World Overhaul
+
+- Remove the freestanding spawn brick facade and reserve a whole city block for an open public plaza with a fountain, paths, gardens and seating.
+- Replace repetitive parcels with 64 district-aware block plans: residential houses with pitched roofs, coastal hotels, commercial markets, downtown towers and apartments, industrial warehouses, parks and parking areas.
+- Add raised landscaped beds, coastal walkways, distinct signage, marked parking spaces and parked vehicle scenery; use GPU instancing for repeated geometry.
+- Public spaces attract local residents. Pedestrians follow sidewalk axes and avoid building footprints and road lanes during ordinary walking.
+- Update the minimap and district labels to reflect the new parcel plans. Preserve the existing main road grid, job coordinates, progression, accounts, workshop and Afterglow presentation.
+- New regression checks cover every block plan, parcel overlaps, road clearance, spawn reservation and district diversity.
+
+**Scope:** Road elevations remain flat to preserve compatibility with driving and mission systems. Terrain relief is landscaped scenery. Vehicles and people still use the existing original procedural models; no professional rigged assets are bundled. Runtime and FPS require interactive browser testing.
+
+
 ## v1.8 — AFTERGLOW | Presentation & Driving
 
 ### Release presentation
