@@ -105,8 +105,29 @@ assert.ok(html.includes('const nx=carPos.x+slide.dx,nz=carPos.z+slide.dz'),'New 
 assert.ok(html.includes('clearsStreet(x,z,w,h,d')===false,'Street guard uses the horizontal dimensions only');
 assert.ok(html.includes('clearsStreet(x,z,w,d,BLOCK,ROAD)'),'Street prop footprint guard is connected');
 assert.ok(html.includes('detailBatch(palmFronds,palmGeometry()'),'Original curved foliage is GPU-instanced');
-assert.ok(html.includes('CROSSROADS · V2.1'),'Visible release marker');
-assert.ok(!html.includes('<div class="bootArtwork"'),'Old illustration montage removed');
+assert.ok(html.includes('DYNASTY · V2.2'),'Visible release marker');
+assert.ok(html.includes('KANG DYNASTY STUDIOS PRESENTS')&&!html.includes('SOLARA CITY STUDIOS PRESENTS'),'Requested studio branding');
+assert.ok(['artCoast','artNight','artDawn'].every(n=>html.includes('class="artCard '+n+'"')),'Original City Life artwork restored');
+assert.ok(html.includes('function updateGameAudio(now)'),'Optional game audio');
+assert.ok(html.includes('waveMap.offset.x='),'Water animation');
+function testTitle(reduced=false){
+ const elements=new Map(),makeElement=()=>{const set=new Set();return {style:{},classList:{add:(...v)=>v.forEach(k=>set.add(k)),remove:(...v)=>v.forEach(k=>set.delete(k)),contains:k=>set.has(k)}}};
+ const document={body:makeElement(),getElementById:id=>{if(!elements.has(id))elements.set(id,makeElement());return elements.get(id)}};
+ let now=0,id=0;const pending=new Map(),window={addEventListener:()=>{}};
+ const context={document,window,performance:{now:()=>now},matchMedia:()=>({matches:reduced}),setInterval:()=>++id,clearInterval:()=>{},setTimeout:(fn,delay)=>{pending.set(++id,{fn,time:now+delay});return id},clearTimeout:k=>pending.delete(k)};
+ vm.runInNewContext(matches[0][1],context,{filename:'title-bootstrap'});
+ const advance=target=>{while(true){const item=[...pending.entries()].filter(([k,v])=>v.time<=target).sort((a,b)=>a[1].time-b[1].time)[0];if(!item)break;pending.delete(item[0]);now=item[1].time;item[1].fn()}now=target};
+ return {window,root:document.getElementById('boot'),body:document.body,skip:()=>document.getElementById('bootSkip').onclick(),advance};
+}
+const title=testTitle();title.window.__mvtLoaded();
+assert.ok(title.root.classList.contains('bootStudio'),'First frame is studio splash');
+title.advance(1200);assert.ok(title.root.classList.contains('artPhase0'),'First artwork displayed');
+title.advance(3900);assert.ok(title.root.classList.contains('artPhase2'),'Third artwork displayed');
+title.advance(5200);assert.ok(title.window.__mvtTitleStart!==null&&!title.root.classList.contains('bootArt'),'Live scene begins after artwork');
+title.advance(9300);assert.ok(title.root.classList.contains('bootIdentity'),'Logo reveal follows live montage');
+title.advance(10500);assert.ok(title.root.classList.contains('bootDone')&&!title.body.classList.contains('bootPlaying'),'Title completes and menu restored');
+const skipped=testTitle();skipped.window.__mvtLoaded();skipped.advance(1500);skipped.skip();skipped.advance(11000);assert.ok(skipped.root.classList.contains('bootDone')&&skipped.window.__mvtTitleStart===null,'Skip cancels pending title stages');
+const reduced=testTitle(true);reduced.window.__mvtLoaded();assert.ok(reduced.root.classList.contains('bootIdentity')&&!reduced.root.classList.contains('bootStudio'),'Reduced motion skips montage');reduced.advance(600);assert.ok(reduced.root.classList.contains('bootDone'),'Reduced motion reaches menu');
 assert.ok(html.includes('function liveTitleCamera(now,dt)'),'Title shots use live game camera');
 assert.ok(html.includes("renderer.shadowMap.enabled=graphicsPreset==='cinematic'"),'Real shadows are opt-in');
 assert.ok(html.includes('scene.environment=skyEnvironment.texture'),'Sky reflections integrated');
