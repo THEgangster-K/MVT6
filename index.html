@@ -526,7 +526,7 @@ body.bootPlaying #menu{visibility:hidden!important}
 <p>Explore Solara City as Jawson and Luxie. Meet local contacts, take on jobs, customise your car and build your own story.</p>
 <div class="menuActions"><button id="play">PLAY STORY</button><button id="resetSave" class="secondary">START OVER</button></div>
 <div class="movieControls">WASD · MOVE &nbsp;&nbsp; CLICK · MOUSE LOOK &nbsp;&nbsp; F · INTERACT</div></div>
-<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">CINEMATIC OVERHAUL · v0.4.0 PREVIEW</div></div></div>
+<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">CINEMATIC OVERHAUL · v0.4.0 PREVIEW 3</div></div></div>
 <div id="storyIntro" aria-live="polite" style="display:none"><div id="introShade"></div><div id="introContent"><div id="introChapter">SOLARA CITY · CHAPTER ONE</div><div id="introCue">AN ORIGINAL MVT 6 FILM</div><h2 id="introTitle">START WITH NOTHING.</h2><p id="introCopy">New city. Empty pockets. Every choice counts.</p></div><button id="introSkip">SKIP INTRO →</button></div>
 <div id="paused" class="overlay"><div class="panel"><div class="eyebrow">SOLARA CITY</div><h2>PAUSED</h2><p>Explore at your own pace. Your cash, upgrades and completed contracts are automatically saved.</p><button id="resume">RESUME</button><button id="pauseMap" class="secondary">MAP & MISSIONS</button>
 <div class="qualitySelector"><label for="graphicsQuality">GRAPHICS QUALITY</label><select id="graphicsQuality">
@@ -617,8 +617,8 @@ const ambient=new THREE.HemisphereLight(0xcbe6ff,0x60605a,2.15);scene.add(ambien
 // Cinematic but readable daylight, golden-hour, and night presentation.
 const atmosphereModes=[
  {label:'DAYLIGHT',sky:'#9ccce2',fog:'#d1dbe0',sun:'#fff2df',intensity:2.8,ambient:1.85,exposure:1.04},
- {label:'GOLDEN HOUR',sky:'#d7a692',fog:'#c9b7ae',sun:'#ffbe7f',intensity:3.1,ambient:1.65,exposure:1.12},
- {label:'SOLARA NIGHTS',sky:'#182f4d',fog:'#476177',sun:'#a0c6e9',intensity:1.12,ambient:1.30,exposure:1.35}
+ {label:'GOLDEN HOUR',sky:'#d7a692',fog:'#c9b7ae',sun:'#ffbe7f',intensity:3.2,ambient:1.72,exposure:1.08},
+ {label:'SOLARA NIGHTS',sky:'#182f4d',fog:'#476177',sun:'#a0c6e9',intensity:1.18,ambient:1.42,exposure:1.28}
 ];
 let atmosphereIndex=1,atmosphereTime=0;
 const atmosphereToast=document.createElement('div');atmosphereToast.id='atmosphereToast';document.body.append(atmosphereToast);
@@ -639,7 +639,7 @@ function mesh(geometry,material,parent=scene){const m=new THREE.Mesh(geometry,ma
 function box(w,h,d,x,y,z,material,parent=scene){const m=mesh(new THREE.BoxGeometry(w,h,d),material,parent);m.position.set(x,y,z);return m}
 function cyl(rt,rb,h,x,y,z,material,parent=scene,n=10){const m=mesh(new THREE.CylinderGeometry(rt,rb,h,n),material,parent);m.position.set(x,y,z);return m}
 function textTexture(text,bg,fg){const c=document.createElement('canvas');c.width=512;c.height=160;const ctx=c.getContext('2d');ctx.fillStyle=bg;ctx.fillRect(0,0,512,160);ctx.fillStyle=fg;ctx.textAlign='center';ctx.font='900 69px system-ui';ctx.fillText(text,256,102);const tx=new THREE.CanvasTexture(c);tx.colorSpace=THREE.SRGBColorSpace;return tx}
-function plane(w,d,x,z,material,y=0){const m=mesh(new THREE.PlaneGeometry(w,d),material);m.rotation.x=-Math.PI/2;m.position.set(x,y,z);m.receiveShadow=true;return m}
+function plane(w,d,x,z,material,y=0){const geometry=new THREE.PlaneGeometry(w,d);if(material===materials.asphalt||material===materials.sidewalk||material===materials.grass){const uv=geometry.attributes.uv;const tile=material===materials.asphalt?12:material===materials.sidewalk?10:22;const rx=material===materials.asphalt?7:material===materials.sidewalk?6:36;const ry=material===materials.asphalt?36:material===materials.sidewalk?6:36;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*w/(tile*rx)+x/(tile*rx),uv.getY(i)*d/(tile*ry)-z/(tile*ry));}const m=mesh(geometry,material);m.rotation.x=-Math.PI/2;m.position.set(x,y,z);m.receiveShadow=true;return m}
 function rnd(n){let v=Math.sin(n*127.1+71.31)*43758.5453;return v-Math.floor(v)}
 const BLOCK=92,ROAD=20,HALF=4, CITY=HALF*BLOCK, roadPositions=[];for(let i=-HALF;i<=HALF;i++)roadPositions.push(i*BLOCK);
 plane(1600,1600,0,0,materials.grass,-.15);
@@ -732,8 +732,8 @@ materialsTexture.grass.wrapS=materialsTexture.grass.wrapT=THREE.RepeatWrapping;
 materialsTexture.grass.repeat.set(36,36);
 const textureAnisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
 for(const texture of Object.values(materialsTexture))texture.anisotropy=textureAnisotropy;
-materials.asphalt.bumpMap=materialsTexture.asphalt;materials.asphalt.bumpScale=.035;
-materials.sidewalk.bumpMap=materialsTexture.pavement;materials.sidewalk.bumpScale=.045;
+materials.asphalt.bumpMap=materialsTexture.asphalt;materials.asphalt.bumpScale=.065;
+materials.sidewalk.bumpMap=materialsTexture.pavement;materials.sidewalk.bumpScale=.055;
 materials.grass.bumpMap=materialsTexture.grass;materials.grass.bumpScale=.035;
 const windowMats=['tower','old','loft','modern'].map((type,i)=>new THREE.MeshStandardMaterial({
  map:patternTexture(type,i),side:THREE.FrontSide,transparent:false,opacity:1,depthWrite:true,roughness:i===1?.85:.37,metalness:i===1?0:.15,emissive:0xffd4a1,emissiveIntensity:0
@@ -2363,7 +2363,7 @@ function applyGraphicsPreset(profile,announce=false){
  graphicsPreset=['auto','performance','balanced','cinematic'].includes(profile)?profile:'auto';
  autoQualityGoodWindows=0;
  autoQualityLastChange=performance.now();
- const desired=graphicsPreset==='cinematic'?1.55:graphicsPreset==='performance'?.83:graphicsPreset==='auto'?1.17:1.12;
+ const desired=graphicsPreset==='cinematic'?1.45:graphicsPreset==='performance'?.83:graphicsPreset==='auto'?1.17:1.12;
  qualityPixelRatio=Math.min(devicePixelRatio,desired);
  renderer.setPixelRatio(qualityPixelRatio);
  renderer.shadowMap.enabled=graphicsPreset==='cinematic';
@@ -3304,10 +3304,14 @@ function updateWeather(dt){
   scene.fog.color.set(kind==='clear'?mode.fog:atmosphereIndex===2?'#476177':'#9aaab5');
   scene.fog.density=kind==='rain'?.0033:kind==='overcast'?.0025:.0019;
   sun.intensity=mode.intensity*(kind==='rain'?.53:kind==='overcast'?.76:1);
-  materials.asphalt.roughness=kind==='rain'?.48:.91;
+  materials.asphalt.roughness=kind==='rain'?.42:kind==='overcast'?.78:.91;
+  materials.asphalt.color.set(kind==='rain'?'#494d54':'#64666a');
+  materials.sidewalk.roughness=kind==='rain'?.62:.92;
+  materials.sidewalk.color.set(kind==='rain'?'#b7b6b2':'#d6c9b5');
   ambient.color.set(kind==='rain'?'#b5c6dd':atmosphereIndex===1?'#f2c9ab':'#cbe6ff');
-  ambient.groundColor.set(atmosphereIndex===2?'#4c555e':'#747165');
-  for(const material of windowMats){if(!material.emissiveMap){material.emissiveMap=material.map;material.needsUpdate=true;}material.emissiveIntensity=atmosphereIndex===2?.17:0;}
+  ambient.groundColor.set(atmosphereIndex===2?'#535c69':'#747165');
+  ambient.intensity=mode.ambient*(kind==='rain'?.89:kind==='overcast'?.96:1);
+  for(const material of windowMats){if(!material.emissiveMap){material.emissiveMap=material.map;material.needsUpdate=true;}material.emissiveIntensity=atmosphereIndex===2?.26:0;}
   $('weatherLabel').textContent=kind.toUpperCase();
  }
  rainMesh.visible=playing&&kind==='rain'&&!reducedWeather;
