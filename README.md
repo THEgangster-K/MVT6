@@ -1,5 +1,17 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v2.4 — STREETSCAPE
+
+- Original jointed seated characters in civilian traffic, police vehicles and the player's car, with facial details, hair, clothing, hands and footwear.
+- Transparent close-range glazing, cabin seats, headrests and console. Shared character meshes and materials, distance-based occupant detail and opaque distant glazing limit rendering cost.
+- NPCs who leave vehicles retain their matching character appearance and transition to ordinary standing and walking poses.
+- Public venues feature room walls, windows, shelves, practical lighting and improved chairs, with static footprint collision checks.
+- Minimap displays the existing irregular parcel alley routes.
+- Main road grid, original character asset, saves, missions and previous intro are retained.
+
+**Verification:** 1,749 assertions passed in the strict adapted regression environment, including occupant construction and detail switching. Actual browser visuals and FPS remain unverified. No violent ejection animation, new full road network or professional vehicle assets are included.
+
+
 ## v2.3 — PREMIERE
 
 - Kang Dynasty Studios Presents fades in from black, holds, then fades back to black over 3.5 seconds.
