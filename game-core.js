@@ -97,3 +97,16 @@ export function cityBlockPlan(cx,cz,seed=0){
  if(rand(1)<.14)return {district,kind:'park',parcels:[]};
  return {district,kind:'urban',parcels:[parcel(-18,-17,26,27,49+rand(3)*49,'tower'),parcel(18,-17,24,27,27+rand(4)*26,'apartment'),parcel(-17,18,27,23,7+rand(5)*9,'market'),parcel(17,18,24,23,20+rand(6)*22,'apartment')]};
 }
+
+// Simple fictional city traffic: alternating green phases and smooth queue speeds.
+export function junctionPhase(time,ix,iz){
+ const t=((time+((ix*7+iz*11)%8)+40)%20+20)%20;
+ return t<8?'east':t<10?'all-red':t<18?'north':'all-red';
+}
+export function trafficQueueSpeed(base,obstacle,stopDistance){
+ const gap=Math.min(obstacle,stopDistance);
+ return gap<=7?0:Math.min(base,Math.max(0,(gap-7)*.72));
+}
+export function nextJunction(position,direction,block=92){
+ return direction>0?Math.ceil((position+.01)/block)*block:Math.floor((position-.01)/block)*block;
+}

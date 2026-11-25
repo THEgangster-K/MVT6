@@ -57,7 +57,7 @@ for(const match of matches[1][1].matchAll(/\$\('([^']+)'\)/g)){
  assert.ok(ids.includes(match[1])||builtAtRuntime.has(match[1]),'Missing UI element: '+match[1]);
 }
 const coreSource=read('game-core.js').replace(/^export /gm,'')+
- '\n;globalThis.core={movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan};';
+ '\n;globalThis.core={movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction};';
 const context={Math};
 vm.runInNewContext(coreSource,context,{filename:'game-core.js'});
 const core=context.core;
@@ -91,7 +91,23 @@ assert.ok(html.includes('const nx=carPos.x+slide.dx,nz=carPos.z+slide.dz'),'New 
 assert.ok(html.includes('clearsStreet(x,z,w,h,d')===false,'Street guard uses the horizontal dimensions only');
 assert.ok(html.includes('clearsStreet(x,z,w,d,BLOCK,ROAD)'),'Street prop footprint guard is connected');
 assert.ok(html.includes('detailBatch(palmFronds,palmGeometry()'),'Original curved foliage is GPU-instanced');
-assert.ok(html.includes('CITY LIFE · V1.9'),'Visible release marker');
+assert.ok(html.includes('BOULEVARDS · V2.0'),'Visible release marker');
+for(let i=-2;i<=2;i++)for(let j=-2;j<=2;j++){
+ const phases=new Set(Array.from({length:20},(_,t)=>core.junctionPhase(t,i,j)));
+ assert.ok(phases.has('east')&&phases.has('north')&&phases.has('all-red'),'Each signal cycles through both axes');
+}
+assert.equal(core.trafficQueueSpeed(12,Infinity,Infinity),12,'Unblocked NPC drives at cruise speed');
+assert.equal(core.trafficQueueSpeed(12,5,Infinity),0,'NPC stops for nearby vehicle');
+assert.equal(core.trafficQueueSpeed(12,Infinity,6),0,'NPC stops for signal');
+assert.ok(core.trafficQueueSpeed(12,15,Infinity)<12,'Queue slows gradually');
+assert.equal(core.nextJunction(-20,1),0);
+assert.equal(core.nextJunction(-20,-1),-92);
+assert.ok(html.includes('updateSignals(dt)'),'Signals advance with traffic');
+assert.ok(html.includes('trafficQueueSpeed(t.baseSpeed,obstacle,stopDistance)'),'NPC traffic uses tested queue rule');
+assert.ok(html.includes('plane(420,900,-620,0,materials.water'),'Sea separated from road');
+assert.ok(html.includes("type==='taxi'"),'Taxi variation present');
+assert.ok(html.includes("type==='utility'"),'Utility variation present');
+
 assert.ok(!html.includes('const wallFacade='),'Artificial spawn wall removed');
 assert.ok(!html.includes('const shopBrick='),'Old decorative wall material removed');
 assert.equal(core.cityBlockPlan(46,-46,0).kind,'plaza','Spawn block is a plaza');

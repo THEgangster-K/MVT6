@@ -1,5 +1,15 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v2.0 — BOULEVARDS
+
+- Reworked West Haven coastline: separate water and land, beach strip, boardwalk segments, railings and an offshore pier landmark. Main roads end at the map edge and crossing markings sit near the road surface.
+- Expanded moving traffic from 18 to 24 vehicles, with taxi, utility, compact and sedan silhouettes. NPC traffic follows timed junction signals and slows for same-lane queues and the player.
+- Added distance culling and reduced distant wheel animation to limit rendering costs.
+- Updated the minimap shoreline and visible release marker.
+- Existing road grid, jobs, saves and City Life districts are preserved. The pier is a scenic landmark outside the playable boundary. Vehicles still use original procedural assets; vehicle acquisition retains the existing player vehicle model.
+- Regression suite passed in-memory (748 assertions). Interactive browser performance and gameplay have not been measured.
+
+
 ## v1.9 — CITY LIFE | District & World Overhaul
 
 - Remove the freestanding spawn brick facade and reserve a whole city block for an open public plaza with a fountain, paths, gardens and seating.
