@@ -138,5 +138,6 @@ export function trafficQueueSpeed(base,obstacle,stopDistance){
  return gap<=7?0:Math.min(base,Math.max(0,(gap-7)*.72));
 }
 export function nextJunction(position,direction,block=92){
- return direction>0?Math.ceil((position+.01)/block)*block:Math.floor((position-.01)/block)*block;
+ const junction=direction>0?Math.ceil((position+.01)/block)*block:Math.floor((position-.01)/block)*block;
+ return junction===0?0:junction; // Normalise negative zero at the centre intersection.
 }
