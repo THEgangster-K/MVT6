@@ -1603,7 +1603,7 @@ document.addEventListener('keydown',e=>{
  e.preventDefault();
  if(!e.repeat&&!inCar)beginJump();
 },true);
-const keys={};let orbitOffset=0,orbitPitch=.06,camYaw=0,walkMotion=0,qualityPixelRatio=Math.min(devicePixelRatio,1.25),mouseLocked=false;
+const keys={};let orbitOffset=0,orbitPitch=.06,camYaw=0,walkMotion=0,walkBlend=0,runBlend=0,gaitPhase=0,qualityPixelRatio=Math.min(devicePixelRatio,1.25),mouseLocked=false;
 // Graphics profiles protect laptop performance while allowing a sharper cinematic mode.
 let graphicsPreset='auto';
 let autoQualityLastChange=0,autoQualityGoodWindows=0;
@@ -1954,7 +1954,12 @@ function movePerson(dt){
  if(walkMotion){const desired=Math.atan2(dx,dz);person.rotation.y+=Math.atan2(Math.sin(desired-person.rotation.y),Math.cos(desired-person.rotation.y))*(1-Math.exp(-15*dt));walkAngle=person.rotation.y}
  }
  person.position.copy(playerPos);
- const gait=Math.sin(clockTime*(keys.shift?14:9))*walkMotion*(keys.shift?1.3:1);
+ // Damped movement weights eliminate hard snapping between idle, walk and sprint.
+ const transition=1-Math.exp(-dt*11);
+ walkBlend=THREE.MathUtils.lerp(walkBlend,walkMotion,transition);
+ runBlend=THREE.MathUtils.lerp(runBlend,walkMotion&&keys.shift?1:0,1-Math.exp(-dt*8));
+ gaitPhase+=dt*(8.7+runBlend*5.1)*Math.max(.06,walkBlend);
+ const gait=Math.sin(gaitPhase)*walkBlend*(1+.27*runBlend);
  person.position.y=jumpHeight+Math.abs(gait)*.037;
  if(jumping)person.position.y=Math.max(.04,person.position.y);
  if(jumping){
@@ -1965,13 +1970,23 @@ function movePerson(dt){
   person.position.y-=Math.sin((landingTimer/.22)*Math.PI)*.055;
   torso.rotation.x=.1*Math.sin((landingTimer/.22)*Math.PI);
  }
- torso.rotation.x=THREE.MathUtils.lerp(torso.rotation.x,walkMotion?(keys.shift?-.13:-.035):.015*Math.sin(clockTime*2),1-Math.exp(-7*dt));
+ torso.rotation.x=THREE.MathUtils.lerp(torso.rotation.x,(-.035-.1*runBlend)*walkBlend+.015*Math.sin(clockTime*2)*(1-walkBlend),1-Math.exp(-7*dt));
+ // Subtle opposing shoulder and hip rotation follows the planted foot.
+ torso.rotation.y=THREE.MathUtils.lerp(torso.rotation.y,Math.sin(gaitPhase)*.075*walkBlend,transition);
+ torso.rotation.z=THREE.MathUtils.lerp(torso.rotation.z,Math.sin(gaitPhase*.5)*.014*walkBlend,transition);
  torso.scale.y=1+.012*Math.sin(clockTime*2.3);
- head.rotation.y=Math.atan2(Math.sin(camYaw-person.rotation.y),Math.cos(camYaw-person.rotation.y))*.14;
- limbs.legs[0].rotation.x=gait*.55;limbs.legs[1].rotation.x=-gait*.55;
- limbs.arms[0].rotation.x=-gait*.4;limbs.arms[1].rotation.x=gait*.4;
+ const headLook=Math.atan2(Math.sin(camYaw-person.rotation.y),Math.cos(camYaw-person.rotation.y))*.14;
+ head.rotation.y=THREE.MathUtils.lerp(head.rotation.y,headLook,1-Math.exp(-6*dt));
+ limbs.legs[0].rotation.x=gait*(.52+.13*runBlend);
+ limbs.legs[1].rotation.x=-gait*(.52+.13*runBlend);
+ limbs.arms[0].rotation.x=-gait*(.36+.12*runBlend);
+ limbs.arms[1].rotation.x=gait*(.36+.12*runBlend);
+ limbs.arms[0].rotation.z=THREE.MathUtils.lerp(limbs.arms[0].rotation.z,.045*walkBlend,transition);
+ limbs.arms[1].rotation.z=THREE.MathUtils.lerp(limbs.arms[1].rotation.z,-.045*walkBlend,transition);
  if(jumping){limbs.legs[0].rotation.x=-.48;limbs.legs[1].rotation.x=-.27;limbs.arms[0].rotation.x=-.7;limbs.arms[1].rotation.x=-.7}
  if(gestureTime>0){gestureTime=Math.max(0,gestureTime-dt);limbs.arms[1].rotation.x=-1.1;limbs.arms[1].rotation.z=.25*Math.sin(gestureTime*13)}
+ // Avoid carrying locomotion poses into the sit/stand animation.
+ if(!walkMotion&&!jumping&&landingTimer===0&&walkBlend<.02)gaitPhase=0;
 }
 const formerDrivers=[];
 let takeoverTarget=null,takeoverElapsed=0,hasTakenVehicle=false;
@@ -2172,15 +2187,26 @@ function advancePolice(dt){
 }
 
 const camTarget=new THREE.Vector3(),camPos=new THREE.Vector3(),camLook=new THREE.Vector3();
+let drivingCameraSpeed=0;
+const normalCameraFov=65;
+
 function updateCamera(dt){
  const focus=inCar?carPos:playerPos;
  if(inCar){const target=angle+orbitOffset;camYaw+=Math.atan2(Math.sin(target-camYaw),Math.cos(target-camYaw))*(1-Math.exp(-9*dt));orbitOffset*=Math.exp(-.65*dt)}
  else if(Math.abs(orbitOffset)>.0001){camYaw+=orbitOffset;orbitOffset=0}
+ const speedTarget=inCar?Math.min(1,Math.abs(velocity)/34):0;
+ drivingCameraSpeed=THREE.MathUtils.lerp(drivingCameraSpeed,speedTarget,1-Math.exp(-2.6*dt));
+ // Mild speed-dependent FOV improves the sensation of acceleration without blur.
+ const targetFov=normalCameraFov+drivingCameraSpeed*(camMode===1?3:7);
+ const nextFov=THREE.MathUtils.lerp(camera.fov,targetFov,1-Math.exp(-2.8*dt));
+ if(Math.abs(camera.fov-nextFov)>.035){camera.fov=nextFov;camera.updateProjectionMatrix()}
  const distance=inCar?(camMode===0?16:camMode===1?27:10):(camMode===0?8.5:camMode===1?14:5);
  const altitude=(inCar?(camMode===0?7.5:camMode===1?15:5):(camMode===0?4.8:camMode===1?8:3.3))+orbitPitch*distance;
  camPos.set(focus.x-Math.sin(camYaw)*distance,altitude,focus.z-Math.cos(camYaw)*distance);
  camera.position.lerp(camPos,1-Math.exp(-11*dt));
- camLook.set(focus.x,inCar?2.3:2.05,focus.z);
+ // At speed, look further down the road to keep junctions visible.
+ const lead=inCar?Math.min(5.5,Math.abs(velocity)*.11):0;
+ camLook.set(focus.x+Math.sin(angle)*lead,inCar?2.3:2.05,focus.z+Math.cos(angle)*lead);
  camTarget.lerp(camLook,1-Math.exp(-13*dt));camera.lookAt(camTarget);
  // Vehicle camera has subtle grounded suspension response, not uncontrolled shake.
  if(inCar)camera.position.y+=Math.sin(clockTime*13)*Math.min(.035,Math.abs(velocity)*.0007);

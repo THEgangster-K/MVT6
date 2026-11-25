@@ -1,5 +1,16 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v1.6 — Motion Polish & Responsive Chase Camera
+
+- Walking and sprinting animation weights now blend smoothly rather than snapping between idle and moving poses. Character gait uses a continuous phase with subtle shoulder/torso motion and eased head tracking.
+- Jumping, landing, standing, gesture and vehicle-entry pose controls remain part of the existing animation system.
+- The chase camera adds moderate speed-dependent field of view and looks slightly ahead while driving, making corners more readable. Camera settings gradually recover when stopping or leaving the vehicle.
+- Projection updates are skipped for very small changes to avoid unnecessary per-frame camera matrix work.
+- The adaptive graphics presets, road traffic, police, missions, accounts and saves remain unchanged.
+
+**Testing:** JavaScript syntax and structural regression checks were performed. Gameplay feel, framerate and browser-specific behavior still require hands-on validation; this update does not introduce external 3D assets.
+
+
 ## v1.5 — Patrol & Jail, Drifting, Distinct Shops, Pedestrian Reactions, Smoother Rendering
 
 ### Police and consequences
