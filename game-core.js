@@ -225,3 +225,26 @@ export function cityWeather(seconds){
  const t=((Math.floor(seconds/95)%4)+4)%4;
  return ['clear','overcast','rain','clear'][t];
 }
+
+// An original, peaceful story trail through five districts.
+export const horizonTrail=[
+ {id:'plaza',name:'The First Photograph',x:46,z:-46,reward:120,jawson:"This photograph is where our story began.",luxie:"My family used to meet here after work. Let's keep those memories alive."},
+ {id:'haven',name:'West Haven Memories',x:-322,z:-46,reward:160,jawson:"The harbour looks different in this old picture.",luxie:"Look at the original shoreline. We should preserve its history."},
+ {id:'north',name:'A Neighbourhood Album',x:46,z:-322,reward:180,jawson:"Everyone has a story about this place.",luxie:"Let's collect the stories and make a community exhibition."},
+ {id:'east',name:'The Workshop Years',x:322,z:46,reward:220,jawson:"Nico's old workshop sign belongs in the exhibition.",luxie:"It reminds me why we wanted to rebuild."},
+ {id:'south',name:'The New Horizon',x:46,z:322,reward:350,jawson:"We have enough memories for the exhibition.",luxie:"This is our city now. Let's build something worth keeping."}
+];
+export function trailPlacement(site,blocked){
+ // Try positions within the buildable block, then adjacent sidewalk edges.
+ const offsets=[[0,24],[-24,0],[24,0],[0,-24],[-25,25],[25,25],[-25,-25],[25,-25],[-32,0],[32,0],[0,-32],[0,32]];
+ for(const [dx,dz] of offsets){
+  const x=site.x+dx,z=site.z+dz;
+  if(clearsStreet(x,z,1.8,1.8)&&!blocked(x,z,1.1))return {x,z};
+ }
+ return null;
+}
+export function completeTrailStop(progress,id,available=horizonTrail.map(s=>s.id)){
+ const completed=Array.isArray(progress?.trailVisited)?progress.trailVisited:[],next=horizonTrail.find(s=>available.includes(s.id)&&!completed.includes(s.id));
+ if(!next||next.id!==id||!Number.isFinite(progress.money))return {ok:false,reason:'Follow the next story marker'};
+ return {ok:true,money:progress.money+next.reward,trailVisited:[...completed,id]};
+}
