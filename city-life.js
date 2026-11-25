@@ -24,7 +24,12 @@ for(let k=0;k<6;k++){
  c.strokeStyle='#77747a55';c.lineWidth=2;c.strokeRect(7,7,114,114);
  const tex=new THREE.CanvasTexture(cv);tex.colorSpace=THREE.SRGBColorSpace;textile.push(tex);
 }
-const legGeo=new THREE.CapsuleGeometry(.15,.65,3,8),armGeo=new THREE.CapsuleGeometry(.13,.55,3,8),headGeo=new THREE.SphereGeometry(.34,14,10);
+// Shared rounded limb segments; joint pivots are aligned with their adjoining surfaces.
+const upperLegGeo=new THREE.CapsuleGeometry(.165,.32,4,10),lowerLegGeo=new THREE.CapsuleGeometry(.135,.34,4,10);
+const upperArmGeo=new THREE.CapsuleGeometry(.145,.29,4,10),lowerArmGeo=new THREE.CapsuleGeometry(.115,.28,4,10);
+const jointGeo=new THREE.SphereGeometry(1,10,8),headGeo=new THREE.SphereGeometry(.34,20,14);
+const shoeGeo=new THREE.SphereGeometry(.29,12,8),soleGeo=new THREE.SphereGeometry(.295,11,7);
+const soleLight=mat('#a5a39e');
 const eyeMat=new THREE.MeshStandardMaterial({color:0x292726,roughness:.42});
 const soleMat=mat('#262a33');
 // Shared wardrobe trim and accessory materials keep GPU material counts bounded.
@@ -115,22 +120,25 @@ function human(i,x,z){
  noseTip.position.set(0,2.59,.393);noseTip.scale.set(.8,.7,1.05);
 
 
- const arms=[],legs=[];
+ const arms=[],legs=[],knees=[],elbows=[];
  for(const side of [-1,1]){
   const a=new THREE.Group();a.position.set(side*.54,2.17,0);root.add(a);
-  const arm=mesh(armGeo,color,a);arm.position.y=-.48;
- const elbow=mesh(new THREE.SphereGeometry(.145,9,7),color,a);elbow.position.y=-.70;
- const hand=mesh(new THREE.SphereGeometry(.12,10,8),face,a);hand.position.y=-1.03;hand.scale.set(.85,1.22,.75);
- arms.push(a);
+  const arm=mesh(upperArmGeo,color,a);arm.position.y=-.25;
+  const elbow=new THREE.Group();elbow.position.y=-.51;a.add(elbow);elbows.push(elbow);
+  const joint=mesh(jointGeo,color,elbow);joint.scale.set(.125,.14,.125);
+  const forearm=mesh(lowerArmGeo,color,elbow);forearm.position.y=-.21;
+  const hand=mesh(jointGeo,face,elbow);hand.position.y=-.49;hand.scale.set(.10,.145,.09);
+  arms.push(a);
   const leg=new THREE.Group();leg.position.set(side*.23,1.28,0);root.add(leg);
-  const shin=mesh(legGeo,pant,leg);shin.position.y=-.61;
-  const shoe=mesh(new THREE.SphereGeometry(.29,12,8),soleMat,leg);
-  shoe.position.set(0,-1.15,.15);shoe.scale.set(1.03,.50,1.48);
-  const sole=mesh(new THREE.SphereGeometry(.295,11,7),mat('#a5a39e'),leg);sole.position.set(0,-1.24,.18);
-  sole.scale.set(1,.18,1.49);
+  const thigh=mesh(upperLegGeo,pant,leg);thigh.position.y=-.29;
+  const knee=new THREE.Group();knee.position.y=-.59;leg.add(knee);knees.push(knee);
+  const kneeJoint=mesh(jointGeo,pant,knee);kneeJoint.scale.set(.15,.16,.15);
+  const shin=mesh(lowerLegGeo,pant,knee);shin.position.y=-.28;
+  const shoe=mesh(shoeGeo,soleMat,knee);shoe.position.set(0,-.56,.15);shoe.scale.set(1.03,.50,1.48);
+  const sole=mesh(soleGeo,soleLight,knee);sole.position.set(0,-.64,.18);sole.scale.set(1,.18,1.49);
   legs.push(leg);
  }
- return {root,fineDetail,arms,legs,head,torso,x,z,baseX:x,baseZ:z,phase:i*1.63,angle:i*.91,walk:0,name:npcNames[i%npcNames.length],id:i,chatIndex:0,pathAxis:i%3===0?'x':'z',direction:(i%2?1:-1),pace:.8+rnd(i*21)*.7,gesture:0,dodgeUntil:0,chatUntil:0,panic:0,stumbleUntil:0,stumbleSide:1};
+ return {root,fineDetail,arms,legs,knees,elbows,head,torso,gaitPhase:i*.73,gaitBlend:0,x,z,baseX:x,baseZ:z,phase:i*1.63,angle:i*.91,walk:0,name:npcNames[i%npcNames.length],id:i,chatIndex:0,pathAxis:i%3===0?'x':'z',direction:(i%2?1:-1),pace:.8+rnd(i*21)*.7,gesture:0,dodgeUntil:0,chatUntil:0,panic:0,stumbleUntil:0,stumbleSide:1};
 }
 function streetPoint(i){
  const road=roadPositions[Math.floor(rnd(i*7+1)*roadPositions.length)],horizontal=rnd(i*9+2)>.5;
@@ -233,15 +241,28 @@ function update(dt,now){
      const turn=Math.atan2(Math.sin(heading-n.root.rotation.y),Math.cos(heading-n.root.rotation.y));
      n.root.rotation.y+=turn*Math.min(1,step*(dodging?12:7));
      if(!animateDetail){
+       if(n.gaitBlend!==0){for(const joint of [...n.legs,...n.knees,...n.arms,...n.elbows])joint.rotation.x=0;n.gaitBlend=0;}
        n.root.position.y=0;
        n.root.rotation.z=0;
        continue;
      }
-     const stride=Math.sin(now*.01*(dodging?1.5:n.pace)+n.phase)*(walking?(dodging?.7:.44):0);
-     n.legs[0].rotation.x=stride;n.legs[1].rotation.x=-stride;
+     const blend=1-Math.exp(-step*9);
+     n.gaitBlend+=(Number(walking)-n.gaitBlend)*blend;
+     const travelled=Math.hypot(movedX,movedZ);
+     n.gaitPhase=(n.gaitPhase+travelled*(dodging?3.2:5.1))%(Math.PI*2);
+     const stride=Math.sin(n.gaitPhase)*n.gaitBlend*(dodging?.65:.42);
+     for(let j=0;j<2;j++){
+       const phase=n.gaitPhase+j*Math.PI;
+       const target=j===0?stride:-stride;
+       n.legs[j].rotation.x+=(target-n.legs[j].rotation.x)*blend;
+       const flex=Math.max(0,-Math.sin(phase))*.68*n.gaitBlend;
+       n.knees[j].rotation.x+=(flex-n.knees[j].rotation.x)*blend;
+       const elbowFlex=-(.10+.22*Math.max(0,Math.sin(phase))*n.gaitBlend);
+       n.elbows[j].rotation.x+=(elbowFlex-n.elbows[j].rotation.x)*blend;
+     }
      const wave=chatting?Math.sin(now*.014)*.2:0;
-     n.arms[0].rotation.x=dodging?-.45:-stride*.7;
-     n.arms[1].rotation.x=chatting?-1.15+wave:dodging?-.55:stride*.7;
+     n.arms[0].rotation.x+=((dodging?-.45:-stride*.7)-n.arms[0].rotation.x)*blend;
+     n.arms[1].rotation.x+=((chatting?-1.15+wave:dodging?-.55:stride*.7)-n.arms[1].rotation.x)*blend;
      n.head.rotation.y=chatting?.12*Math.sin(now*.003):dodging?-.22:routine==='browse'?.35*Math.sin(now*.001+n.phase):Math.sin(now*.00065+n.phase)*.12;
      n.root.position.y=walking?Math.abs(stride)*.029:Math.sin(now*.002+n.phase)*.009;
      const stumblePhase=stumbling?1-Math.max(0,n.stumbleUntil-now)/800:0;
