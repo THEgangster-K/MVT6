@@ -77,27 +77,57 @@ export function cityDistrict(x,z){
 export function cityBlockPlan(cx,cz,seed=0){
  const district=cityDistrict(cx,cz);
  const rand=i=>{const v=Math.sin((seed+i*17.31)*127.1+71.31)*43758.5453;return v-Math.floor(v)};
- const parcel=(dx,dz,w,d,h,type)=>({x:cx+dx,z:cz+dz,w,d,h,type});
  if(cx===46&&cz===-46)return {district,kind:'plaza',parcels:[]};
- // Reserve the workshop's approach and its surrounding courtyards.
  if(Math.abs(cx-184)<50&&Math.abs(cz)<50)return {district,kind:'parking',parcels:[]};
- if(district==='WEST HAVEN'){
-  if(rand(1)<.26)return {district,kind:'park',parcels:[]};
-  return {district,kind:'coast',parcels:[parcel(-15,-17,25,23,16+rand(2)*18,'hotel'),parcel(17,16,23,25,9+rand(3)*8,'market')]};
+ if(rand(1)<.13)return {district,kind:'park',parcels:[]};
+ // Neighbourhoods influence probability rather than dictate identical blocks.
+ const weights={
+  'WEST HAVEN':['hotel','market','apartment','house','hotel','market','tower'],
+  'NORTH QUARTER':['house','house','market','apartment','warehouse','house','hotel'],
+  'EAST SOLARA':['warehouse','market','house','warehouse','apartment','hotel','market'],
+  'SOUTH PIER':['market','apartment','house','hotel','warehouse','market','tower'],
+  'DOWNTOWN':['tower','apartment','market','hotel','house','apartment','warehouse']
+ };
+ const kinds={'WEST HAVEN':'coast','NORTH QUARTER':'residential','EAST SOLARA':'industrial','SOUTH PIER':'commercial','DOWNTOWN':'urban'};
+ const list=weights[district],parcels=[];
+ const dims={house:[11,17,13,20,4.8,8.5],warehouse:[18,29,15,26,8,14],market:[14,25,12,23,7,14],hotel:[17,27,17,26,15,36],apartment:[16,26,15,26,17,48],tower:[19,28,18,28,42,96]};
+ // Offset two-to-four independent parcels inside a 62-unit buildable square.
+ // A continuous corridor is reserved on one varying axis. Empty plots form courts and gaps.
+ const axis=rand(2)<.5?'x':'z',split=-7+rand(3)*14,lanew=7+rand(4)*4;
+ const slots=[];
+ for(const [lo,hi] of [[-31,split-lanew/2],[split+lanew/2,31]]){
+   const cut=-5+rand(5+slots.length)*10;
+   if(rand(12+slots.length)<.36)slots.push([lo,hi,-31,31]);
+   else slots.push([lo,hi,-31,cut-3],[lo,hi,cut+3,31]);
  }
- if(district==='NORTH QUARTER'){
-  if(rand(1)<.19)return {district,kind:'park',parcels:[]};
-  return {district,kind:'residential',parcels:[-19,19].flatMap(dx=>[-19,19].map(dz=>parcel(dx,dz,12+rand(dx+dz)*5,14+rand(dx-dz)*5,4.8+rand(dx+dz+2)*3,'house')))};
+ const order=slots.map((_,i)=>i).sort((a,b)=>rand(30+a)-rand(30+b));
+ for(let k=0;k<order.length;k++){
+   if(k>=2&&rand(50+k)<.22)continue;
+   const [lo,hi,zlo,zhi]=slots[order[k]],type=list[Math.floor(rand(60+k)*list.length)],d=dims[type];
+   const w=Math.min(hi-lo-3,d[0]+rand(70+k)*(d[1]-d[0])),depth=Math.min(zhi-zlo-3,d[2]+rand(80+k)*(d[3]-d[2]));
+   if(w<8||depth<8)continue;
+   const x=lo+w/2+1.5+rand(90+k)*Math.max(0,hi-lo-w-3),z=zlo+depth/2+1.5+rand(100+k)*Math.max(0,zhi-zlo-depth-3);
+   const h=d[4]+rand(110+k)*(d[5]-d[4]);
+   parcels.push(axis==='x'?{x:cx+x,z:cz+z,w,d:depth,h,type}:{x:cx+z,z:cz+x,w:depth,d:w,h,type});
  }
- if(district==='EAST SOLARA')return {district,kind:'industrial',parcels:[parcel(0,-17,51,24,9+rand(4)*5,'warehouse'),parcel(16,17,25,22,7+rand(5)*6,'warehouse')]};
- if(district==='SOUTH PIER'){
-  if(rand(1)<.35)return {district,kind:'park',parcels:[]};
-  return {district,kind:'commercial',parcels:[parcel(-17,-12,24,32,9+rand(5)*5,'market'),parcel(17,15,25,22,15+rand(6)*11,'apartment')]};
- }
- if(rand(1)<.14)return {district,kind:'park',parcels:[]};
- return {district,kind:'urban',parcels:[parcel(-18,-17,26,27,49+rand(3)*49,'tower'),parcel(18,-17,24,27,27+rand(4)*26,'apartment'),parcel(-17,18,27,23,7+rand(5)*9,'market'),parcel(17,18,24,23,20+rand(6)*22,'apartment')]};
+ return {district,kind:kinds[district],parcels,alley:{axis,offset:split,width:lanew}};
 }
 
+// Game-only vehicle contact: overlap of two short capsule-like footprints.
+// Returns a bounded separation normal; no real-world crash dynamics are simulated.
+export function arcadeCarContact(a,b){
+ const offsets=[-1.85,1.85];let best=null;
+ for(const p of offsets)for(const q of offsets){
+  const ax=a.x+Math.sin(a.yaw)*p,az=a.z+Math.cos(a.yaw)*p;
+  const bx=b.x+Math.sin(b.yaw)*q,bz=b.z+Math.cos(b.yaw)*q;
+  const x=ax-bx,z=az-bz,d=Math.hypot(x,z),overlap=3.7-d;
+  if(overlap>0&&(!best||overlap>best.overlap)){
+   const fallback=Math.hypot(a.x-b.x,a.z-b.z);
+   best={x:d>.0001?x/d:fallback>.0001?(a.x-b.x)/fallback:1,z:d>.0001?z/d:fallback>.0001?(a.z-b.z)/fallback:0,overlap};
+  }
+ }
+ return best;
+}
 // Simple fictional city traffic: alternating green phases and smooth queue speeds.
 export function junctionPhase(time,ix,iz){
  const t=((time+((ix*7+iz*11)%8)+40)%20+20)%20;
