@@ -456,6 +456,21 @@ body.bootPlaying #menu{visibility:hidden!important}
 @media(max-height:500px){#menu .menuContent{padding:12px 24px 28px!important}#menu .movieLogo{font-size:60px}#menu h2{margin:8px 0 3px}#menu .movieControls{display:none}#menu .menuActions{margin-top:10px}}
 @media(prefers-reduced-motion:reduce){#menu .menuActions button{transition:none}}
 
+
+/* Preview 6 — full-bleed key art with independent, accessible controls. */
+#menu .menuHeroArt{display:none}
+#menu.artworkReady .menuHeroArt{display:block;position:absolute;inset:0 0 90px;width:100%;height:calc(100% - 90px);object-fit:contain;object-position:center;z-index:0;pointer-events:none}
+#menu.artworkReady .menuCover{display:none}
+#menu.artworkReady .menuContent{justify-content:flex-end;align-items:center;padding:0 12px 23px!important;background:none;pointer-events:none}
+#menu.artworkReady .menuContent>:not(.menuActions){position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0!important;white-space:nowrap}
+#menu.artworkReady .menuActions{pointer-events:auto;justify-content:center;flex-wrap:nowrap;margin:0;gap:12px}
+#menu.artworkReady .menuActions button{padding:13px clamp(15px,3vw,48px);min-width:0;border-radius:3px;letter-spacing:.08em;font-size:clamp(11px,1.3vw,17px)}
+#menu.artworkReady #play{background:linear-gradient(110deg,#c21d83,#ed4764);color:#fff;border:1px solid #ffb7e4;box-shadow:0 0 18px #e1357b55}
+#menu.artworkReady #resetSave{background:#191a2c;color:#f7e9ff;border-color:#8e9dcc}
+#menu.artworkReady .menuDecor{bottom:3px;right:12px}
+#menu.artworkReady .releaseVersion{font-size:9px}
+@media(max-width:650px){#menu.artworkReady .menuHeroArt{inset:0 0 110px;height:calc(100% - 110px)}#menu.artworkReady .menuContent{padding:0 12px 35px!important}#menu.artworkReady .menuActions{gap:8px}}
+@media(max-height:420px){#menu.artworkReady .menuHeroArt{height:calc(100% - 66px);bottom:66px}#menu.artworkReady .menuContent{padding-bottom:16px!important}#menu.artworkReady .menuActions button{padding:8px 16px}}
 </style>
 </head>
 <body>
@@ -520,13 +535,13 @@ body.bootPlaying #menu{visibility:hidden!important}
 <div class="loadingInfo"><span id="bootStatus">Preparing Solara City...</span><span id="bootPct">0%</span></div>
 <div class="loadingTrack"><div id="loadingFill"></div></div><p id="bootError">Jawson &amp; Luxie • Eight story chapters</p><div class="artDots"><i></i><i></i><i></i></div><div class="bootFeatureStrip"><span>NO MONEY</span><span>NO CONNECTIONS</span><span>EVERYTHING TO BUILD</span></div>
 <button id="bootRetry" style="display:none" onclick="location.reload()">RETRY</button></div></div>
-<div id="menu" class="overlay movieMenu"><div class="menuCity"></div><div class="coverArt menuCover" aria-hidden="true"></div><div class="menuContent">
+<div id="menu" class="overlay movieMenu"><div class="menuCity"></div><div class="coverArt menuCover" aria-hidden="true"></div><img class="menuHeroArt" alt="" decoding="async" onload="this.parentElement.classList.add('artworkReady')" onerror="this.parentElement.classList.remove('artworkReady')" src="./models/solara-menu.jpg"><div class="menuContent">
 <div class="kicker">SOLARA CITY &nbsp; / &nbsp; CINEMATIC OVERHAUL</div><h1 class="movieLogo releaseMark" aria-label="MVT 6"><span class="letters">MVT</span><i class="slash" aria-hidden="true"></i><span class="digit">6</span></h1>
 <div class="movieSubtitle">MOTOR VEHICLE THEFT</div><h2>Two lives. One city.</h2>
 <p>Explore Solara City as Jawson and Luxie. Meet local contacts, take on jobs, customise your car and build your own story.</p>
 <div class="menuActions"><button id="play">PLAY STORY</button><button id="resetSave" class="secondary">START OVER</button></div>
 <div class="movieControls">WASD · MOVE &nbsp;&nbsp; CLICK · MOUSE LOOK &nbsp;&nbsp; F · INTERACT</div></div>
-<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">CINEMATIC OVERHAUL · v0.4.0 PREVIEW 5</div></div></div>
+<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">CINEMATIC OVERHAUL · v0.4.0 PREVIEW 6</div></div></div>
 <div id="storyIntro" aria-live="polite" style="display:none"><div id="introShade"></div><div id="introContent"><div id="introChapter">SOLARA CITY · CHAPTER ONE</div><div id="introCue">AN ORIGINAL MVT 6 FILM</div><h2 id="introTitle">START WITH NOTHING.</h2><p id="introCopy">New city. Empty pockets. Every choice counts.</p></div><button id="introSkip">SKIP INTRO →</button></div>
 <div id="paused" class="overlay"><div class="panel"><div class="eyebrow">SOLARA CITY</div><h2>PAUSED</h2><p>Explore at your own pace. Your cash, upgrades and completed contracts are automatically saved.</p><button id="resume">RESUME</button><button id="pauseMap" class="secondary">MAP & MISSIONS</button>
 <div class="qualitySelector"><label for="graphicsQuality">GRAPHICS QUALITY</label><select id="graphicsQuality">
@@ -735,8 +750,22 @@ for(const texture of Object.values(materialsTexture))texture.anisotropy=textureA
 materials.asphalt.bumpMap=materialsTexture.asphalt;materials.asphalt.bumpScale=.065;
 materials.sidewalk.bumpMap=materialsTexture.pavement;materials.sidewalk.bumpScale=.055;
 materials.grass.bumpMap=materialsTexture.grass;materials.grass.bumpScale=.035;
+// Only selected window interiors emit light; walls remain dark at night.
+function windowGlowTexture(kind,seed){
+ const c=document.createElement('canvas');c.width=c.height=256;const ctx=c.getContext('2d');
+ ctx.fillStyle='#000';ctx.fillRect(0,0,256,256);
+ const rows=kind==='tower'?9:kind==='old'?6:kind==='loft'?7:8,gap=256/rows;
+ for(let y=6;y<250;y+=gap)for(let x=7;x<252;x+=kind==='old'?37:30){
+  if(rnd(x*7+y*13+seed*50)<=.83)continue;
+  const w=kind==='old'?25:20,h=gap*.62;
+  ctx.fillStyle='#967448';ctx.fillRect(x+1,y+2,w-2,h-3);
+  ctx.fillStyle='#ffdeb0';ctx.fillRect(x+3,y+4,w-6,h-7);
+  if(kind==='loft'){ctx.fillStyle='#30271f';ctx.fillRect(x+9,y+2,2,h-2);}
+ }
+ const tx=new THREE.CanvasTexture(c);tx.colorSpace=THREE.SRGBColorSpace;tx.anisotropy=textureAnisotropy;return tx;
+}
 const windowMats=['tower','old','loft','modern'].map((type,i)=>new THREE.MeshStandardMaterial({
- map:patternTexture(type,i),side:THREE.FrontSide,transparent:false,opacity:1,depthWrite:true,roughness:i===1?.85:.37,metalness:i===1?0:.15,emissive:0xffd4a1,emissiveIntensity:0
+ map:patternTexture(type,i),emissiveMap:windowGlowTexture(type,i),side:THREE.FrontSide,transparent:false,opacity:1,depthWrite:true,roughness:i===1?.85:.37,metalness:i===1?0:.15,emissive:0xffd4a1,emissiveIntensity:0
 }));
 // GPU instancing renders many static skyline elements in four draw calls.
 const alleys=[],footprint=[],buildingMatrices=[],buildingTints=[],roofMatrices=[],facadeMatrices=[[],[],[],[]],treeTrunks=[],treeCanopies=[],palmTrunks=[],palmFronds=[],buildingTypes=[],neighborhoods=[],houseRoofs=[],warehouseRoofs=[],lawnTiles=[],gardenPaths=[],plazaPavers=[],parkingTiles=[],parkingLines=[],parkMounds=[],fountainBases=[],fountainWater=[],houseWindows=[],garageDoors=[],towerSetbacks=[],parkBenches=[],parkBenchLegs=[],gardenBorders=[],coastDecks=[],reactiveTrees=[];
@@ -3333,7 +3362,7 @@ function updateWeather(dt){
   ambient.color.set(kind==='rain'?'#b5c6dd':atmosphereIndex===1?'#f2c9ab':'#cbe6ff');
   ambient.groundColor.set(atmosphereIndex===2?'#535c69':'#747165');
   ambient.intensity=mode.ambient*(kind==='rain'?.89:kind==='overcast'?.96:1);
-  for(const material of windowMats){if(!material.emissiveMap){material.emissiveMap=material.map;material.needsUpdate=true;}material.emissiveIntensity=atmosphereIndex===2?.26:0;}
+  for(const material of windowMats){if(!material.emissiveMap){material.emissiveMap=material.map;material.needsUpdate=true;}material.emissiveIntensity=atmosphereIndex===2?.88:0;}
   $('weatherLabel').textContent=kind.toUpperCase();
  }
  rainMesh.visible=playing&&kind==='rain'&&!reducedWeather;
