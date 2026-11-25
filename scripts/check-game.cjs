@@ -40,6 +40,15 @@ assert.ok(html.includes('detailBatch(solarModules'),'Instanced rooftop solar arr
 assert.ok(html.includes('detailBatch(parapetModules'),'Instanced rooftop parapets exist');
 
 assert.ok(html.includes('group.userData.brakeLights=brakeTailLights'),'Brake light interface is retained');
+assert.ok(html.includes('walkBlend=THREE.MathUtils.lerp(walkBlend,walkMotion,transition)'),'Walking blend is damped');
+assert.ok(html.includes('runBlend=THREE.MathUtils.lerp(runBlend,walkMotion&&keys.shift?1:0'),'Sprint blend is damped');
+assert.ok(html.includes('gaitPhase+=dt*'),'Gait animation has continuous phase');
+assert.ok(html.includes('const targetFov=normalCameraFov+drivingCameraSpeed'),'Driving FOV depends on speed');
+assert.ok(html.includes('Math.abs(camera.fov-nextFov)>.035'),'FOV projection updates are throttled');
+assert.ok(html.includes('const lead=inCar?Math.min(5.5,Math.abs(velocity)*.11):0'),'Camera leads at speed');
+assert.ok(html.includes('if(jumping){limbs.legs[0].rotation.x=-.48'),'Jump poses retained');
+assert.ok(html.includes('function setSeatPose(amount)'),'Seated character pose retained');
+
 
 assert.ok(!html.includes('fpsTime+=dt'),'Old FPS calculation is removed');
 
