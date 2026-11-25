@@ -1,5 +1,17 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v2.6 — DUAL PATHS
+
+- Play as Jawson or Luxie, switch with V on foot between jobs, or use the pause-menu character switch.
+- Separate original animated Luxie glTF variant with distinctive clothing and hair; each character has a fallback and matching stylised seated car occupant.
+- The inactive protagonist becomes the story contact. The original Jawson prologue is retained.
+- Jawson receives a 10% courier chapter bonus; Luxie receives $45 instead of $35 for first-time shop help. Character chapter counts and active lead persist locally and in account progress.
+- Existing campaign, mission stages, road network, city scenery and vehicle mechanics retained.
+- 1,792 assertions passed in the adapted strict test environment. Interactive browser rendering, account persistence and FPS have not been verified.
+
+**Scope:** Switching changes the active character at the current location; there is no separate playable character location simulation. Luxie shares Jawson's rig and animations with a different appearance. New road layouts and vehicle assets are not included.
+
+
 ## v2.5 — CROSSWINDS
 
 - Jawson is the playable lead and Luxie is the recurring co-lead and story contact. Eight chapter briefings and completion lines follow their original workshop and harbour mystery. The opening introduces both characters with dedicated shots.

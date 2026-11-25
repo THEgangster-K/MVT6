@@ -140,6 +140,9 @@ function streetPoint(i){
 }
 // Named contact for story jobs, stays by the start-of-game sidewalk.
 const fixer=human(29,12.5,-18);fixer.name='Luxie';fixer.role='fixer';fixer.root.rotation.y=Math.PI/2;
+const jawsonContact=human(31,12.5,-18);jawsonContact.name='Jawson';jawsonContact.role='fixer';jawsonContact.root.rotation.y=Math.PI/2;jawsonContact.root.visible=false;
+let currentPartner=fixer;
+function setPartner(activeLead){currentPartner=activeLead==='luxie'?jawsonContact:fixer;fixer.root.visible=currentPartner===fixer;jawsonContact.root.visible=currentPartner===jawsonContact;}
 // Walkers follow the sidewalk axis; public spaces attract small local groups.
 for(let i=0;i<48;i++){
  let p=i<18?{x:i%2===0?14:-14,z:-175+i*19,axis:'z'}:streetPoint(i+12);
@@ -175,7 +178,7 @@ for(let i=0;i<16;i++){
 let active=null,dialogUntil=0;
 const pop=document.createElement('div');pop.id='citizenPrompt';pop.style.cssText='display:none;position:fixed;bottom:160px;left:50%;transform:translateX(-50%);z-index:7;background:#0b1d2fe8;border:1px solid #75e6bfaa;border-radius:12px;padding:11px 17px;color:white;font:700 13px system-ui;pointer-events:none;box-shadow:0 8px 24px #0008';document.body.appendChild(pop);
 const dialog=document.createElement('div');dialog.id='citizenDialog';dialog.style.cssText='display:none;position:fixed;bottom:205px;left:50%;transform:translateX(-50%);z-index:8;max-width:min(480px,90vw);background:#112439f2;border:1px solid #73e6b7b0;border-radius:14px;padding:15px 19px;color:#f5fbff;box-shadow:0 14px 50px #0009;font:14px/1.55 system-ui';document.body.appendChild(dialog);
-function nearest(){const p=getPlayer();if(p.inCar)return null;let best=null,d=5.2;for(const n of [fixer,...citizens]){const distance=Math.hypot(p.x-n.root.position.x,p.z-n.root.position.z);if(distance<d){best=n;d=distance}}return best}
+function nearest(){const p=getPlayer();if(p.inCar)return null;let best=null,d=5.2;for(const n of [currentPartner,...citizens]){const distance=Math.hypot(p.x-n.root.position.x,p.z-n.root.position.z);if(distance<d){best=n;d=distance}}return best}
 function interact(){const n=nearest();if(!n)return false;if(n.role==='fixer'){onStoryContact?.();return true}active=n;n.chatUntil=performance.now()+2200;const story=stories[n.id%stories.length];const first=n.chatIndex++===0;dialog.innerHTML='<b style="color:#6ee8ba">'+n.name+'</b><div style="margin-top:5px">'+(first?story[0]:story[1])+'</div><small style="color:#a7c4cf">Press F to talk again · Walk away to close</small>';dialog.style.display='block';dialogUntil=performance.now()+6500;if(first){onReward(story[2]);onNotice(n.name+' gave you $'+story[2]+' for helping around town')}return true}
 let lastNpc=0,lastPropCull=0;
 function update(dt,now){
@@ -248,7 +251,7 @@ function update(dt,now){
  }
  if(!isPlaying()){pop.style.display='none';dialog.style.display='none';return}
  const n=nearest();
- pop.style.display=n?'block':'none';if(n)pop.textContent=n.role==='fixer'?'F  ·  Talk to Luxie (story chapter)':'F  ·  Talk to '+n.name;
+ pop.style.display=n?'block':'none';if(n)pop.textContent=n.role==='fixer'?'F  ·  Talk to '+currentPartner.name+' (story chapter)':'F  ·  Talk to '+n.name;
  if(!n||now>dialogUntil)dialog.style.display='none';
 }
 
@@ -267,5 +270,5 @@ function reactToVehicle(x,z,force=1){
  }
  return reacted;
 }
-return {update,interact,citizens,fixer,reactToVehicle};
+return {update,interact,citizens,fixer,setPartner,reactToVehicle};
 }
