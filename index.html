@@ -431,6 +431,31 @@ body.bootPlaying #menu{visibility:hidden!important}
 @keyframes coverReveal{from{opacity:0;transform:scale(1.025)}to{opacity:1;transform:none}}
 @media(max-width:650px){#menu .menuCover,#boot .bootCover{background-size:auto 56vh;background-position:center 20%}#menu .menuContent{justify-content:flex-end;padding-bottom:12vh!important}#menu h2{margin-top:10px}#menu p{max-width:320px}#menu .movieLogo{font-size:80px}}
 @media(prefers-reduced-motion:reduce){#boot.bootIdentity .bootCover{animation:none}}
+
+/* Cinematic Overhaul — presentation pass */
+#menu.movieMenu{justify-content:flex-end!important;align-items:stretch!important;isolation:isolate;background:#14111f!important}
+#menu .menuCover{background-size:cover;background-position:center;inset:0 0 22%;opacity:1}
+#menu .menuContent{position:relative;justify-content:flex-end;align-items:flex-start;text-align:left;padding:clamp(20px,5vw,76px)!important;padding-bottom:clamp(34px,7vh,76px)!important;background:linear-gradient(0deg,#100e19 0%,#100e19ee 17%,#100e1980 35%,transparent 72%),linear-gradient(90deg,#100e1970,transparent 65%);}
+#menu .movieLogo{font-size:clamp(62px,10vw,146px);justify-content:flex-start;margin:0 0 8px;filter:drop-shadow(0 3px 12px #100e19)}
+#menu .kicker{font-size:10px;letter-spacing:.24em;color:#f6cbab}
+#menu .movieSubtitle{letter-spacing:.32em;font-size:10px}
+#menu h2{margin:15px 0 6px;color:#fff6e8;font-weight:650}
+#menu p{max-width:440px;line-height:1.55;color:#dfd7da}
+#menu .menuActions{justify-content:flex-start;gap:12px;margin-top:20px}
+#menu .menuActions button{border-radius:3px;min-width:150px;letter-spacing:.09em;font-weight:800;transition:background .18s,transform .18s}
+#menu .menuActions #play{background:#ffd1a4;color:#18121e;border:1px solid #ffd1a4}
+#menu .menuActions #resetSave{background:#15121fcc;color:#fff1df;border:1px solid #ffffff50}
+#menu .menuActions button:hover{transform:translateY(-2px);background:#fff0d7!important;color:#171421!important}
+#menu button:focus-visible{outline:2px solid #fff1dc;outline-offset:4px}
+#menu .movieControls{color:#b9b3c0;margin-top:18px;letter-spacing:.10em}
+#menu .menuDecor{bottom:14px;right:clamp(12px,3vw,42px)}
+#boot .bootCover{background-size:cover;background-position:center}
+#top .pill,#objective{border-radius:5px;box-shadow:0 3px 12px #0003}
+#objective{border-left-color:#f4bd8f}
+@media(max-width:650px){#menu .menuCover{inset:0 0 35%;background-position:42% center}#menu .menuContent{padding:22px 20px 55px!important}#menu .movieLogo{font-size:clamp(54px,13vw,90px)}#menu .movieControls{font-size:8px;letter-spacing:.04em}#menu .menuActions button{min-width:120px;padding:12px}#menu .menuDecor .releaseVersion{font-size:9px}}
+@media(max-height:500px){#menu .menuContent{padding:12px 24px 28px!important}#menu .movieLogo{font-size:60px}#menu h2{margin:8px 0 3px}#menu .movieControls{display:none}#menu .menuActions{margin-top:10px}}
+@media(prefers-reduced-motion:reduce){#menu .menuActions button{transition:none}}
+
 </style>
 </head>
 <body>
@@ -496,12 +521,12 @@ body.bootPlaying #menu{visibility:hidden!important}
 <div class="loadingTrack"><div id="loadingFill"></div></div><p id="bootError">Jawson &amp; Luxie • Eight story chapters</p><div class="artDots"><i></i><i></i><i></i></div><div class="bootFeatureStrip"><span>NO MONEY</span><span>NO CONNECTIONS</span><span>EVERYTHING TO BUILD</span></div>
 <button id="bootRetry" style="display:none" onclick="location.reload()">RETRY</button></div></div>
 <div id="menu" class="overlay movieMenu"><div class="menuCity"></div><div class="coverArt menuCover" aria-hidden="true"></div><div class="menuContent">
-<div class="kicker">SOLARA CITY &nbsp; / &nbsp; POSTCARDS</div><h1 class="movieLogo releaseMark" aria-label="MVT 6"><span class="letters">MVT</span><i class="slash" aria-hidden="true"></i><span class="digit">6</span></h1>
-<div class="movieSubtitle">MOTOR VEHICLE THEFT</div><h2>Every street has a story.</h2>
-<p>Explore Solara City. Meet local contacts, take on jobs, customise your car and build your own story.</p>
+<div class="kicker">SOLARA CITY &nbsp; / &nbsp; CINEMATIC OVERHAUL</div><h1 class="movieLogo releaseMark" aria-label="MVT 6"><span class="letters">MVT</span><i class="slash" aria-hidden="true"></i><span class="digit">6</span></h1>
+<div class="movieSubtitle">MOTOR VEHICLE THEFT</div><h2>Two lives. One city.</h2>
+<p>Explore Solara City as Jawson and Luxie. Meet local contacts, take on jobs, customise your car and build your own story.</p>
 <div class="menuActions"><button id="play">PLAY STORY</button><button id="resetSave" class="secondary">START OVER</button></div>
 <div class="movieControls">WASD · MOVE &nbsp;&nbsp; CLICK · MOUSE LOOK &nbsp;&nbsp; F · INTERACT</div></div>
-<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">POSTCARDS · V3.1</div></div></div>
+<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">CINEMATIC OVERHAUL · v0.4.0 PREVIEW</div></div></div>
 <div id="storyIntro" aria-live="polite" style="display:none"><div id="introShade"></div><div id="introContent"><div id="introChapter">SOLARA CITY · CHAPTER ONE</div><div id="introCue">AN ORIGINAL MVT 6 FILM</div><h2 id="introTitle">START WITH NOTHING.</h2><p id="introCopy">New city. Empty pockets. Every choice counts.</p></div><button id="introSkip">SKIP INTRO →</button></div>
 <div id="paused" class="overlay"><div class="panel"><div class="eyebrow">SOLARA CITY</div><h2>PAUSED</h2><p>Explore at your own pace. Your cash, upgrades and completed contracts are automatically saved.</p><button id="resume">RESUME</button><button id="pauseMap" class="secondary">MAP & MISSIONS</button>
 <div class="qualitySelector"><label for="graphicsQuality">GRAPHICS QUALITY</label><select id="graphicsQuality">
