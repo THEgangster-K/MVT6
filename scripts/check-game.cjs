@@ -71,7 +71,7 @@ for(const match of matches[1][1].matchAll(/\$\('([^']+)'\)/g)){
  assert.ok(ids.includes(match[1])||builtAtRuntime.has(match[1]),'Missing UI element: '+match[1]);
 }
 const coreSource=read('game-core.js').replace(/^export /gm,'')+
- '\n;globalThis.core={movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction,arcadeCarContact};';
+ '\n;globalThis.core={movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction,arcadeCarContact,secondaryLane,vehicleProfile};';
 const context={Math};
 vm.runInNewContext(coreSource,context,{filename:'game-core.js'});
 const core=context.core;
@@ -105,7 +105,7 @@ assert.ok(html.includes('const nx=carPos.x+slide.dx,nz=carPos.z+slide.dz'),'New 
 assert.ok(html.includes('clearsStreet(x,z,w,h,d')===false,'Street guard uses the horizontal dimensions only');
 assert.ok(html.includes('clearsStreet(x,z,w,d,BLOCK,ROAD)'),'Street prop footprint guard is connected');
 assert.ok(html.includes('detailBatch(palmFronds,palmGeometry()'),'Original curved foliage is GPU-instanced');
-assert.ok(html.includes('DUAL PATHS · V2.6'),'Visible release marker');
+assert.ok(html.includes('AVENUES · V2.7'),'Visible release marker');
 assert.ok(html.includes('heroOccupant.group.visible=inCar&&playerCar.visible'),'Hero seated character visible when driving');
 assert.ok(html.includes('const driverRig=attachOccupant(car,i)'),'Traffic uses detailed occupant');
 assert.ok(html.includes('attachOccupant(c,i+8)'),'Police vehicles use detailed occupant');
@@ -233,7 +233,26 @@ assert.ok(html.includes('detailBatch(fountainBases'),'Spawn plaza centerpiece');
 assert.ok(html.includes('publicSpaces:neighborhoods.filter'),'Public spaces connected to residents');
 assert.ok(cityLifeSource.includes('resident.pathAxis=p.axis'),'Walkers follow sidewalk direction');
 
-assert.ok(html.includes('coachworkGeometry(police)'),'Vehicles use original longitudinal coachwork mesh');
+assert.ok(html.includes('coachworkGeometry(police,type)'),'Vehicles use distinct original coachwork profiles');
+const vehicleTypes=['sedan','taxi','utility','compact','wagon','coupe'];
+assert.equal(new Set(vehicleTypes.map(t=>JSON.stringify(core.vehicleProfile(t)))).size,6,'Six distinct profiles');
+for(const type of vehicleTypes){const p=core.vehicleProfile(type);assert.ok([p.roof,p.rear,p.front,p.body].every(Number.isFinite),'Finite vehicle shape');assert.ok(1.48+p.front-p.rear>1,'Positive roof dimensions');}
+assert.ok(html.includes('venueVisits:[ ]')||html.includes('venueVisits:[]'),'Venue activity save default');
+assert.ok(html.includes("save.venueVisits=[...visited,id]"),'Venue completion recorded per lead');
+assert.ok(read('server.js').includes('venueVisits:Array.isArray'),'Venue completion persists to account');
+let lanes=0;
+for(let ix=-4;ix<4;ix++)for(let iz=-4;iz<4;iz++){
+ const cx=(ix+.5)*92,cz=(iz+.5)*92,seed=(ix+4)*10+iz+4;
+ const p=core.cityBlockPlan(cx,cz,seed),lane=core.secondaryLane(cx,cz,p.alley,seed);
+ if(!p.alley){assert.equal(lane,null,'No lane in reserved public block');continue;}
+ lanes++;assert.equal(lane.points.length,17,'Curved lane sample count');
+ assert.ok(lane.width>4&&lane.width<=6,'Reasonable lane width');
+ const a=p.alley,center=a.axis==='x'?cx:cz;
+ for(const pt of lane.points){const cross=(a.axis==='x'?pt.x:pt.z)-center;assert.ok(Math.abs(cross-a.offset)+lane.width/2<=a.width/2,'Lane stays inside reserved envelope');}
+ assert.ok(Math.abs((a.axis==='x'?lane.points[0].z:lane.points[0].x)-(a.axis==='x'?cz:cx))===36,'Lane connects block edge');
+}
+assert.ok(lanes>30,'Substantial secondary lane coverage');
+
 assert.ok(html.includes('assembly.spin.children'),'Wheel rim customisation addresses nested wheel meshes');
 assert.ok(html.includes('exitOffsets.find'),'Vehicle exit checks nearby open space');
 assert.ok(html.includes('if(collision(camPos.x,camPos.z,.3))'),'Camera retracts when inside a building footprint');
