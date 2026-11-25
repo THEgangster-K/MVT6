@@ -15,10 +15,11 @@ export function applyStoryPose(model,joints,baseY,amount){
 export function createPlayerModelSystem({THREE, root, fallbackChildren, manifestKey='player', onStatus=()=>{}}) {
   let mixer=null, model=null, actions={}, activeAction=null, loaded=false,showing=false;
   const original=fallbackChildren.slice();
-  let lastState='idle',poseJoints=null,posing=false,baseY=0;
+  let lastState='idle',poseJoints=null,posing=false,baseY=0,gestureBase=null;
   function status(message) { onStatus(message); }
-  function update(dt,{walking=0,running=0,jumping=false,enabled=true,seatAmount=null}={}) {
+  function update(dt,{walking=0,running=0,jumping=false,enabled=true,seatAmount=null,gesture=0}={}) {
     if(!loaded || !mixer)return;
+    if(gestureBase){for(const [joint,rotation] of gestureBase)joint.rotation.copy(rotation);gestureBase=null;}
     // The same loaded hero is used for the seated-to-standing story pose and ordinary movement.
     if(enabled!==showing){showing=enabled;model.visible=enabled;for(const child of original)child.visible=!enabled;}
     if(!enabled)return;
@@ -37,6 +38,12 @@ export function createPlayerModelSystem({THREE, root, fallbackChildren, manifest
     }
     lastState=next;
     mixer.update(Math.max(0,Math.min(dt,.06)));
+    if(gesture>0&&!jumping&&walking<.3&&poseJoints){
+      const arm=poseJoints.arms[1],elbow=poseJoints.elbows[1],amount=Math.min(1,gesture*5);
+      gestureBase=[[arm,arm.rotation.clone()],[elbow,elbow.rotation.clone()]];
+      arm.rotation.x+=( -1.02-arm.rotation.x)*amount;arm.rotation.z+=Math.sin(gesture*11)*.12*amount;
+      elbow.rotation.x+=(-.48-elbow.rotation.x)*amount;
+    }
   }
   async function load() {
     try{
