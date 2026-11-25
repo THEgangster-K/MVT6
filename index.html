@@ -586,7 +586,7 @@ const windowMats=['tower','old','loft','modern'].map((type,i)=>new THREE.MeshSta
  map:patternTexture(type,i),side:THREE.FrontSide,transparent:false,opacity:1,depthWrite:true,roughness:i===1?.85:.37,metalness:i===1?0:.15
 }));
 // GPU instancing renders many static skyline elements in four draw calls.
-const alleys=[],footprint=[],buildingMatrices=[],buildingTints=[],roofMatrices=[],facadeMatrices=[[],[],[],[]],treeTrunks=[],treeCanopies=[],palmTrunks=[],palmFronds=[],buildingTypes=[],neighborhoods=[],houseRoofs=[],warehouseRoofs=[],lawnTiles=[],gardenPaths=[],plazaPavers=[],parkingTiles=[],parkingLines=[],parkMounds=[],fountainBases=[],fountainWater=[],houseWindows=[],garageDoors=[],towerSetbacks=[];
+const alleys=[],footprint=[],buildingMatrices=[],buildingTints=[],roofMatrices=[],facadeMatrices=[[],[],[],[]],treeTrunks=[],treeCanopies=[],palmTrunks=[],palmFronds=[],buildingTypes=[],neighborhoods=[],houseRoofs=[],warehouseRoofs=[],lawnTiles=[],gardenPaths=[],plazaPavers=[],parkingTiles=[],parkingLines=[],parkMounds=[],fountainBases=[],fountainWater=[],houseWindows=[],garageDoors=[],towerSetbacks=[],parkBenches=[],parkBenchLegs=[],gardenBorders=[],coastDecks=[];
 const facadeDummy=new THREE.Object3D();
 function facadeMatrix(x,y,z,w,h,rot){facadeDummy.position.set(x,y,z);facadeDummy.rotation.set(0,rot,0);facadeDummy.scale.set(w,h,1);facadeDummy.updateMatrix();return facadeDummy.matrix.clone()}
 // The new city plans reserve roads and preserve existing story coordinates.
@@ -604,15 +604,24 @@ for(let ix=-HALF;ix<HALF;ix++)for(let iz=-HALF;iz<HALF;iz++){
    if(plaza){
      plazaPavers.push(parcelMatrix(cx,.19,cz,24,.06,24));
      fountainBases.push(parcelMatrix(cx,.65,cz,9,1.05,9));fountainWater.push(parcelMatrix(cx,1.19,cz,7.6,.05,7.6));
+     footprint.push({x:cx,z:cz,w:4.6,d:4.6});
      // Preserve the existing spawn and story contact; keep the west approach unobstructed.
      for(const dx of [-24,24])for(const dz of [-24,24])addTree(cx+dx,cz+dz,2.7);
    }else{
      // Raised landscaped beds: relief is off the driving lanes, not a new road height.
      for(const dx of [-17,17])for(const dz of [-17,17]){
-       parkMounds.push(parcelMatrix(cx+dx,.18,cz+dz,11,1.7,10));
+       parkMounds.push(parcelMatrix(cx+dx,.18,cz+dz,6,1.7,5));
+       footprint.push({x:cx+dx,z:cz+dz,w:6,d:5});
        addTree(cx+dx+7,cz+dz-7,2.4);
      }
      for(const dx of [-28,28])for(const dz of [-28,28])addTree(cx+dx,cz+dz,2.7);
+   }
+   // Small public spaces have integrated seating instead of unexplained freestanding blocks.
+   for(const dx of [-9,9]){
+     const bx=cx+dx,bz=cz+7;
+     parkBenches.push(parcelMatrix(bx,.83,bz,3.5,.17,.85),parcelMatrix(bx,1.2,bz-.38,3.5,.55,.11));
+     for(const side of [-1,1])parkBenchLegs.push(parcelMatrix(bx+side*1.25,.43,bz,.14,.8,.64));
+     footprint.push({x:bx,z:bz,w:1.8,d:.6});
    }
    continue;
  }
@@ -629,6 +638,7 @@ for(let ix=-HALF;ix<HALF;ix++)for(let iz=-HALF;iz<HALF;iz++){
    alleys.push({x:cx,z:cz});
  }else{
    parkingTiles.push(parcelMatrix(cx,.13,cz,63,.03,63));
+   if(plan.kind==='coast')coastDecks.push(parcelMatrix(cx,.185,cz,6,.06,60));
    for(let z=-24;z<=24;z+=6)parkingLines.push(parcelMatrix(cx+29,.16,cz+z,5,.025,.12));
  }
  for(const [bi,p] of plan.parcels.entries()){
@@ -734,6 +744,9 @@ detailBatch(fountainWater,new THREE.CylinderGeometry(.5,.5,1,28),mat('#4d9eaf',.
 detailBatch(houseWindows,tileGeo,mat('#416876',.22,.35));
 detailBatch(garageDoors,tileGeo,mat('#69777a',.68,.26));
 detailBatch(towerSetbacks,tileGeo,mat('#819ca6',.34,.35));
+detailBatch(parkBenches,tileGeo,mat('#987455',.85));
+detailBatch(parkBenchLegs,tileGeo,mat('#35454a',.64,.23));
+detailBatch(coastDecks,tileGeo,mat('#bfaa8a',.85));
 
 for(let g=0;g<facadeMatrices.length;g++){const inst=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1),windowMats[g],facadeMatrices[g].length);
 for(let j=0;j<facadeMatrices[g].length;j++)inst.setMatrixAt(j,facadeMatrices[g][j]);
@@ -850,7 +863,7 @@ for(const [kind,list] of Object.entries(pavementProps)){
 // Real-world scale street furniture and neighborhood landmarks in batches.
 const streetscape={lampPost:[],lampHead:[],bollard:[],bench:[],busGlass:[],busRoof:[],kiosk:[],kioskRoof:[],trash:[]};
 const addStreet=(kind,x,y,z,w,h,d)=>{if(clearsStreet(x,z,w,d,BLOCK,ROAD))streetscape[kind].push([x,y,z,w,h,d])};
-const transitStops=[[-46,-106],[138,14],[-138,106],[230,-14],[-230,-14],[46,198],[138,-106],[-46,-198]].filter(([x,z])=>clearsStreet(x,z,8,3.4,BLOCK,ROAD));
+const transitStops=[[-46,-106],[138,14],[-138,106],[230,-14],[-230,-14],[46,198],[138,-106],[-46,-198]].filter(([x,z])=>clearsStreet(x,z,8,3.4,BLOCK,ROAD)&&!footprint.some(p=>Math.abs(p.x-x)<p.w+4&&Math.abs(p.z-z)<p.d+1.7));
 for(const [idx,pos] of transitStops.entries()){
  const [x,z]=pos;
  addStreet('busGlass',x,2.15,z,5.8,3.6,.10);addStreet('busRoof',x,4.02,z,7.7,.22,3.0);
@@ -909,7 +922,7 @@ function alleyInstances(arr,material){
 alleyInstances(canopyBars,alleySteel);alleyInstances(hangingLamps,alleyLamp);alleyInstances(alleyBins,mat('#667c78',.9));
 // Coastal vegetation: curved palm fronds use a purpose-built indexed mesh and GPU instances.
 function addTree(x,z,s){
- if(!clearsStreet(x,z,1.2,1.2,BLOCK,ROAD))return;
+ if(!clearsStreet(x,z,1.2,1.2,BLOCK,ROAD)||footprint.some(p=>Math.abs(p.x-x)<p.w+.8&&Math.abs(p.z-z)<p.d+.8))return;
  if(x < -80 || rnd(x*17+z*9)>.66){
    const height=s*2.35;
    palmTrunks.push(new THREE.Matrix4().compose(new THREE.Vector3(x,height*.5+.12,z),new THREE.Quaternion(),new THREE.Vector3(.64,height,.64)));
@@ -2437,7 +2450,7 @@ function drawMap(){
  ctx.translate(w/2,h/2);ctx.rotate(-heading);ctx.translate(-p.x*zoom,p.z*zoom);
  for(let i=-HALF;i<HALF;i++)for(let j=-HALF;j<HALF;j++){
   const cx=(i+.5)*BLOCK,cz=(j+.5)*BLOCK;
-  const plan=cityBlockPlan(cx,cz,(i+HALF)*10+j+HALF);ctx.fillStyle=({park:'#526e4c',plaza:'#6d8062',parking:'#37454d',residential:'#6b7860',industrial:'#60686c',coast:'#777e76',commercial:'#6c6664',urban:'#465951'})[plan.kind]||'#465951';
+  const plan=neighborhoods[(i+HALF)*HALF*2+j+HALF];ctx.fillStyle=({park:'#526e4c',plaza:'#6d8062',parking:'#37454d',residential:'#6b7860',industrial:'#60686c',coast:'#777e76',commercial:'#6c6664',urban:'#465951'})[plan.kind]||'#465951';
   ctx.fillRect((cx-(BLOCK-ROAD)/2)*zoom,-(cz+(BLOCK-ROAD)/2)*zoom,(BLOCK-ROAD)*zoom,(BLOCK-ROAD)*zoom);
   ctx.strokeStyle='#d5ddbd66';ctx.lineWidth=.7;ctx.strokeRect((cx-34)*zoom,-(cz+34)*zoom,68*zoom,68*zoom);
  }
