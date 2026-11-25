@@ -22,7 +22,7 @@ function hash(password,salt=crypto.randomBytes(16).toString('hex')){return salt+
 function matches(password,stored){try{const [salt]=stored.split(':');const candidate=hash(password,salt);return crypto.timingSafeEqual(Buffer.from(stored),Buffer.from(candidate))}catch{return false}}
 function cleanProgress(v){const limit=(x,max)=>Math.max(0,Math.min(max,Math.floor(Number(x)||0)));return {money:limit(v?.money,100000000),completed:limit(v?.completed,1000000),speed:limit(v?.speed,5),handling:limit(v?.handling,5),nitro:limit(v?.nitro,5),lifeTier:limit(v?.lifeTier,4)}}
 async function initDb(){if(!db){console.warn('DATABASE_URL not set: guest multiplayer enabled; player accounts unavailable');return}await db.query('CREATE TABLE IF NOT EXISTS mvt_players (id BIGSERIAL PRIMARY KEY, username VARCHAR(20) UNIQUE NOT NULL, password_hash TEXT NOT NULL, progress JSONB NOT NULL DEFAULT \'{"money":45,"completed":0,"speed":0,"handling":0,"nitro":0,"lifeTier":0}\'::jsonb, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())');console.log('Account database ready')}
-const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.ico':'image/x-icon'};
+const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.ico':'image/x-icon','.json':'application/json; charset=utf-8','.glb':'model/gltf-binary','.gltf':'model/gltf+json','.bin':'application/octet-stream','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp'};
 async function route(req,res){
 const url=new URL(req.url,'http://localhost');
 if(url.pathname==='/api/health')return json(res,200,{ok:true,online:peers.size,accountsEnabled:!!db});
@@ -44,7 +44,14 @@ return json(res,404,{error:'Not found'});
 if(req.method!=='GET')return json(res,405,{error:'Method not allowed'});
 const target=url.pathname==='/'?'/index.html':url.pathname;
 const full=path.resolve(__dirname,'.'+target);
-if(full!==path.resolve(__dirname,'index.html')&&full!==path.resolve(__dirname,'client.js')&&full!==path.resolve(__dirname,'city-life.js')&&full!==path.resolve(__dirname,'game-core.js'))return json(res,404,{error:'Not found'});
+// Serve only the known game modules plus explicitly permitted asset files.
+const modules=new Set(['index.html','client.js','city-life.js','game-core.js','model-assets.js']);
+const relative=path.relative(__dirname,full);
+const modelsDir=path.resolve(__dirname,'models');
+const modelFile=full.startsWith(modelsDir+path.sep)&&
+  ['.json','.glb','.gltf','.bin','.png','.jpg','.jpeg','.webp'].includes(path.extname(full).toLowerCase())&&
+  !relative.split(path.sep).includes('..');
+if(!modules.has(relative)&&!modelFile)return json(res,404,{error:'Not found'});
 fs.readFile(full,(err,data)=>{if(err)return json(res,404,{error:'File missing'});res.writeHead(200,{'Content-Type':mime[path.extname(full)]||'application/octet-stream','Cache-Control':'no-cache','X-Content-Type-Options':'nosniff','Content-Security-Policy':"frame-ancestors 'none'"});res.end(data)})
 }
 const app=http.createServer((req,res)=>{route(req,res).catch(e=>{console.error(e);if(!res.headersSent)json(res,500,{error:'Server error'})})});

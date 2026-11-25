@@ -354,7 +354,9 @@ function fail(msg){if(complete)return;complete=true;clearInterval(timer);label.t
 window.addEventListener('error',e=>fail(e.message||'Game asset could not load'));window.addEventListener('unhandledrejection',e=>fail(e.reason?.message||'Game module could not load'));setTimeout(()=>fail('Game startup timed out. Check your connection, then retry.'),30000);
 })();
 </script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js"}}</script>
 <script type="module">
+import {createPlayerModelSystem} from './model-assets.js';
 import {multiplayer} from './client.js';
 import {createCityLife} from './city-life.js';
 import {movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase} from './game-core.js';
@@ -901,8 +903,18 @@ const head=mesh(new THREE.SphereGeometry(.39,14,10),skin,person);head.position.y
 const hair=mesh(new THREE.SphereGeometry(.4,14,8,0,Math.PI*2,0,1.15),mat('#24252a'),person);hair.position.y=2.79;
 const limbs={arms:[],legs:[]};
 for(const side of [-1,1]){
- const arm=new THREE.Group();arm.position.set(side*.62,2.14,0);person.add(arm);box(.26,.96,.32,0,-.48,0,jacket,arm);box(.26,.24,.32,0,-1.01,0,skin,arm);limbs.arms.push(arm);
- const leg=new THREE.Group();leg.position.set(side*.26,1.25,0);person.add(leg);box(.34,1.12,.36,0,-.55,0,jeans,leg);box(.38,.23,.65,0,-1.17,.13,mat('#1e2935'),leg);limbs.legs.push(leg);
+ const arm=new THREE.Group();arm.position.set(side*.62,2.14,0);person.add(arm);
+ const sleeve=mesh(new THREE.CapsuleGeometry(.185,.68,5,10),jacket,arm);sleeve.position.y=-.44;
+ const cuff=mesh(new THREE.CylinderGeometry(.185,.155,.11,10),mat('#183345'),arm);cuff.position.y=-.87;
+ const hand=mesh(new THREE.CapsuleGeometry(.105,.15,3,8),skin,arm);hand.position.y=-1.04;
+ limbs.arms.push(arm);
+ const leg=new THREE.Group();leg.position.set(side*.26,1.25,0);person.add(leg);
+ const trouser=mesh(new THREE.CapsuleGeometry(.206,.79,5,10),jeans,leg);trouser.position.y=-.52;trouser.scale.z=.89;
+ const ankle=mesh(new THREE.CylinderGeometry(.18,.155,.16,10),jeans,leg);ankle.position.y=-1.06;
+ const boot=mesh(new THREE.SphereGeometry(.30,12,8),mat('#1e2935'),leg);
+ boot.position.set(0,-1.20,.145);boot.scale.set(.72,.44,1.23);
+ const sole=mesh(new THREE.BoxGeometry(.43,.052,.60),mat('#92969b'),leg);sole.position.set(0,-1.34,.15);
+ limbs.legs.push(leg);
 }
 // Clothing material grain and articulated-looking details.
 const knitCanvas=document.createElement('canvas');knitCanvas.width=128;knitCanvas.height=128;
@@ -2378,6 +2390,9 @@ getPlayer:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,inCar,
 isPlaying:()=>gameMode==='play',onNotice:setNotice,
 onReward:amount=>{save.money+=amount;persist();updateHUD()}});
 let network=multiplayer({THREE,scene,makeCar,box,mat,mesh,getState:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,angle:inCar?angle:person.rotation.y,inCar}),onAccount:progress=>{if(progress){save={...defaultSave(),...progress};updateHUD()}},onMessage:message=>setNotice(message)});
+// Optional high-detail character assets only replace the fallback after validation.
+const modelAssets=createPlayerModelSystem({THREE,root:person,fallbackChildren:[...person.children]});
+modelAssets.load();
 let last=performance.now(),fpsCounter=0,fpsWindowStart=last,lastShopUpdate=0,lastHudUpdate=0,lastMapUpdate=0;function frame(now){requestAnimationFrame(frame);if(now-lastShopUpdate>800){lastShopUpdate=now;touchJump.style.display=gameMode==='play'&&!inCar&&matchMedia('(pointer:coarse)').matches?'block':'none';const gearNear=gameMode==='play'&&!inCar?nearestEquipment():null;$('pickupPrompt').style.display=gearNear?'block':'none';if(gearNear)$('pickupPrompt').textContent='F · COLLECT '+gadgetNames[gearNear.id];carHint.style.display=(gameMode==='play'&&!inCar&&nearestTrafficCar())?'block':'none';const px=inCar?carPos.x:playerPos.x,pz=inCar?carPos.z:playerPos.z;
  // Keep the hero car richly detailed; use squared-distance checks for nearby traffic/police.
  if(playerCar.userData.detail)playerCar.userData.detail.visible=true;
@@ -2389,7 +2404,8 @@ let last=performance.now(),fpsCounter=0,fpsWindowStart=last,lastShopUpdate=0,las
    const detail=p.car.userData.detail;
    if(detail)detail.visible=p.active&&(p.pos.x-px)**2+(p.pos.z-pz)**2<78*78;
  }
- for(const sh of shopBuildings){sh.root.visible=gameMode==='intro'||gameMode==='menu'||Math.hypot(px-sh.x,pz-sh.z)<155}}const dt=Math.max(.001,Math.min(.04,(now-last)/1000));last=now;animateCustoms(dt);if(gameMode==='play'){clockTime+=dt;if(atmosphereTime>0){atmosphereTime=Math.max(0,atmosphereTime-dt);if(atmosphereTime===0)atmosphereToast.classList.remove('show')}if(detailingShine>0)detailingShine=Math.max(0,detailingShine-dt);if(chapterBannerTime>0){chapterBannerTime-=dt;if(chapterBannerTime<=0)chapterScreen.classList.remove('show')}updateEquipmentWorld(dt);if(inCar)moveCar(dt);else movePerson(dt);updateVfx(dt);advanceTraffic(dt);advancePolice(dt);updatePatrolAgents(dt);if(mission){missionTime-=dt;updateMissionActivity(dt);if(missionTime<=0)failMission()}if(taxiJob)updateTaxiJob(dt);cityLife.update(dt,now);if(now-lastHudUpdate>100){lastHudUpdate=now;updateHUD()}updateCamera(dt);if(now-lastMapUpdate>95){lastMapUpdate=now;drawMap()}}else if(gameMode==='arrest'){animateArrest(dt);cityLife.update(dt,now)}else if(gameMode==='jail'){cityLife.update(dt,now)}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='takeover'){clockTime+=dt;updateVfx(dt);updateTakeover(dt);advanceTraffic(dt);cityLife.update(dt,now);updateCamera(dt);if(now-lastMapUpdate>95){lastMapUpdate=now;drawMap()}}else if(gameMode==='menu'){cityLife.update(dt,now);const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;
+ for(const sh of shopBuildings){sh.root.visible=gameMode==='intro'||gameMode==='menu'||Math.hypot(px-sh.x,pz-sh.z)<155}}const dt=Math.max(.001,Math.min(.04,(now-last)/1000));last=now;animateCustoms(dt);if(gameMode==='play'){clockTime+=dt;if(atmosphereTime>0){atmosphereTime=Math.max(0,atmosphereTime-dt);if(atmosphereTime===0)atmosphereToast.classList.remove('show')}if(detailingShine>0)detailingShine=Math.max(0,detailingShine-dt);if(chapterBannerTime>0){chapterBannerTime-=dt;if(chapterBannerTime<=0)chapterScreen.classList.remove('show')}updateEquipmentWorld(dt);if(inCar)moveCar(dt);else movePerson(dt);updateVfx(dt);advanceTraffic(dt);advancePolice(dt);updatePatrolAgents(dt);if(mission){missionTime-=dt;updateMissionActivity(dt);if(missionTime<=0)failMission()}if(taxiJob)updateTaxiJob(dt);cityLife.update(dt,now);if(now-lastHudUpdate>100){lastHudUpdate=now;updateHUD()}updateCamera(dt);if(now-lastMapUpdate>95){lastMapUpdate=now;drawMap()}}else if(gameMode==='arrest'){animateArrest(dt);cityLife.update(dt,now)}else if(gameMode==='jail'){cityLife.update(dt,now)}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='takeover'){clockTime+=dt;updateVfx(dt);updateTakeover(dt);advanceTraffic(dt);cityLife.update(dt,now);updateCamera(dt);if(now-lastMapUpdate>95){lastMapUpdate=now;drawMap()}}else if(gameMode==='menu'){cityLife.update(dt,now);const a=now*.00007;camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}modelAssets.update(dt,{walking:walkBlend,running:runBlend,jumping});
+network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;
 // Measure wall-clock frame throughput, not the clamped physics timestep.
 // AUTO uses hysteresis, a cooldown, and small resolution steps to avoid oscillation.
 if(now-fpsWindowStart>=1500){

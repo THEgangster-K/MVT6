@@ -1,5 +1,19 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v1.7 — Character Model Pipeline and Updated Hero Silhouette
+
+- Added a **local GLB/glTF animation pipeline** for an optional original, licensed player character. A rigged model with Idle and Walk animations can replace the built-in player by editing `models/manifest.json`.
+- The loader validates model paths and animation clips, normalises model height, crossfades between Idle, Walk, Run and Jump (where supplied), and safely falls back to the existing player if loading fails.
+- The game server now serves only explicitly allowed model asset files under `models/`; unrelated files remain inaccessible.
+- The **built-in player also looks less blocky**, using rounded sleeves, hands, legs and footwear instead of rectangular limb boxes.
+- Normal game loading, multiplayer, save data, police, vehicle physics and existing procedural NPCs are unchanged.
+- The default manifest leaves player assets disabled until an original rigged model is supplied. **This release does not bundle a photorealistic model** or claim GTA 6 graphical quality.
+
+See `models/README.md` for asset format, model scale and licensing instructions.
+
+**Validation:** Syntax and integration assertions pass. A complete Node runtime test and live browser/FPS test were unavailable from this session; actual model loading has not yet been exercised with a rigged GLB.
+
+
 ## v1.6 — Motion Polish & Responsive Chase Camera
 
 - Walking and sprinting animation weights now blend smoothly rather than snapping between idle and moving poses. Character gait uses a continuous phase with subtle shoulder/torso motion and eased head tracking.

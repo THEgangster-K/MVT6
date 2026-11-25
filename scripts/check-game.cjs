@@ -12,7 +12,7 @@ for(const [index,match] of matches.entries()){
  const plain=match[1].replace(/^import .*;$/gm,'');
  new vm.Script(plain,{filename:'inline-script-'+index});
 }
-for(const moduleName of ['city-life.js','client.js','game-core.js']){
+for(const moduleName of ['city-life.js','client.js','game-core.js','model-assets.js']){
  const plain=read(moduleName).replace(/^import .*;$/gm,'').replace(/^export /gm,'');
  new vm.Script(plain,{filename:moduleName});
 }
@@ -71,6 +71,16 @@ assert.equal(core.bailAmount(3.1),700,'Bail rounds up to next wanted star');
 assert.equal(core.nextMissionPhase({stage:'pickup',kind:'escape'},true),'escape');
 assert.equal(core.nextMissionPhase({stage:'pickup',kind:'courier'},true),'deliver');
 assert.ok(read('server.js').includes("'game-core.js'"),'Server serves game core');
+assert.ok(read('server.js').includes("'model-assets.js'"),'Server serves model loader');
+assert.ok(read('server.js').includes("'.glb'"),'Server can serve local model format');
+const modelManifest=JSON.parse(read('models/manifest.json'));
+assert.equal(modelManifest.player,null,'Default game uses fallback hero while no licensed asset is installed');
+assert.ok(html.includes("import {createPlayerModelSystem} from './model-assets.js';"),'Character pipeline is imported');
+assert.ok(html.includes('modelAssets.load()'),'Optional character loading begins');
+assert.ok(html.includes('modelAssets.update(dt,{walking:walkBlend,running:runBlend,jumping})'),'Animation mixer updates on frames');
+assert.ok(html.includes('new THREE.CapsuleGeometry(.185,.68'),'New rounded fallback arms are present');
+assert.ok(html.includes('new THREE.CapsuleGeometry(.206,.79'),'New rounded fallback legs are present');
+
 const taxiStart=html.indexOf('const taxiStops=['),taxiEnd=html.indexOf('function offerMission(){',taxiStart);
 assert.ok(taxiStart>0&&taxiEnd>taxiStart,'Taxi job module is present');
 const taxiSandbox={
