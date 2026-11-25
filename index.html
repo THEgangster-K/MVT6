@@ -393,12 +393,12 @@ button:hover{filter:none;background:#ffe0ba}button:focus-visible,select:focus-vi
 <div class="loadingTrack"><div id="loadingFill"></div></div><p id="bootError">Three original Solara City chapters • A world to make your own</p><div class="artDots"><i></i><i></i><i></i></div><div class="bootFeatureStrip"><span>NO MONEY</span><span>NO CONNECTIONS</span><span>EVERYTHING TO BUILD</span></div>
 <button id="bootRetry" style="display:none" onclick="location.reload()">RETRY</button></div></div>
 <div id="menu" class="overlay movieMenu"><div class="menuCity"></div><div class="menuContent">
-<div class="kicker">SOLARA CITY &nbsp; / &nbsp; CITY LIFE</div><h1 class="movieLogo releaseMark" aria-label="MVT 6"><span class="letters">MVT</span><i class="slash" aria-hidden="true"></i><span class="digit">6</span></h1>
+<div class="kicker">SOLARA CITY &nbsp; / &nbsp; BOULEVARDS</div><h1 class="movieLogo releaseMark" aria-label="MVT 6"><span class="letters">MVT</span><i class="slash" aria-hidden="true"></i><span class="digit">6</span></h1>
 <div class="movieSubtitle">MOTOR VEHICLE THEFT</div><h2>Every street has a story.</h2>
 <p>Explore Solara City. Meet local contacts, take on jobs, customise your car and build your own story.</p>
 <div class="menuActions"><button id="play">PLAY STORY</button><button id="resetSave" class="secondary">START OVER</button></div>
 <div class="movieControls">WASD · MOVE &nbsp;&nbsp; CLICK · MOUSE LOOK &nbsp;&nbsp; F · INTERACT</div></div>
-<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">CITY LIFE · V1.9</div></div></div>
+<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">BOULEVARDS · V2.0</div></div></div>
 <div id="storyIntro" aria-live="polite" style="display:none"><div id="introShade"></div><div id="introContent"><div id="introChapter">SOLARA CITY · CHAPTER ONE</div><div id="introCue">AN ORIGINAL MVT 6 FILM</div><h2 id="introTitle">START WITH NOTHING.</h2><p id="introCopy">New city. Empty pockets. Every choice counts.</p></div><button id="introSkip">SKIP INTRO →</button></div>
 <div id="paused" class="overlay"><div class="panel"><div class="eyebrow">SOLARA CITY</div><h2>PAUSED</h2><p>Explore at your own pace. Your cash, upgrades and completed contracts are automatically saved.</p><button id="resume">RESUME</button><button id="pauseMap" class="secondary">MAP & MISSIONS</button>
 <div class="qualitySelector"><label for="graphicsQuality">GRAPHICS QUALITY</label><select id="graphicsQuality">
@@ -444,7 +444,7 @@ window.addEventListener('error',e=>fail(e.message||'Game asset could not load'))
 import {createPlayerModelSystem} from './model-assets.js';
 import {multiplayer} from './client.js';
 import {createCityLife} from './city-life.js';
-import {movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan} from './game-core.js';
+import {movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction} from './game-core.js';
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';
 // MVT 6: an original browser game and city, not GTA assets or source.
 const $=id=>document.getElementById(id), world=$('game');
@@ -968,7 +968,27 @@ for(let i=0;i<treeCanopies.length;i++)canopyBatch.setMatrixAt(i,treeCanopies[i])
 trunkBatch.instanceMatrix.needsUpdate=true;canopyBatch.instanceMatrix.needsUpdate=true;
 trunkBatch.frustumCulled=false;canopyBatch.frustumCulled=false;scene.add(trunkBatch,canopyBatch);
 // Coastal visual: water beyond city's western edge, elevated promenade.
-plane(425,1000,-570,0,materials.water,-.10); // Remove obsolete floating waterfront barriers.
+// West Haven's waterfront is now a continuous, readable shore instead of water intersecting roads.
+plane(420,900,-620,0,materials.water,-.10);
+const sand=mat('#d9c6a0',.94),deck=mat('#b9a58a',.88),rail=mat('#53656a',.62,.2),seaFoam=mat('#a1cbd0',.65);
+plane(20,820,-400,0,sand,.025);
+const waterfrontRails=[],waterfrontPosts=[],shoreStreaks=[];
+for(let i=-4;i<4;i++){
+ const z=(i+.5)*BLOCK;
+ plane(8,69,-384,z,deck,.15);
+ waterfrontRails.push(parcelMatrix(-388.2,1.0,z,.13,.13,66));
+ for(let k=-30;k<=30;k+=10)waterfrontPosts.push(parcelMatrix(-388.2,.58,z+k,.15,1.16,.15));
+ for(let k=0;k<3;k++)shoreStreaks.push(parcelMatrix(-414-k*6,.012,z+8*k,1.2,.015,25+8*k));
+}
+detailBatch(waterfrontRails,new THREE.BoxGeometry(1,1,1),rail);
+detailBatch(waterfrontPosts,new THREE.BoxGeometry(1,1,1),rail);
+detailBatch(shoreStreaks,new THREE.BoxGeometry(1,1,1),seaFoam);
+// A small pier sits offshore, outside the drivable map, as a visible coastal landmark.
+box(52,.48,8,-436,.2,46,deck);
+for(const z of [42.4,49.6])for(let x=-460;x<=-411;x+=8)box(.3,1.35,.3,x,.78,z,rail);
+for(const z of [42.4,49.6])box(49,.12,.12,-435,1.4,z,rail);
+for(const x of [-455,-437,-419])for(const z of [43,49])cyl(.34,.44,1.8,x,-.7,z,rail,8);
+
 // Original coachwork mesh. Longitudinal sections define actual tapered silhouettes,
 // with shared geometry across vehicles instead of identical extruded rectangles.
 const coachworkCache=new Map();
@@ -1190,8 +1210,47 @@ function setSeatPose(amount){
  limbs.arms[0].rotation.x=-.5*a;limbs.arms[1].rotation.x=-.5*a;
 }
 let carPos=new THREE.Vector3(5,0,36),playerPos=new THREE.Vector3(15.35,0,-29),angle=0,walkAngle=0,velocity=0,inCar=false,gameMode='menu',camMode=0,clockTime=0,heat=0,heatTimer=0,mission=null,missionCount=0,missionTime=0,missionCooldown=0,nearGarage=false;
-const traffic=[],police=[];for(let i=0;i<18;i++){const car=makeCar(['#5f9ac9','#eab76e','#94beb5','#e2e4e4','#657489'][i%5]);let q=roadPositions[Math.floor(rnd(i+10)*roadPositions.length)];const east=i%2===0;const pos=east?new THREE.Vector3((rnd(i+71)-.5)*720,0,q+(i%4===0?5:-5)):new THREE.Vector3(q+(i%3===0?5:-5),0,(rnd(i+88)-.5)*720);
- const baseSpeed=8+rnd(i+94)*7;
+// A small, staggered signal network; paired heads share materials and only change at phase boundaries.
+let trafficClock=0;
+const signals=[];
+const signalPole=mat('#4c5759',.7,.2),signalCase=mat('#21292b',.83);
+const lampOff=mat('#293135',.95),redLamp=new THREE.MeshBasicMaterial({color:0xf24c50}),greenLamp=new THREE.MeshBasicMaterial({color:0x59e3a2});
+for(let ix=-2;ix<=2;ix++)for(let iz=-2;iz<=2;iz++){
+ const x=ix*BLOCK,z=iz*BLOCK;
+ const phase={ix,iz,heads:[],last:''};
+ for(const [dx,dz,axis] of [[12.5,12.5,'east'],[-12.5,-12.5,'north']]){
+  if(collision(x+dx,z+dz,.5))continue;
+  const root=new THREE.Group();scene.add(root);root.position.set(x+dx,0,z+dz);
+  const pole=mesh(new THREE.CylinderGeometry(.095,.12,4.5,8),signalPole,root);pole.position.y=2.25;
+  const head=new THREE.Group();root.add(head);head.position.y=4.7;head.rotation.y=axis==='east'?Math.PI/2:0;
+  box(.38,.86,.26,0,0,0,signalCase,head);
+  const r=mesh(new THREE.SphereGeometry(.12,8,6),redLamp,head);r.position.set(0,.22,.14);
+  const g=mesh(new THREE.SphereGeometry(.12,8,6),lampOff,head);g.position.set(0,-.22,.14);
+  phase.heads.push({axis,r,g});
+ }
+ signals.push(phase);
+}
+function updateSignals(dt){
+ trafficClock+=dt;
+ for(const signal of signals){
+  const phase=junctionPhase(trafficClock,signal.ix,signal.iz);
+  if(phase===signal.last)continue;signal.last=phase;
+  for(const h of signal.heads){h.r.material=phase===h.axis?lampOff:redLamp;h.g.material=phase===h.axis?greenLamp:lampOff}
+ }
+}
+const traffic=[],police=[];for(let i=0;i<24;i++){
+ const type=i%6===0?'taxi':i%6===1?'utility':i%6===2?'compact':'sedan';
+ const color=type==='taxi'?'#e8bb47':type==='utility'?'#e4e1d7':['#5f9ac9','#eab76e','#94beb5','#e2e4e4','#657489'][i%5];
+ const car=makeCar(color);
+ // Different silhouettes without changing the underlying collision model.
+ if(type==='utility'){car.scale.set(1.03,1.22,1.12);box(2.2,.42,1.6,0,2.55,-.6,mat('#657578',.6),car)}
+ if(type==='compact')car.scale.set(.91,.96,.88);
+ if(type==='taxi'){box(1.1,.28,.48,0,2.72,-.65,mat('#f9e6a8'),car);const sign=mesh(new THREE.PlaneGeometry(.87,.19),new THREE.MeshBasicMaterial({map:textTexture('TAXI','#e7c568','#263237'),side:THREE.DoubleSide}),car);sign.position.set(0,2.72,-.39)}
+ const east=i%2===0,dir=i%4<2?1:-1;
+ const q=roadPositions[Math.floor(i/4)%roadPositions.length];
+ const travel=-330+(i*127)%660;
+ const pos=east?new THREE.Vector3(travel,0,q+dir*5):new THREE.Vector3(q-dir*5,0,travel);
+ const baseSpeed=(type==='utility'?7:9)+rnd(i+94)*5;
  // Visible seated driver with hair, face and moving steering arm.
  const driver=new THREE.Group();car.add(driver);driver.position.set(-.72,0,.18);
  const skinTone=mat(['#bd8b68','#e4b08c','#825b45','#d0a27b'][i%4]),coat=mat(['#655980','#456e77','#a56d53','#4e7b61'][i%4]);
@@ -1202,7 +1261,7 @@ const traffic=[],police=[];for(let i=0;i<18;i++){const car=makeCar(['#5f9ac9','#
  const doorPivot=new THREE.Group();car.add(doorPivot);doorPivot.position.set(-1.84,1.42,1.2);
  box(.14,.9,1.47,-.06,0,-.63,mat(['#6b8d9c','#af916d','#8babad'][i%3],.38,.36),doorPivot);
  box(.17,.08,1.25,-.08,.51,-.55,mat('#a2bac5'),doorPivot);
- traffic.push({car,pos,east,dir:i%4<2?1:-1,speed:baseSpeed,baseSpeed,driver,steeringArm,doorPivot,taken:false,id:i});car.position.copy(pos)}
+ traffic.push({car,pos,east,dir,type,speed:baseSpeed,baseSpeed,driver,steeringArm,doorPivot,taken:false,id:i});car.position.copy(pos)}
 for(let i=0;i<4;i++){const c=makeCar('#e4edf2',true);c.visible=false;police.push({car:c,pos:new THREE.Vector3(),angle:0,active:false})}
 const depot={x:12.5,z:-16};const depotMark=cyl(6,6,.3,depot.x,.26,depot.z,mat('#65e2ac',.35));depotMark.visible=false;const garageMarker=cyl(7,7,.28,184,.28,0,mat('#edc66f'));const depotBeacon=mesh(new THREE.TorusGeometry(4.8,.37,8,32),new THREE.MeshBasicMaterial({color:0x6df5b5}));depotBeacon.rotation.x=Math.PI/2;depotBeacon.position.set(depot.x,.72,depot.z);const garageBeacon=depotBeacon.clone();garageBeacon.material=new THREE.MeshBasicMaterial({color:0xf5cb72});garageBeacon.position.set(184,.72,0);scene.add(depotBeacon,garageBeacon);depotBeacon.visible=false;
 // Modelled open-sided tuning workshop: floor markings, service lifts, signage and tools.
@@ -2292,27 +2351,35 @@ function updateTakeover(dt){
  if(takeoverElapsed>=1.85)finishTakeover();
 }
 function advanceTraffic(dt){
+ updateSignals(dt);
  const you=inCar?carPos:playerPos;
  for(const t of traffic){
  if(t.taken)continue;
  const axis=t.east?'x':'z',lateral=t.east?'z':'x',forward=t.dir;
  let obstacle=Infinity;
- if(!inCar){const lead=(you[axis]-t.pos[axis])*forward;
- if(lead>-.6&&lead<25&&Math.abs(you[lateral]-t.pos[lateral])<5.7)obstacle=Math.min(obstacle,Math.max(0,lead))}
+ {const lead=(you[axis]-t.pos[axis])*forward;
+ if(lead>-.6&&lead<25&&Math.abs(you[lateral]-t.pos[lateral])<4.8)obstacle=Math.min(obstacle,Math.max(0,lead))}
+ for(const other of traffic){if(other===t||other.taken||other.east!==t.east||other.dir!==t.dir||Math.abs(other.pos[lateral]-t.pos[lateral])>2)continue;const lead=(other.pos[axis]-t.pos[axis])*forward;if(lead>0&&lead<45)obstacle=Math.min(obstacle,lead-2)}
  for(const n of cityLife.citizens){
  if(!n.root.visible)continue;
  const lead=(n.root.position[axis]-t.pos[axis])*forward;
  if(lead>0&&lead<22&&Math.abs(n.root.position[lateral]-t.pos[lateral])<4.4)obstacle=Math.min(obstacle,lead);
  }
- const target=t===takeoverTarget?0:obstacle<9?0:obstacle<24?t.baseSpeed*Math.max(.06,(obstacle-9)/15):t.baseSpeed;
+ let stopDistance=Infinity;
+ const intersection=nextJunction(t.pos[axis],forward,BLOCK);
+ const road=Math.round(t.pos[lateral]/BLOCK);
+ const ix=t.east?Math.round(intersection/BLOCK):road,iz=t.east?road:Math.round(intersection/BLOCK);
+ const gap=Math.abs(intersection-t.pos[axis]);
+ if(Math.abs(ix)<=2&&Math.abs(iz)<=2&&gap>10&&gap<45&&junctionPhase(trafficClock,ix,iz)!==(t.east?'east':'north'))stopDistance=gap-10;
+ const target=t===takeoverTarget?0:trafficQueueSpeed(t.baseSpeed,obstacle,stopDistance);
  t.speed+=THREE.MathUtils.clamp(target-t.speed,-23*dt,9*dt);
  const v=t.dir*Math.max(0,t.speed)*dt;
  if(t.east)t.pos.x+=v;else t.pos.z+=v;
  if(t.east&&Math.abs(t.pos.x)>386)t.pos.x=-Math.sign(t.pos.x)*383;
  if(!t.east&&Math.abs(t.pos.z)>386)t.pos.z=-Math.sign(t.pos.z)*383;
  t.car.position.copy(t.pos);t.car.rotation.y=t.east?(t.dir>0?Math.PI/2:-Math.PI/2):(t.dir>0?0:Math.PI);
- t.steeringArm.rotation.x=.9+.08*Math.sin(clockTime*2+t.id);
- for(const wheel of t.car.userData.wheels||[])wheel.spin.rotation.x+=Math.max(0,t.speed)*dt/.87;
+ if(t.pos.distanceToSquared(you)<120*120){t.steeringArm.rotation.x=.9+.08*Math.sin(clockTime*2+t.id);
+ for(const wheel of t.car.userData.wheels||[])wheel.spin.rotation.x+=Math.max(0,t.speed)*dt/.87;}
  if(inCar&&t.pos.distanceTo(carPos)<5.3&&Math.abs(velocity)>7){
   velocity*=-.31;heat=Math.min(5,heat+.34);heatTimer=0;
   if(clockTime>vehicleImpactCooldown){vehicleImpactCooldown=clockTime+1;vehicleCondition=Math.max(5,vehicleCondition-8);saveVehicleCondition()}
@@ -2633,6 +2700,7 @@ let last=performance.now(),fpsCounter=0,fpsWindowStart=last,lastShopUpdate=0,las
  for(const t of traffic){
    const detail=t.car.userData.detail;
    if(detail)detail.visible=(t.pos.x-px)**2+(t.pos.z-pz)**2<78*78;
+   t.car.visible=!t.taken&&((t.pos.x-px)**2+(t.pos.z-pz)**2<180*180||gameMode==='intro'||gameMode==='menu');
  }
  for(const p of police){
    const detail=p.car.userData.detail;
