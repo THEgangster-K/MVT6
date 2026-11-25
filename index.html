@@ -398,12 +398,16 @@ body.bootPlaying #menu{visibility:hidden!important}
 #boot .bootSound{display:none;position:absolute;z-index:6;bottom:6vh;left:4vw;font-size:10px;padding:8px 13px;background:#131a22c9;color:#f0eee6;border:1px solid #ffffff35}
 #boot.bootLive:not(.bootDone) .bootSound{display:block}
 @media(prefers-reduced-motion:reduce){#boot.bootIdentity .bootInside{animation:none!important}#boot .studioSplash{animation:none!important}}
+
+.storyTurn{display:flex;flex-direction:column;gap:5px;padding:10px 14px;margin:8px 0;background:#ffffff0b;border-left:2px solid #e1b889;text-align:left}
+.storyTurn b{font-size:10px;letter-spacing:.18em;color:#e9c49a}.storyTurn span{color:#f2e9dd}.storySummary{display:block;margin-top:12px;color:#b8ced5;font-size:12px}
+@media(prefers-reduced-motion:no-preference){.storyTurn{animation:storyTurnIn .35s ease both}.storyTurn:nth-child(2){animation-delay:.12s}@keyframes storyTurnIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}}
 </style>
 </head>
 <body>
 <div id="game"></div>
 <div id="hud">
- <div id="top"><div class="pill"><small>PLAYING AS · V</small><span id="activeLeadName">JAWSON</span></div><div class="pill"><small>CASH</small><span class="money" id="money">$0</span></div><div class="pill"><small>WANTED</small><span class="stars" id="heat">☆☆☆☆☆</span></div><div class="pill"><small>DISTRICT</small><span id="district">DOWNTOWN</span></div><div class="pill"><small>STREET STATUS</small><span id="streetRank">UNKNOWN</span></div></div>
+ <div id="top"><div class="pill"><small>PLAYING AS · V</small><span id="activeLeadName">JAWSON</span></div><div class="pill"><small>HOMES</small><span id="homeCount">0 / 3</span></div><div class="pill"><small>CASH</small><span class="money" id="money">$0</span></div><div class="pill"><small>WANTED</small><span class="stars" id="heat">☆☆☆☆☆</span></div><div class="pill"><small>DISTRICT</small><span id="district">DOWNTOWN</span></div><div class="pill"><small>STREET STATUS</small><span id="streetRank">UNKNOWN</span></div></div>
  <div id="fps"></div>
  <div id="objective"><b>CURRENT OBJECTIVE</b><strong id="missionTitle">—</strong><p id="missionText">—</p></div>
  <div id="notice"></div><div id="pickupPrompt">F · COLLECT GEAR</div><div id="equippedStatus">✋ HANDS</div><div id="speed">0 <small>KM/H</small></div>
@@ -463,12 +467,12 @@ body.bootPlaying #menu{visibility:hidden!important}
 <div class="loadingTrack"><div id="loadingFill"></div></div><p id="bootError">Jawson &amp; Luxie • Eight story chapters</p><div class="artDots"><i></i><i></i><i></i></div><div class="bootFeatureStrip"><span>NO MONEY</span><span>NO CONNECTIONS</span><span>EVERYTHING TO BUILD</span></div>
 <button id="bootRetry" style="display:none" onclick="location.reload()">RETRY</button></div></div>
 <div id="menu" class="overlay movieMenu"><div class="menuCity"></div><div class="menuContent">
-<div class="kicker">SOLARA CITY &nbsp; / &nbsp; AVENUES</div><h1 class="movieLogo releaseMark" aria-label="MVT 6"><span class="letters">MVT</span><i class="slash" aria-hidden="true"></i><span class="digit">6</span></h1>
+<div class="kicker">SOLARA CITY &nbsp; / &nbsp; HOMESTEAD</div><h1 class="movieLogo releaseMark" aria-label="MVT 6"><span class="letters">MVT</span><i class="slash" aria-hidden="true"></i><span class="digit">6</span></h1>
 <div class="movieSubtitle">MOTOR VEHICLE THEFT</div><h2>Every street has a story.</h2>
 <p>Explore Solara City. Meet local contacts, take on jobs, customise your car and build your own story.</p>
 <div class="menuActions"><button id="play">PLAY STORY</button><button id="resetSave" class="secondary">START OVER</button></div>
 <div class="movieControls">WASD · MOVE &nbsp;&nbsp; CLICK · MOUSE LOOK &nbsp;&nbsp; F · INTERACT</div></div>
-<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">AVENUES · V2.7</div></div></div>
+<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">HOMESTEAD · V2.8</div></div></div>
 <div id="storyIntro" aria-live="polite" style="display:none"><div id="introShade"></div><div id="introContent"><div id="introChapter">SOLARA CITY · CHAPTER ONE</div><div id="introCue">AN ORIGINAL MVT 6 FILM</div><h2 id="introTitle">START WITH NOTHING.</h2><p id="introCopy">New city. Empty pockets. Every choice counts.</p></div><button id="introSkip">SKIP INTRO →</button></div>
 <div id="paused" class="overlay"><div class="panel"><div class="eyebrow">SOLARA CITY</div><h2>PAUSED</h2><p>Explore at your own pace. Your cash, upgrades and completed contracts are automatically saved.</p><button id="resume">RESUME</button><button id="pauseMap" class="secondary">MAP & MISSIONS</button>
 <div class="qualitySelector"><label for="graphicsQuality">GRAPHICS QUALITY</label><select id="graphicsQuality">
@@ -530,7 +534,7 @@ window.addEventListener('error',e=>fail(e.message||'Game asset could not load'))
 import {createPlayerModelSystem} from './model-assets.js';
 import {multiplayer} from './client.js';
 import {createCityLife} from './city-life.js';
-import {movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction,arcadeCarContact,secondaryLane,vehicleProfile} from './game-core.js';
+import {movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction,arcadeCarContact,secondaryLane,vehicleProfile,homeCatalog,purchaseHome,visualSpring} from './game-core.js';
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';
 // MVT 6: an original browser game and city, not GTA assets or source.
 const $=id=>document.getElementById(id), world=$('game');
@@ -1391,7 +1395,7 @@ wheelRim.rotation.x=Math.PI/2+.3;wheelRim.position.set(-.62,2.05,.37);
  if(police){box(2,.22,.55,0,2.7,-.4,mat('#e8f0f9'),group);box(.75,.25,.55,-.54,2.86,-.4,mat('#ec394a'),group);box(.75,.25,.55,.54,2.86,-.4,mat('#418bff'),group)}
  const contact=mesh(carContactGeometry,contactMaterial,group);contact.rotation.x=-Math.PI/2;contact.position.y=.095;
  return group}
-let save;const defaultSave=()=>({money:45,completed:0,speed:0,handling:0,nitro:0,lifeTier:0,lead:'jawson',leadJobs:{jawson:0,luxie:0},venueVisits:[]});try{save={...defaultSave(),...JSON.parse(localStorage.getItem('mvt6-save')||'{}')}}catch{save=defaultSave()}
+let save;const defaultSave=()=>({money:45,completed:0,speed:0,handling:0,nitro:0,lifeTier:0,lead:'jawson',leadJobs:{jawson:0,luxie:0},venueVisits:[],homes:[]});try{save={...defaultSave(),...JSON.parse(localStorage.getItem('mvt6-save')||'{}')}}catch{save=defaultSave()}
 function activeLead(){return save.lead==='luxie'?'luxie':'jawson'}
 function leadName(){return activeLead()==='luxie'?'Luxie':'Jawson'}
 function persist(){try{localStorage.setItem('mvt6-save',JSON.stringify(save))}catch{};if(network)network.save(save)}
@@ -1412,6 +1416,34 @@ for(const district of neighborhoods.filter(p=>p.kind==='parking')){
   if(car.userData.detail)car.userData.detail.visible=false;
   parkedVehicles.push({car,x,z});footprint.push({x,z,w:4,d:2.3});
  }
+}
+// Walk-in properties use empty reserved parking plots; all furniture has a static footprint.
+const homes=[];
+const homeWall=mat('#e7decb',.9),homeWood=mat('#9c7357',.8),homeFabric=mat('#778d91',.96),homeFloor=mat('#b3a38c',.85),homeLight=new THREE.MeshBasicMaterial({color:0xffe8c7});
+for(const h of homeCatalog){
+ if(!clearsStreet(h.x,h.z,14,12,BLOCK,ROAD)||footprint.some(p=>Math.abs(h.x-p.x)<p.w+7.5&&Math.abs(h.z-p.z)<p.d+6.5))continue;
+ const root=new THREE.Group();root.position.set(h.x,0,h.z);scene.add(root);shopBuildings.push({root,x:h.x,z:h.z});
+ const wall=(w,d,x,z)=>{box(w,3.65,d,x,1.96,z,homeWall,root);footprint.push({x:h.x+x,z:h.z+z,w:w/2,d:d/2})};
+ box(14,.15,12,0,.22,0,homeFloor,root);box(14.4,.26,12.4,0,3.9,0,mat(h.roof,.75),root);
+ wall(14,.25,0,-5.85);wall(.25,11.7,-6.85,0);wall(.25,11.7,6.85,0);wall(5.25,.25,-4.375,5.85);wall(5.25,.25,4.375,5.85);
+ const furnish=(w,height,d,x,z,material)=>{box(w,height,d,x,.30+height/2,z,material,root);footprint.push({x:h.x+x,z:h.z+z,w:w/2,d:d/2})};
+ furnish(3.3,.68,2.1,-4,-3.5,homeWood);box(3.2,.24,2,-4,1.07,-3.5,homeFabric,root);box(2.8,.21,.6,-4,1.25,-4.1,homeWall,root);
+ furnish(3.4,.65,1.35,4,-3.8,homeFabric);box(3.4,.62,.23,4,1.21,-4.4,homeFabric,root);
+ furnish(2.1,.48,1.2,3,-1,homeWood);furnish(1.2,1.4,3,-5.8,1,homeWood);
+ box(.35,.08,3.2,0,.32,0,mat('#caab88',.92),root);
+ for(const x of [-3,3])box(1.2,.09,.32,x,3.68,0,homeLight,root);
+ const sign=mesh(new THREE.PlaneGeometry(5.8,.65),new THREE.MeshBasicMaterial({map:textTexture(h.name.toUpperCase(),'#293b40','#f7ead2'),side:THREE.DoubleSide}),root);sign.position.set(0,3.44,6.05);
+ const marker=mesh(new THREE.CylinderGeometry(.9,.9,.055,20),new THREE.MeshBasicMaterial({color:0xc9b38b}),root);marker.position.set(0,.31,5.1);
+ homes.push({...h,root,marker});
+}
+function interactHome(x,z){
+ const home=homes.find(h=>Math.hypot(x-h.x,z-(h.z+5))<4.5||Math.hypot(x-h.x,z-h.z)<4.5);
+ if(!home)return false;
+ if((save.homes||[]).includes(home.id)){setNotice('HOME · '+home.name+' · Progress saved');persist();return true;}
+ const result=purchaseHome(save,home.id);
+ if(!result.ok){setNotice(home.name+' · $'+home.price+' · '+result.reason);return true;}
+ if(!confirm('Buy '+home.name+' for $'+home.price+' in game cash?'))return true;
+ save.money=result.money;save.homes=result.homes;persist();updateHUD();setNotice('PROPERTY PURCHASED · '+home.name);return true;
 }
 const person=new THREE.Group();scene.add(person);
 const walkingShadow=mesh(new THREE.PlaneGeometry(2.2,2.4),contactMaterial);walkingShadow.rotation.x=-Math.PI/2;walkingShadow.position.y=.12;
@@ -1693,7 +1725,7 @@ function safeWalkingPosition(){
 
 function setNotice(t){$('notice').textContent=t;$('notice').style.opacity='1';clearTimeout(setNotice.timer);setNotice.timer=setTimeout(()=>$('notice').style.opacity='0',2800)}
 function getRank(){if(save.lifeTier>=4)return 'CITY LEGEND';if(save.lifeTier>=3)return 'HIGH SOCIETY';if(save.lifeTier>=2)return 'CREW LEADER';if(save.lifeTier>=1||save.completed>=2)return 'STREET RUNNER';return 'NEW TO THE STREETS'}
-function updateHUD(){ $('activeLeadName').textContent=leadName().toUpperCase();$('streetRank').textContent=getRank();$('money').textContent='$'+Math.floor(save.money).toLocaleString();$('heat').textContent='★'.repeat(Math.ceil(heat))+'☆'.repeat(5-Math.ceil(heat));$('speed').style.visibility=inCar?'visible':'hidden';$('speed').innerHTML=(inCar?Math.round(Math.abs(velocity)*3.6):0)+' <small>KM/H</small>'+(inCar?'<div class="vehicleConditionMini">'+Math.round(vehicleCondition)+'% CONDITION · '+(slideActive?'SLIDING · ':'')+'J HORN · L LIGHTS</div>':'');const p=inCar?carPos:playerPos;$('district').textContent=cityDistrict(p.x,p.z);if(mission){$('missionTitle').textContent=mission.title;$('missionText').textContent=({
+function updateHUD(){ $('homeCount').textContent=(save.homes||[]).length+' / '+homes.length;$('activeLeadName').textContent=leadName().toUpperCase();$('streetRank').textContent=getRank();$('money').textContent='$'+Math.floor(save.money).toLocaleString();$('heat').textContent='★'.repeat(Math.ceil(heat))+'☆'.repeat(5-Math.ceil(heat));$('speed').style.visibility=inCar?'visible':'hidden';$('speed').innerHTML=(inCar?Math.round(Math.abs(velocity)*3.6):0)+' <small>KM/H</small>'+(inCar?'<div class="vehicleConditionMini">'+Math.round(vehicleCondition)+'% CONDITION · '+(slideActive?'SLIDING · ':'')+'J HORN · L LIGHTS</div>':'');const p=inCar?carPos:playerPos;$('district').textContent=cityDistrict(p.x,p.z);if(mission){$('missionTitle').textContent=mission.title;$('missionText').textContent=({
  pickup:'Find the package and press F to collect.',
  deliver:'Meet your contact and press F.',
  terminal:'Find the terminal and press F for the decoder puzzle.',
@@ -1774,7 +1806,11 @@ function offerMission(){
  gameMode='briefing';for(const k in keys)keys[k]=false;
  document.getElementById('briefingChapter').textContent='CHAPTER '+(n+1)+' · '+job.kind.toUpperCase();
  document.getElementById('briefingTitle').textContent=job.title.replace(/CHAPTER \d+ · /,'');
- document.getElementById('briefingDialogue').textContent=narrative[1]+' '+job.description+' · Playing as '+leadName()+'.';
+ const dialogue=document.getElementById('briefingDialogue');dialogue.textContent='';
+ for(const line of narrative[1].split(/(?=JAWSON:|LUXIE:)/).filter(Boolean)){
+  const turn=document.createElement('span');turn.className='storyTurn';const name=document.createElement('b');name.textContent=line.split(':')[0];const words=document.createElement('span');words.textContent=line.slice(line.indexOf(':')+1).trim();turn.append(name,words);dialogue.append(turn);
+ }
+ const summary=document.createElement('span');summary.className='storySummary';summary.textContent=job.description+' · Playing as '+leadName()+'.';dialogue.append(summary);
  const tasks={
  courier:['Meet Luxie','Collect the package','Deliver it to the receiving contact'],
  vehicle:['Find a working vehicle','Drive to Solara Customs','Talk to Nico in the workshop'],
@@ -2084,6 +2120,7 @@ function interact(){
  const p=inCar?carPos:playerPos;
  if(!inCar&&Math.hypot(p.x-customsNico.x,p.z-customsNico.z)<6){setNotice('NICO: Get your vehicle into my bay. Engine, paint, spoilers – we do it all.');gestureTime=.5;return}
  if(Math.hypot(p.x-184,p.z)<16){setNotice('SOLARA CUSTOMS · Drive into the service bay, stop, and press F.');return}
+ if(!inCar&&interactHome(p.x,p.z))return;
  if(!inCar&&interactShop(p.x,p.z))return;
  if(cityLife.interact()){gestureTime=.65;return;}
  setNotice(mission?'Collect the parcel or speak to the receiving NPC.':'Talk to your partner near the starting pavement to find work.');
@@ -2547,6 +2584,7 @@ function checkPedestrianTraffic(dt){
   }
  }
 }
+let cosmeticPitch={position:0,velocity:0},cosmeticRoll={position:0,velocity:0};
 function moveCar(dt){
  impactKick*=Math.exp(-7*dt);
  const accel=26+save.speed*4,maxSpeed=(31+save.speed*5.2)*(1+Math.max(0,(save.lifeTier||0)-1)*.06);
@@ -2572,8 +2610,9 @@ function moveCar(dt){
  resolveTrafficContact();
  checkPedestrianTraffic(dt);
  playerCar.position.copy(carPos);playerCar.rotation.y=angle;
- playerCar.rotation.z=THREE.MathUtils.lerp(playerCar.rotation.z,-turning*Math.min(Math.abs(velocity)/35,1)*(driftActive?.12:.045),Math.min(1,dt*5));
- playerCar.rotation.x=THREE.MathUtils.lerp(playerCar.rotation.x,throttle*-.012+impactKick,Math.min(1,dt*4));
+ cosmeticRoll=visualSpring(cosmeticRoll.position,cosmeticRoll.velocity,-turning*.055,dt);
+ cosmeticPitch=visualSpring(cosmeticPitch.position,cosmeticPitch.velocity,throttle*-.025+Math.min(.08,impactKick),dt);
+ playerCar.rotation.z=cosmeticRoll.position;playerCar.rotation.x=cosmeticPitch.position;
  if(detailingShine>0&&playerCar.children[0]?.material){
   playerCar.children[0].material.roughness=THREE.MathUtils.lerp(playerCar.children[0].material.roughness,.12,Math.min(1,dt*2));
  }else if(playerCar.children[0]?.material)playerCar.children[0].material.roughness=THREE.MathUtils.lerp(playerCar.children[0].material.roughness,.26,Math.min(1,dt));
@@ -2948,6 +2987,7 @@ function drawMap(){
  const nearShops=shopFronts.slice().sort((a,b)=>Math.hypot(a.x-p.x,a.z-p.z)-Math.hypot(b.x-p.x,b.z-p.z)).slice(0,3);
  for(const shop of nearShops)if(Math.hypot(shop.x-p.x,shop.z-p.z)<120)dot(shop.x,shop.z,'#95dce3',4,false);
  for(const venue of openVenues)if(Math.hypot(venue.x-p.x,venue.z-p.z)<150)dot(venue.x,venue.z,(save.venueVisits||[]).includes(activeLead()+':'+venue.id)?'#82969a':'#c8b9f8',5,true);
+ for(const home of homes)dot(home.x,home.z,(save.homes||[]).includes(home.id)?'#7de0b4':'#edc27e',7,true);
  dot(cityLife.fixer.root.position.x,cityLife.fixer.root.position.z,'#c3e0a4',5);
  dot(184,0,'#d9b378',5);
  if(taxiJob){const target=taxiObjective();if(target)dot(target.x,target.z,'#76deed',9,true)}
