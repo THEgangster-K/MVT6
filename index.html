@@ -563,7 +563,7 @@ window.addEventListener('error',e=>fail(e.message||'Game asset could not load'))
 import {createPlayerModelSystem} from './model-assets.js';
 import {multiplayer} from './client.js';
 import {createCityLife} from './city-life.js';
-import {movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction,arcadeCarContact,secondaryLane,vehicleProfile,homeCatalog,purchaseHome,visualSpring,showroomCatalog,purchaseShowroom,furnishingCatalog,purchaseFurnishing,cityWeather,horizonTrail,trailPlacement,completeTrailStop} from './game-core.js';
+import {movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction,arcadeCarContact,secondaryLane,vehicleProfile,homeCatalog,purchaseHome,visualSpring,showroomCatalog,purchaseShowroom,furnishingCatalog,purchaseFurnishing,cityWeather,horizonTrail,trailPlacement,completeTrailStop,postcardJobs,completePostcard} from './game-core.js';
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';
 // MVT 6: an original browser game and city, not GTA assets or source.
 const $=id=>document.getElementById(id), world=$('game');
@@ -1430,7 +1430,7 @@ wheelRim.rotation.x=Math.PI/2+.3;wheelRim.position.set(-.62,2.05,.37);
  if(police){box(2,.22,.55,0,2.7,-.4,mat('#e8f0f9'),group);box(.75,.25,.55,-.54,2.86,-.4,mat('#ec394a'),group);box(.75,.25,.55,.54,2.86,-.4,mat('#418bff'),group)}
  const contact=mesh(carContactGeometry,contactMaterial,group);contact.rotation.x=-Math.PI/2;contact.position.y=.095;
  return group}
-let save;const defaultSave=()=>({money:45,completed:0,speed:0,handling:0,nitro:0,lifeTier:0,lead:'jawson',leadJobs:{jawson:0,luxie:0},venueVisits:[],homes:[],homeThemes:{},vehicles:['sedan'],selectedVehicle:'sedan',trailVisited:[]});try{save={...defaultSave(),...JSON.parse(localStorage.getItem('mvt6-save')||'{}')}}catch{save=defaultSave()}
+let save;const defaultSave=()=>({money:45,completed:0,speed:0,handling:0,nitro:0,lifeTier:0,lead:'jawson',leadJobs:{jawson:0,luxie:0},venueVisits:[],homes:[],homeThemes:{},vehicles:['sedan'],selectedVehicle:'sedan',trailVisited:[],postcardVisits:[]});try{save={...defaultSave(),...JSON.parse(localStorage.getItem('mvt6-save')||'{}')}}catch{save=defaultSave()}
 function ownsPaidVehicle(){return Array.isArray(save.vehicles)&&save.vehicles.some(id=>showroomCatalog.some(v=>v.id===id&&v.price>0));}
 function activeLead(){return save.lead==='luxie'?'luxie':'jawson'}
 function leadName(){return activeLead()==='luxie'?'Luxie':'Jawson'}
@@ -1823,7 +1823,7 @@ function updateHUD(){ $('homeCount').textContent=(save.homes||[]).length+' / '+h
  escape:'Keep moving and lose the patrol.'
 }[mission.stage]||'Follow the next story objective.')+
  ' · '+Math.round(Math.hypot(p.x-missionObjective().x,p.z-missionObjective().z))+'m TO TARGET'+
- ' · '+Math.max(0,Math.ceil(missionTime))+'s'}else if(taxiJob){const o=taxiObjective();$('missionTitle').textContent='TAXI · '+(taxiJob.stage==='pickup'?'PICKUP':'DROP OFF');$('missionText').textContent='Stop at '+o.name+' · '+Math.round(Math.hypot(p.x-o.x,p.z-o.z))+'m · '+Math.ceil(taxiJob.time)+'s'}else{$('missionTitle').textContent='The city is yours';$('missionText').textContent=nextTrailSite()?'HORIZON · B to mark '+nextTrailSite().name+' · F at the landmark. Talk to your partner for chapters.':'Exhibition complete · Talk to your partner for chapters or explore venues.'}}
+ ' · '+Math.max(0,Math.ceil(missionTime))+'s'}else if(taxiJob){const o=taxiObjective();$('missionTitle').textContent='TAXI · '+(taxiJob.stage==='pickup'?'PICKUP':'DROP OFF');$('missionText').textContent='Stop at '+o.name+' · '+Math.round(Math.hypot(p.x-o.x,p.z-o.z))+'m · '+Math.ceil(taxiJob.time)+'s'}else{$('missionTitle').textContent='The city is yours';$('missionText').textContent=nextTrailSite()?'B · Exhibition: '+nextTrailSite().name+' · K · Personal activities · F to interact.':'Exhibition complete · K for personal activities · F to interact.'}}
 // Original crime-fiction campaign: Lost Solara, a city of rival crews and secret debts.
 // Jawson is playable; Luxie is the story's second lead.
 const chapterBeats=[
@@ -2203,6 +2203,7 @@ function interact(){
  if(gameMode!=='play')return;
  if(!inCar&&!mission&&!taxiJob&&Math.hypot(playerPos.x-196,playerPos.z+12.5)<5){openLifestyle('cars');return;}
  if(interactTrail())return;
+ if(interactPostcard())return;
  if(collectEquipment())return;
  if(interactMission()){gestureTime=.65;return}
  if(inCar&&nearCustoms()){openGarage();return}
@@ -2495,7 +2496,7 @@ if([' ','spacebar','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e
 if(on&&!e.repeat&&k==='q'){e.preventDefault();if(wheelOpen)closeGadgetWheel();else if(gameMode==='play')openGadgetWheel();return}
 if(k==='escape'&&on){if(gameMode==='trail'){closeTrail();return}if(gameMode==='lifestyle'){closeLifestyle();return}if(gameMode==='briefing'){closeBriefing();return}if(tutorialOpen){closeTutorial();return}if(wheelOpen){closeGadgetWheel();return}if(phoneOpen){closePhone();return}}
 if(k==='p'&&on&&!e.repeat){if(phoneOpen)closePhone();else if(gameMode==='play')openPhone();return}
-if(gameMode!=='play'&&k!=='escape')return;keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(document.pointerLockElement)document.exitPointerLock();else if(gameMode==='play')pause();else if(gameMode==='pause')resume();}if((k===' '||k==='spacebar')&&!inCar)beginJump();if(k==='e')enterExit();if(k==='v')switchLead();if(k==='f')interact();if(k==='t')tagWall();if(k==='g')activateGadget();if(k==='j')drivingHorn();if(k==='l'&&inCar)setHeadlights(!headlightsOn);if(k==='n')setAtmosphere(atmosphereIndex+1);if(k==='b'&&!mission&&!taxiJob){const target=nextTrailSite();if(target)setWaypoint(target,target.name);else setNotice('HORIZON · Exhibition complete');}if(k==='c'){camMode=(camMode+1)%3;orbitOffset=0};if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;playerCar.position.copy(carPos);playerCar.rotation.y=angle;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
+if(gameMode!=='play'&&k!=='escape')return;keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(document.pointerLockElement)document.exitPointerLock();else if(gameMode==='play')pause();else if(gameMode==='pause')resume();}if((k===' '||k==='spacebar')&&!inCar)beginJump();if(k==='e')enterExit();if(k==='v')switchLead();if(k==='f')interact();if(k==='t')tagWall();if(k==='g')activateGadget();if(k==='j')drivingHorn();if(k==='l'&&inCar)setHeadlights(!headlightsOn);if(k==='n')setAtmosphere(atmosphereIndex+1);if(k==='b'&&!mission&&!taxiJob){const target=nextTrailSite();if(target)setWaypoint(target,target.name);else setNotice('HORIZON · Exhibition complete');}if(k==='k'&&!mission&&!taxiJob){const job=nextPostcard();if(job)setWaypoint(job.location,job.name);else setNotice('All personal postcard activities completed for '+leadName());}if(k==='c'){camMode=(camMode+1)%3;orbitOffset=0};if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;playerCar.position.copy(carPos);playerCar.rotation.y=angle;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
 addEventListener('keydown',e=>keyState(e,true));addEventListener('keyup',e=>keyState(e,false));addEventListener('blur',()=>{for(let k in keys)keys[k]=false});
 function switchLead(){
  if(!['play','pause'].includes(gameMode)||inCar||jumping||mission||taxiJob||phoneOpen||wheelOpen||tutorialOpen){setNotice('Switch characters on foot between jobs.');return false;}
@@ -3090,6 +3091,7 @@ function drawMap(){
  dot(cityLife.fixer.root.position.x,cityLife.fixer.root.position.z,'#c3e0a4',5);
  dot(184,0,'#d9b378',5);
  dot(196,-12.5,'#91d5ee',6,true);
+ const postcard=nextPostcard();if(postcard)dot(postcard.location.x,postcard.location.z,'#8ee3d6',8,true);
  const trailTarget=nextTrailSite();for(const stop of trailSites)if(stop===trailTarget||Math.hypot(stop.x-p.x,stop.z-p.z)<140)dot(stop.x,stop.z,stop===trailTarget?'#f0a6d7':'#72868e',6,true);
  if(taxiJob){const target=taxiObjective();if(target)dot(target.x,target.z,'#76deed',9,true)}
  if(mission){const target=missionObjective();if(target){
@@ -3235,6 +3237,15 @@ for(const [i,site] of horizonTrail.entries()){
  footprint.push({x:pos.x,z:pos.z,w:.85,d:.85});trailSites.push({...site,...pos,root,orb});
 }
 function nextTrailSite(){return trailSites.find(p=>!(save.trailVisited||[]).includes(p.id));}
+function nextPostcard(){return postcardJobs.filter(j=>j.lead===activeLead()&&!(save.postcardVisits||[]).includes(j.lead+':'+j.site)).map(j=>({...j,location:trailSites.find(p=>p.id===j.site)})).find(j=>j.location);}
+function interactPostcard(){
+ if(inCar||mission||taxiJob)return false;
+ const job=nextPostcard();if(!job||Math.hypot(playerPos.x-job.location.x,playerPos.z-job.location.z)>5)return false;
+ const result=completePostcard(save,activeLead(),job.site);if(!result.ok)return false;
+ save.money=result.money;save.postcardVisits=result.postcardVisits;persist();gestureTime=.8;updateHUD();
+ setNotice(leadName().toUpperCase()+' · '+job.name+' · '+job.line+' · +$'+job.reward);
+ if(mapWaypointName===job.name)setWaypoint(null);return true;
+}
 const trailPanel=document.createElement('div');trailPanel.id='trailPanel';trailPanel.className='overlay';trailPanel.style.display='none';
 trailPanel.innerHTML='<div class="panel"><div class="eyebrow">HORIZON · THE SOLARA EXHIBITION</div><h2 id="trailTitle"></h2><div class="storyTurn"><b>JAWSON</b><span id="trailJawson"></span></div><div class="storyTurn"><b>LUXIE</b><span id="trailLuxie"></span></div><p id="trailReward"></p><button id="trailContinue">CONTINUE</button></div>';document.body.append(trailPanel);
 function closeTrail(){trailPanel.style.display='none';if(gameMode==='trail')gameMode='play';}
