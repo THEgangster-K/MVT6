@@ -1398,6 +1398,7 @@ wheelRim.rotation.x=Math.PI/2+.3;wheelRim.position.set(-.62,2.05,.37);
  const contact=mesh(carContactGeometry,contactMaterial,group);contact.rotation.x=-Math.PI/2;contact.position.y=.095;
  return group}
 let save;const defaultSave=()=>({money:45,completed:0,speed:0,handling:0,nitro:0,lifeTier:0,lead:'jawson',leadJobs:{jawson:0,luxie:0},venueVisits:[],homes:[],homeThemes:{},vehicles:['sedan'],selectedVehicle:'sedan'});try{save={...defaultSave(),...JSON.parse(localStorage.getItem('mvt6-save')||'{}')}}catch{save=defaultSave()}
+function ownsPaidVehicle(){return Array.isArray(save.vehicles)&&save.vehicles.some(id=>showroomCatalog.some(v=>v.id===id&&v.price>0));}
 function activeLead(){return save.lead==='luxie'?'luxie':'jawson'}
 function leadName(){return activeLead()==='luxie'?'Luxie':'Jawson'}
 function persist(){try{localStorage.setItem('mvt6-save',JSON.stringify(save))}catch{};if(network)network.save(save)}
@@ -1478,7 +1479,7 @@ function openLifestyle(kind,home=null){
     const result=kind==='cars'?purchaseShowroom(save,item.id):purchaseFurnishing(save,home.id,item.id);
     if(!result.ok){$('lifestyleCash').textContent=result.reason+' · $'+Math.floor(save.money);return;}
     if(result.money<save.money&&!confirm('Spend $'+(save.money-result.money)+' in game cash?'))return;
-    Object.assign(save,result);delete save.ok;applyOwnedVehicle();refreshHomeThemes();persist();updateHUD();render();
+    Object.assign(save,result);delete save.ok;applyOwnedVehicle();if(kind==='cars'&&ownsPaidVehicle())playerCar.visible=true;refreshHomeThemes();persist();updateHUD();render();
    };items.append(button);
   }
  };
@@ -2180,7 +2181,7 @@ function enterExit(){if(gameMode!=='play')return;if(inCar){if(Math.abs(velocity)
  const exit=exitOffsets.find(([x,z])=>!collision(carPos.x+x,carPos.z+z,.45));
  if(!exit){setNotice('Move to an open space to exit');return}
  inCar=false;slideSlip=0;slideActive=false;velocity=0;jumpHeight=0;jumping=false;jumpVelocity=0;
- person.visible=true;playerPos.set(carPos.x+exit[0],0,carPos.z+exit[1]);person.position.copy(playerPos);setNotice('On foot — E to enter car')}else if(nearestTrafficCar()){takeVehicle(nearestTrafficCar())}else if(save.completed<2&&!hasTakenVehicle){setNotice('Finish two jobs for your own car, or approach a traffic vehicle and press E.')}else if(playerPos.distanceTo(carPos)<12){jumpHeight=0;jumping=false;inCar=true;slideSlip=0;slideActive=false;person.visible=false;playerCar.visible=true;setNotice('Vehicle entered')}else{setNotice('Walk closer to your car')}}
+ person.visible=true;playerPos.set(carPos.x+exit[0],0,carPos.z+exit[1]);person.position.copy(playerPos);setNotice('On foot — E to enter car')}else if(nearestTrafficCar()){takeVehicle(nearestTrafficCar())}else if(save.completed<2&&!hasTakenVehicle&&!ownsPaidVehicle()){setNotice('Finish two jobs for your own car, or approach a traffic vehicle and press E.')}else if(playerPos.distanceTo(carPos)<12){jumpHeight=0;jumping=false;inCar=true;slideSlip=0;slideActive=false;person.visible=false;playerCar.visible=true;setNotice('Vehicle entered')}else{setNotice('Walk closer to your car')}}
 let introTime=0;
 const introCameraLook=new THREE.Vector3();
 const introShots=[
@@ -2194,7 +2195,7 @@ function startIntro(){
  safeWalkingPosition();gameMode='intro';introTime=0;introStage=-1;cityLife.setPartner('jawson');
  $('menu').style.display='none';$('hud').style.display='none';$('storyIntro').style.display='block';
  person.visible=true;setSeatPose(save.completed===0?1:0);
- playerCar.visible=save.completed>=2||hasTakenVehicle;cinematicCamera(0);
+ playerCar.visible=save.completed>=2||hasTakenVehicle||ownsPaidVehicle();cinematicCamera(0);
 }
 let standTimer=0;
 function endIntro(){
@@ -3166,7 +3167,7 @@ const cityLife=createCityLife({THREE,scene,box,mesh,mat,roadPositions,rnd,collis
 getPlayer:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,inCar,speed:velocity,heading:angle}),
 isPlaying:()=>gameMode==='play',onNotice:setNotice,
 onReward:amount=>{save.money+=amount;persist();updateHUD()}});
-let network=multiplayer({THREE,scene,makeCar,box,mat,mesh,getState:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,angle:inCar?angle:person.rotation.y,inCar}),onAccount:progress=>{if(progress){save={...defaultSave(),...progress};applyOwnedVehicle();refreshHomeThemes();cityLife.setPartner(activeLead());try{localStorage.setItem('mvt6-save',JSON.stringify(save))}catch{}updateHUD()}},onMessage:message=>setNotice(message)});
+let network=multiplayer({THREE,scene,makeCar,box,mat,mesh,getState:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,angle:inCar?angle:person.rotation.y,inCar}),onAccount:progress=>{if(progress){save={...defaultSave(),...progress};applyOwnedVehicle();refreshHomeThemes();if(ownsPaidVehicle())playerCar.visible=true;cityLife.setPartner(activeLead());try{localStorage.setItem('mvt6-save',JSON.stringify(save))}catch{}updateHUD()}},onMessage:message=>setNotice(message)});
 // Optional high-detail character assets only replace the fallback after validation.
 const jawsonFallback=[...person.children];
 const luxieFallback=makeOccupant(2,false);luxieFallback.group.scale.setScalar(1.15);person.add(luxieFallback.group);luxieFallback.group.visible=false;
@@ -3181,7 +3182,7 @@ const rainMesh=new THREE.LineSegments(rainGeo,new THREE.LineBasicMaterial({color
 let lastWeather='',lastWeatherAtmosphere=-1;
 const reducedWeather=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function updateWeather(dt){
- const playing=gameMode==='play',kind=playing?cityWeather(clockTime):'clear';
+ const playing=gameMode==='play',kind=['menu','intro','standing'].includes(gameMode)?'clear':cityWeather(clockTime);
  if(kind!==lastWeather||atmosphereIndex!==lastWeatherAtmosphere){
   lastWeather=kind;lastWeatherAtmosphere=atmosphereIndex;
   const mode=atmosphereModes[atmosphereIndex];
@@ -3238,7 +3239,7 @@ if(now-fpsWindowStart>=1500){
  }
  fpsWindowStart=now;fpsCounter=0;
 }}
-person.visible=true;setSeatPose(save.completed===0?1:0);playerCar.visible=save.completed>=2;playerCar.position.copy(carPos);$('hud').style.display='none';requestAnimationFrame(frame);addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
+person.visible=true;setSeatPose(save.completed===0?1:0);playerCar.visible=save.completed>=2||ownsPaidVehicle();playerCar.position.copy(carPos);$('hud').style.display='none';requestAnimationFrame(frame);addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
 </script>
 </body>
 </html>
