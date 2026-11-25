@@ -471,6 +471,14 @@ body.bootPlaying #menu{visibility:hidden!important}
 #menu.artworkReady .releaseVersion{font-size:9px}
 @media(max-width:650px){#menu.artworkReady .menuHeroArt{inset:0 0 110px;height:calc(100% - 110px)}#menu.artworkReady .menuContent{padding:0 12px 35px!important}#menu.artworkReady .menuActions{gap:8px}}
 @media(max-height:420px){#menu.artworkReady .menuHeroArt{height:calc(100% - 66px);bottom:66px}#menu.artworkReady .menuContent{padding-bottom:16px!important}#menu.artworkReady .menuActions button{padding:8px 16px}}
+
+/* Part VII: restrained story dossier styling and readable chapter cards. */
+#briefingRecap{font-size:13px;line-height:1.6;color:#c9d4d8;padding:10px 0 14px;border-bottom:1px solid #ffffff20}
+.briefingBox{background:linear-gradient(145deg,#191827,#111e2c);border:1px solid #bba18b;border-radius:8px}
+.storyTurn{border-left-color:#e7b18e;background:#ffffff08}
+.storyTurn b{color:#ffd3aa}
+#chapterBanner{background:linear-gradient(115deg,#191827f5,#14232ef2);border-top-color:#ffc19b;border-bottom-color:#b1a0bd66}
+@media(prefers-reduced-motion:reduce){#chapterBanner{transition:none}}
 </style>
 </head>
 <body>
@@ -541,7 +549,7 @@ body.bootPlaying #menu{visibility:hidden!important}
 <p>Explore Solara City as Jawson and Luxie. Meet local contacts, take on jobs, customise your car and build your own story.</p>
 <div class="menuActions"><button id="play">PLAY STORY</button><button id="resetSave" class="secondary">START OVER</button></div>
 <div class="movieControls">WASD · MOVE &nbsp;&nbsp; CLICK · MOUSE LOOK &nbsp;&nbsp; F · INTERACT</div></div>
-<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">CINEMATIC OVERHAUL · v0.4.0 PREVIEW 6</div></div></div>
+<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">CINEMATIC OVERHAUL · v0.4.0 PREVIEW 7</div></div></div>
 <div id="storyIntro" aria-live="polite" style="display:none"><div id="introShade"></div><div id="introContent"><div id="introChapter">SOLARA CITY · CHAPTER ONE</div><div id="introCue">AN ORIGINAL MVT 6 FILM</div><h2 id="introTitle">START WITH NOTHING.</h2><p id="introCopy">New city. Empty pockets. Every choice counts.</p></div><button id="introSkip">SKIP INTRO →</button></div>
 <div id="paused" class="overlay"><div class="panel"><div class="eyebrow">SOLARA CITY</div><h2>PAUSED</h2><p>Explore at your own pace. Your cash, upgrades and completed contracts are automatically saved.</p><button id="resume">RESUME</button><button id="pauseMap" class="secondary">MAP & MISSIONS</button>
 <div class="qualitySelector"><label for="graphicsQuality">GRAPHICS QUALITY</label><select id="graphicsQuality">
@@ -1913,17 +1921,28 @@ const chapterBeats=[
  ['A CITY WORTH KEEPING',"LUXIE: The ledger proves what happened. JAWSON: Then we finish what we started, together."]
 ];
 const chapterAftermath=['LUXIE: The workshop has a chance.','JAWSON: The address was no coincidence.','LUXIE: Nico remembers the archive.','JAWSON: The records connect three businesses.','LUXIE: Vega gave us the missing location.','JAWSON: The workshop was never meant to be sold.','LUXIE: One final record and we have the whole picture.','JAWSON & LUXIE: The workshop is ours to rebuild.'];
+const chapterRecap=['Two strangers meet on a Solara sidewalk. Luxie has a workshop to save, and Jawson needs a fresh start.','A first delivery buys the workshop more time, but an unexpected envelope raises questions.','The envelope leads back to the family workshop. Nico might remember why.','Nico remembers the old harbour archive and the records that went missing.','The archive connects the workshop with other Solara businesses. Vega knows the neighbourhood.','Vega identifies a possible location. The photographs may provide the missing link.','The original agreement has surfaced. Only one piece of the story remains.','The last record could explain the workshop closure and settle the family claim.'];
+function storyChapterIndex(completed){return Math.max(0,Math.min(chapterBeats.length-1,Math.floor(Number(completed)||0)));}
+function storyContactName(lead){return lead==='luxie'?'Jawson':'Luxie';}
 const chapterScreen=document.createElement('div');chapterScreen.id='chapterBanner';
-chapterScreen.innerHTML='<span>NEW STORY CHAPTER</span><strong id="chapterBannerTitle"></strong><p id="chapterBannerQuote"></p>';document.body.append(chapterScreen);
+chapterScreen.innerHTML='<span id="chapterBannerStatus">NEW STORY CHAPTER</span><strong id="chapterBannerTitle"></strong><p id="chapterBannerQuote"></p>';document.body.append(chapterScreen);
 let chapterBannerTime=0;
 function showChapterBanner(i){
- const [title,line]=chapterBeats[Math.min(i,chapterBeats.length-1)];
+ const idx=storyChapterIndex(i),[title]=chapterBeats[idx];
+ document.getElementById('chapterBannerStatus').textContent=i>=chapterBeats.length?'REPLAY · SOLARA STORIES':'STORY CHAPTER '+String(idx+1).padStart(2,'0')+' / 08';
  document.getElementById('chapterBannerTitle').textContent=title;
- document.getElementById('chapterBannerQuote').textContent=line;
+ document.getElementById('chapterBannerQuote').textContent=chapterRecap[idx];
  chapterBannerTime=5;chapterScreen.classList.add('show');
 }
+function showChapterCompletion(i,reward){
+ const idx=storyChapterIndex(i);
+ document.getElementById('chapterBannerStatus').textContent=i===chapterBeats.length-1?'SEASON ONE · COMPLETE':'CHAPTER COMPLETE · +$'+reward.toLocaleString('en-AU');
+ document.getElementById('chapterBannerTitle').textContent=chapterBeats[idx][0];
+ document.getElementById('chapterBannerQuote').textContent=chapterAftermath[idx];
+ chapterBannerTime=6.5;chapterScreen.classList.add('show');
+}
 const missionBriefing=document.createElement('div');missionBriefing.id='missionBriefing';
-missionBriefing.innerHTML='<div class="briefingBox"><div class="briefingTop">JAWSON &amp; LUXIE · STORY DOSSIER</div><div id="briefingChapter"></div><h2 id="briefingTitle"></h2><p id="briefingDialogue"></p><div id="briefingSteps"></div><div id="briefingReward"></div><div class="briefingButtons"><button id="briefingAccept">ACCEPT MISSION ➜</button><button id="briefingDecline" class="secondary">NOT NOW</button></div></div>';
+missionBriefing.innerHTML='<div class="briefingBox"><div class="briefingTop">JAWSON &amp; LUXIE · STORY DOSSIER</div><div id="briefingChapter"></div><h2 id="briefingTitle"></h2><div id="briefingRecap"></div><div id="briefingDialogue"></div><div id="briefingSteps"></div><div id="briefingReward"></div><div class="briefingButtons"><button id="briefingAccept">ACCEPT MISSION ➜</button><button id="briefingDecline" class="secondary">NOT NOW</button></div></div>';
 document.body.append(missionBriefing);
 function closeBriefing(){missionBriefing.classList.remove('visible');if(gameMode==='briefing')gameMode='play'}
 // Repeatable city job: Solara taxi dispatch.
@@ -1968,7 +1987,8 @@ function offerMission(){
  const narrative=chapterBeats[Math.min(n,chapterBeats.length-1)];
  if(document.pointerLockElement)document.exitPointerLock();
  gameMode='briefing';for(const k in keys)keys[k]=false;
- document.getElementById('briefingChapter').textContent='CHAPTER '+(n+1)+' · '+job.kind.toUpperCase();
+ document.getElementById('briefingChapter').textContent=n>=storyJobs.length?'REPLAY · '+job.kind.toUpperCase():'CHAPTER '+(n+1)+' / '+storyJobs.length+' · '+job.kind.toUpperCase();
+ document.getElementById('briefingRecap').textContent=n>=storyJobs.length?'Season one complete. Return to a familiar story job.':chapterRecap[storyChapterIndex(n)];
  document.getElementById('briefingTitle').textContent=job.title.replace(/CHAPTER \d+ · /,'');
  const dialogue=document.getElementById('briefingDialogue');dialogue.textContent='';
  for(const line of narrative[1].split(/(?=JAWSON:|LUXIE:)/).filter(Boolean)){
@@ -2126,12 +2146,13 @@ function startMission(){
 function finishMission(){
  if(!mission)return;
  const wasLocked=save.completed<2;const lead=activeLead();const bonus=lead==='jawson'&&mission.kind==='courier'?Math.round(mission.reward*.1):0;save.money+=mission.reward+bonus;save.leadJobs={jawson:0,luxie:0,...save.leadJobs};save.leadJobs[lead]++;save.completed++;missionCount=save.completed;persist();
+ showChapterCompletion(save.completed-1,mission.reward+bonus);
  setNotice('CHAPTER COMPLETE · +$'+(mission.reward+bonus)+' · '+leadName().toUpperCase()+' · '+getRank()+' · '+chapterAftermath[Math.min(save.completed-1,chapterAftermath.length-1)]);
  mission=null;mapWaypoint=null;mapWaypointName='';parcelMesh.visible=false;courierMesh.visible=false;jobTerminal.visible=false;targetRing.visible=false;heat=Math.max(0,heat-.9);
  if(wasLocked&&save.completed===2){playerCar.visible=true;setTimeout(()=>setNotice('YOUR FIRST RIDE IS READY! Find your parked car and press E.'),700)}
 }
 function failMission(){
- setNotice('CHAPTER FAILED · Return to Luxie to retry. Progress kept.');
+ setNotice('CHAPTER FAILED · Return to '+storyContactName(activeLead())+' to retry. Progress kept.');
  mission=null;targetRing.visible=false;parcelMesh.visible=false;courierMesh.visible=false;jobTerminal.visible=false;closeHack();
 }
 // Solara Customs is a physical drive-in workshop. Esc no longer grants remote upgrades.
@@ -3194,17 +3215,17 @@ function drawMap(){
 }
 let phoneOpen=false;
 const phoneRoot=$('gamePhone');
-const phoneMissionStatus=()=>mission?({pickup:'Collect item',deliver:'Meet contact',terminal:'Decode signal',vehicle:'Find a ride',race:'Drive the route',scout:'Gather clues',escape:'Lose pursuit'}[mission.stage]||'Follow objective'):'Talk to Luxie to begin';
+const phoneMissionStatus=()=>mission?({pickup:'Collect item',deliver:'Meet contact',terminal:'Decode signal',vehicle:'Find a ride',race:'Drive the route',scout:'Gather clues',escape:'Lose pursuit'}[mission.stage]||'Follow objective'):'Talk to '+storyContactName(activeLead())+' to begin';
 function renderPhone(){
  renderLifestyle();renderTaxiPhone();
  $('phoneClock').textContent=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
  const current=$('phoneCurrent');current.innerHTML='';
  const active=document.createElement('div');active.className='phoneCard';
  const label=document.createElement('b');label.textContent=mission?mission.title:'NO ACTIVE MISSION';
- const desc=document.createElement('p');desc.textContent=mission?mission.description:'Talk to Luxie near your starting street to accept your next chapter.';
+ const desc=document.createElement('p');desc.textContent=mission?mission.description:'Talk to '+storyContactName(activeLead())+' near your starting street to accept your next chapter.';
  const status=document.createElement('small');status.textContent=mission?phoneMissionStatus()+' · '+Math.ceil(missionTime)+'s remaining':'STORY PROGRESS: '+save.completed+' CHAPTERS';
- const track=document.createElement('button');track.textContent=mission?'TRACK OBJECTIVE':'TRACK LUXIE';
- track.onclick=()=>{const place=mission?missionObjective():{x:cityLife.fixer.root.position.x,z:cityLife.fixer.root.position.z};setWaypoint(place,mission?mission.title:'LUXIE');closePhone()};
+ const track=document.createElement('button');track.textContent=mission?'TRACK OBJECTIVE':'TRACK '+storyContactName(activeLead()).toUpperCase();
+ track.onclick=()=>{const place=mission?missionObjective():{x:cityLife.fixer.root.position.x,z:cityLife.fixer.root.position.z};setWaypoint(place,mission?mission.title:storyContactName(activeLead()).toUpperCase());closePhone()};
  active.append(label,desc,status,document.createElement('br'),track);current.append(active);
  const list=$('phoneMissions');list.innerHTML='';
  storyJobs.forEach((job,i)=>{
@@ -3213,7 +3234,7 @@ function renderPhone(){
  const p=document.createElement('p');p.textContent=job.description;
  const status=document.createElement('small');status.textContent=i<save.completed?'✓ COMPLETED':i===save.completed?'● NEXT STORY CHAPTER':'LOCKED · FINISH EARLIER CHAPTERS';
  card.append(title,p,status);
- if(i===save.completed&&!mission){const pin=document.createElement('button');pin.textContent='TRACK CONTACT';pin.onclick=()=>{setWaypoint(cityLife.fixer.root.position,'LUXIE · STORY CONTACT');closePhone()};card.append(pin)}
+ if(i===save.completed&&!mission){const pin=document.createElement('button');pin.textContent='TRACK CONTACT';pin.onclick=()=>{setWaypoint(cityLife.fixer.root.position,storyContactName(activeLead()).toUpperCase()+' · STORY CONTACT');closePhone()};card.append(pin)}
  list.append(card);
  });
 }
