@@ -141,3 +141,27 @@ export function nextJunction(position,direction,block=92){
  const junction=direction>0?Math.ceil((position+.01)/block)*block:Math.floor((position-.01)/block)*block;
  return junction===0?0:junction; // Normalise negative zero at the centre intersection.
 }
+
+// Curved secondary lanes remain within each reserved alley envelope.
+export function secondaryLane(cx,cz,alley,seed=0){
+ if(!alley)return null;
+ const width=Math.min(6,alley.width-1.6),bend=Math.min(1.35,(alley.width-width)/2-.35)*(seed%2===0?1:-1);
+ const points=[];
+ for(let i=0;i<=16;i++){
+  const t=i/16,along=-36+t*72,cross=alley.offset+Math.sin(t*Math.PI*2)*bend;
+  points.push(alley.axis==='x'?{x:cx+cross,z:cz+along}:{x:cx+along,z:cz+cross});
+ }
+ return {width,points};
+}
+// Distinct original silhouettes, all compatible with the existing arcade footprint.
+export function vehicleProfile(type='sedan'){
+ const profiles={
+  sedan:{roof:0,rear:0,front:0,body:0,trim:'sedan'},
+  taxi:{roof:.025,rear:.13,front:0,body:.02,trim:'taxi'},
+  utility:{roof:.27,rear:-.34,front:.14,body:.08,trim:'utility'},
+  compact:{roof:.10,rear:.23,front:-.12,body:-.04,trim:'compact'},
+  wagon:{roof:.16,rear:-.37,front:.05,body:.035,trim:'wagon'},
+  coupe:{roof:-.08,rear:.31,front:-.15,body:-.025,trim:'coupe'}
+ };
+ return profiles[type]||profiles.sedan;
+}
