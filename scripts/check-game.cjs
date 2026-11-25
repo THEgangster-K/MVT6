@@ -105,7 +105,36 @@ assert.ok(html.includes('const nx=carPos.x+slide.dx,nz=carPos.z+slide.dz'),'New 
 assert.ok(html.includes('clearsStreet(x,z,w,h,d')===false,'Street guard uses the horizontal dimensions only');
 assert.ok(html.includes('clearsStreet(x,z,w,d,BLOCK,ROAD)'),'Street prop footprint guard is connected');
 assert.ok(html.includes('detailBatch(palmFronds,palmGeometry()'),'Original curved foliage is GPU-instanced');
-assert.ok(html.includes('PREMIERE · V2.3'),'Visible release marker');
+assert.ok(html.includes('STREETSCAPE · V2.4'),'Visible release marker');
+assert.ok(html.includes('heroOccupant.group.visible=inCar&&playerCar.visible'),'Hero seated character visible when driving');
+assert.ok(html.includes('const driverRig=attachOccupant(car,i)'),'Traffic uses detailed occupant');
+assert.ok(html.includes('attachOccupant(c,i+8)'),'Police vehicles use detailed occupant');
+assert.ok(html.includes('const rig=makeOccupant(t.id,false)'),'Standing NPC retains same appearance');
+assert.ok(html.includes('if(!collision(nextX,nextZ,.35))'),'Walking NPC avoids static footprints');
+assert.ok(html.includes('alley:plan.alley||null'),'Minimap can show offset alley routes');
+assert.ok(html.includes('venueGlass=new THREE.MeshStandardMaterial'),'Accessible venue glazing exists');
+const occupantStart=html.indexOf('const occupantGeo='),occupantEnd=html.indexOf("function makeCar(color=",occupantStart);
+assert.ok(occupantStart>=0&&occupantEnd>occupantStart,'Occupant code exists');
+const xyz=()=>({x:0,y:0,z:0,set(x,y,z){this.x=x;this.y=y;this.z=z}});
+class TestGroup{constructor(){this.position=xyz();this.rotation=xyz();this.scale=xyz();this.children=[];this.userData={};this.visible=true}add(child){this.children.push(child)}}
+const shape=class{constructor(...args){this.args=args}};
+const occupantSandbox={THREE:{Group:TestGroup,SphereGeometry:shape,CapsuleGeometry:shape},mat:color=>({color}),mesh:(geometry,material,parent)=>{const obj=new TestGroup();obj.geometry=geometry;obj.material=material;parent.add(obj);return obj}};
+vm.runInNewContext(html.slice(occupantStart,occupantEnd)+'\nglobalThis.occupantTest={makeOccupant,setOccupantPose,attachOccupant,occupantDetail}',occupantSandbox);
+const occupantTest=occupantSandbox.occupantTest;
+for(let id=0;id<24;id++){
+ const car=new TestGroup();car.userData.cabin={material:{transparent:true,opacity:.25,depthWrite:false}};
+ const rig=occupantTest.attachOccupant(car,id);
+ assert.equal(rig.arms.length,2,'Occupant arms');
+ assert.equal(rig.legs.length,2,'Occupant legs');
+ assert.equal(rig.knees.length,2,'Occupant knees');
+ assert.equal(rig.elbows.length,2,'Occupant elbows');
+ assert.ok(rig.legs.every(l=>l.rotation.x===-1.45),'Seated pose');
+ assert.ok(rig.fine.children.length>=8,'Facial detail');
+ occupantTest.occupantDetail(car,false);assert.ok(!rig.group.visible&&!car.userData.cabin.material.transparent,'Distant occupant hidden');
+ occupantTest.occupantDetail(car,true);assert.ok(rig.group.visible&&car.userData.cabin.material.transparent,'Near occupant visible through glazing');
+ occupantTest.occupantDetail(car,true,false);assert.ok(!rig.group.visible,'Exited occupant stays hidden in car');
+ occupantTest.setOccupantPose(rig,false);assert.ok(rig.legs.every(l=>Object.is(l.rotation.x,0)),'Neutral standing pose');
+}
 assert.ok(html.includes('KANG DYNASTY STUDIOS PRESENTS')&&!html.includes('SOLARA CITY STUDIOS PRESENTS'),'Requested studio branding');
 assert.ok(!html.includes('<div class="bootArtwork"'),'Flat art removed from opening');
 assert.ok(html.includes('@keyframes studioPremiere{0%,7%{opacity:0}34%,64%{opacity:1}92%,100%{opacity:0}}'),'Studio fades from and to black');
