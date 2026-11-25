@@ -874,28 +874,44 @@ trunkBatch.instanceMatrix.needsUpdate=true;canopyBatch.instanceMatrix.needsUpdat
 trunkBatch.frustumCulled=false;canopyBatch.frustumCulled=false;scene.add(trunkBatch,canopyBatch);
 // Coastal visual: water beyond city's western edge, elevated promenade.
 plane(425,1000,-570,0,materials.water,-.10); // Remove obsolete floating waterfront barriers.
-// Reusable driving actors and props.
+// Original coachwork mesh. Longitudinal sections define actual tapered silhouettes,
+// with shared geometry across vehicles instead of identical extruded rectangles.
+const coachworkCache=new Map();
+function coachworkGeometry(tall=false){
+ const key=tall?'saloon':'coupe';if(coachworkCache.has(key))return coachworkCache.get(key);
+ // [longitudinal position, half width, upper height, lower height]
+ const sections=[[-3.79,1.38,1.04,.54],[-3.52,1.67,1.29,.48],[-2.54,1.85,1.48,.47],[-1.38,1.79,1.52,.49],[0,1.74,1.48,.49],[1.36,1.78,1.46,.49],[2.45,1.83,1.39,.49],[3.42,1.63,1.17,.48],[3.79,1.37,1.00,.54]];
+ const vertices=[],tri=[];
+ for(const [z,w,y,lo] of sections){
+   const high=y+(tall?.05:0);
+   vertices.push(-w*.82,lo,z,w*.82,lo,z,w,.76,z,w*.98,high-.13,z,w*.80,high,z,-w*.80,high,z,-w*.98,high-.13,z,-w,.76,z);
+ }
+ const r=8;
+ for(let i=0;i<sections.length-1;i++)for(let k=0;k<r;k++){
+   const a=i*r+k,b=i*r+(k+1)%r,c=(i+1)*r+k,d=(i+1)*r+(k+1)%r;
+   tri.push(a,b,c,b,d,c);
+ }
+ const last=(sections.length-1)*r;
+ for(let k=1;k<r-1;k++){tri.push(0,k+1,k,last,last+k,last+k+1)}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setIndex(tri);g.computeVertexNormals();g.computeBoundingSphere();
+ coachworkCache.set(key,g);return g;
+}
 function makeCar(color='#ed636a',police=false){const group=new THREE.Group();scene.add(group);
  const paint=new THREE.MeshPhysicalMaterial({color,roughness:.24,metalness:.54,clearcoat:.9,clearcoatRoughness:.12});
  const dark=mat('#192735',.4,.2),lamp=mat('#fff6c5',.2),rear=mat('#e0454c',.25),wheel=mat('#101820',.92),trim=mat('#d7e5ea',.24,.65);
- // Bevelled vehicle body and curved roofline; reused geometry keeps draw costs moderate.
- const hullShape=new THREE.Shape();
- hullShape.moveTo(-1.53,.5);hullShape.lineTo(1.53,.5);
- hullShape.quadraticCurveTo(1.85,.5,1.85,.78);hullShape.lineTo(1.85,1.24);
- hullShape.quadraticCurveTo(1.85,1.54,1.53,1.54);hullShape.lineTo(-1.53,1.54);
- hullShape.quadraticCurveTo(-1.85,1.54,-1.85,1.24);hullShape.lineTo(-1.85,.78);
- hullShape.quadraticCurveTo(-1.85,.5,-1.53,.5);
- const hull=mesh(new THREE.ExtrudeGeometry(hullShape,{depth:7.28,steps:1,bevelEnabled:true,bevelThickness:.1,bevelSize:.09,bevelSegments:2,curveSegments:5}),paint,group);
- hull.position.z=-3.64;hull.castShadow=false;
- const canopyShape=new THREE.Shape();
- canopyShape.moveTo(-1.3,1.5);canopyShape.lineTo(1.3,1.5);
- canopyShape.quadraticCurveTo(1.65,1.65,1.42,2.32);
- canopyShape.quadraticCurveTo(1.23,2.59,.9,2.60);
- canopyShape.lineTo(-.9,2.60);
- canopyShape.quadraticCurveTo(-1.23,2.59,-1.42,2.32);
- canopyShape.quadraticCurveTo(-1.65,1.65,-1.3,1.5);
- const canopy=mesh(new THREE.ExtrudeGeometry(canopyShape,{depth:3.4,steps:1,bevelEnabled:true,bevelSize:.07,bevelThickness:.08,bevelSegments:2,curveSegments:5}),paint,group);
- canopy.position.z=-2.15;box(3.2,.75,2.3,0,2.05,-.35,dark,group);box(3.23,.08,2,0,2.55,-.35,paint,group);
+ // Sculpted nose, rear deck, shoulder line and wheel-side contours.
+ const hull=mesh(coachworkGeometry(police),paint,group);hull.castShadow=false;
+ const cabinShade=new THREE.MeshStandardMaterial({color:0x273d46,roughness:.25,metalness:.24,side:THREE.DoubleSide});
+ // Tapered glass cabin: a roof ridge, sloped front/rear glass and integrated pillars.
+ const cv=[-1.47,1.47,-2.18,1.47,1.47,-2.18,-1.52,1.47,1.22,1.52,1.47,1.22,-1.10,2.48,-1.37,1.10,2.48,-1.37,-1.11,2.48,-.02,1.11,2.48,-.02];
+ const ci=[0,4,1,1,4,5,2,3,6,3,7,6,0,2,4,2,6,4,1,5,3,3,5,7,4,6,5,5,6,7];
+ const cg=new THREE.BufferGeometry();cg.setAttribute('position',new THREE.Float32BufferAttribute(cv,3));cg.setIndex(ci);cg.computeVertexNormals();
+ mesh(cg,cabinShade,group);
+ const roof=box(2.25,.10,1.48,0,2.51,-.70,paint,group);
+ for(const side of [-1,1]){
+   const pillar=box(.095,1.06,.10,side*1.30,1.99,.57,paint,group);pillar.rotation.x=-.48;pillar.rotation.z=-side*.20;
+   const rearPillar=box(.13,1.0,.13,side*1.29,1.98,-1.80,paint,group);rearPillar.rotation.x=.56;rearPillar.rotation.z=-side*.21;
+ }
  // Real wheel assemblies spin and front wheels steer; wheel spokes are visible when moving.
  const wheelAssemblies=[];
  for(const side of [-1,1])for(const along of [-2.42,2.42]){
@@ -982,13 +998,10 @@ wheelRim.rotation.x=Math.PI/2+.3;wheelRim.position.set(-.62,2.05,.37);
  const glass=new THREE.MeshStandardMaterial({color:0x1b4353,roughness:.15,metalness:.3,transparent:true,opacity:.82,side:THREE.DoubleSide});
  for(const side of [-1,1]){
    box(.54,.18,.52,side*1.92,1.87,.55,dark,group);
-   box(.07,.65,2.45,side*1.62,2.06,-.45,glass,group);
+   // Side glazing is part of the sculpted cabin mesh above.
    box(.12,.18,4.8,side*1.82,.52,0,trim,group);
  }
- const frontGlass=mesh(new THREE.PlaneGeometry(2.75,1.02),glass,group);
- frontGlass.position.set(0,2.12,.64);frontGlass.rotation.x=-.24;
- const backGlass=mesh(new THREE.PlaneGeometry(2.75,.97),glass,group);
- backGlass.position.set(0,2.10,-1.51);backGlass.rotation.x=.22;backGlass.rotation.y=Math.PI;
+ // Windscreens are integrated into the cabin instead of floating planar inserts.
  box(2.6,.41,.08,0,.89,3.83,dark,group);
  for(let stripe=-1;stripe<=1;stripe++)box(.1,.28,.085,stripe*.48,.89,3.9,trim,group);
  box(3.3,.22,.42,0,.54,3.92,trim,group);
@@ -1512,7 +1525,7 @@ const paintOptions=[
 let cosmetics={paint:'#e96e5d',spoiler:false,lightKit:false,rims:false};
 try{cosmetics={...cosmetics,...JSON.parse(localStorage.getItem('mvt6-customs')||'{}')}}catch{}
 const paintMaterial=playerCar.children[0].material;
-const wheelRims=playerCar.children.filter(n=>n.geometry&&n.geometry.type==='CylinderGeometry'&&n.material?.metalness>.45);
+const wheelRims=[];for(const assembly of playerCar.userData.wheels||[])for(const node of assembly.spin.children){if(node.geometry?.type==='CylinderGeometry'&&node.material?.metalness>.45)wheelRims.push(node)}
 const spoiler=new THREE.Group();playerCar.add(spoiler);
 box(3.85,.18,.7,0,2.15,-3.05,mat('#2a3944',.35,.55),spoiler);
 for(const side of [-1,1])box(.18,.85,.17,side*1.25,1.7,-3.05,mat('#293a48'),spoiler);
@@ -1643,7 +1656,11 @@ function interact(){
  if(cityLife.interact()){gestureTime=.65;return;}
  setNotice(mission?'Collect the parcel or speak to the receiving NPC.':'Talk to Rae near the starting pavement to find work.');
 }
-function enterExit(){if(gameMode!=='play')return;if(inCar){if(Math.abs(velocity)>3){setNotice('Slow down before exiting');return}inCar=false;jumpHeight=0;jumping=false;jumpVelocity=0;person.visible=true;playerPos.set(carPos.x+4,0,carPos.z+2);person.position.copy(playerPos);setNotice('On foot — E to enter car')}else if(nearestTrafficCar()){takeVehicle(nearestTrafficCar())}else if(save.completed<2&&!hasTakenVehicle){setNotice('Finish two jobs for your own car, or approach a traffic vehicle and press E.')}else if(playerPos.distanceTo(carPos)<12){jumpHeight=0;jumping=false;inCar=true;slideSlip=0;slideActive=false;person.visible=false;playerCar.visible=true;setNotice('Vehicle entered')}else{setNotice('Walk closer to your car')}}
+function enterExit(){if(gameMode!=='play')return;if(inCar){if(Math.abs(velocity)>3){setNotice('Slow down before exiting');return}const exitOffsets=[[-4,0],[4,0],[0,-4],[0,4],[-3,-3],[3,3]];
+ const exit=exitOffsets.find(([x,z])=>!collision(carPos.x+x,carPos.z+z,.45));
+ if(!exit){setNotice('Move to an open space to exit');return}
+ inCar=false;slideSlip=0;slideActive=false;velocity=0;jumpHeight=0;jumping=false;jumpVelocity=0;
+ person.visible=true;playerPos.set(carPos.x+exit[0],0,carPos.z+exit[1]);person.position.copy(playerPos);setNotice('On foot — E to enter car')}else if(nearestTrafficCar()){takeVehicle(nearestTrafficCar())}else if(save.completed<2&&!hasTakenVehicle){setNotice('Finish two jobs for your own car, or approach a traffic vehicle and press E.')}else if(playerPos.distanceTo(carPos)<12){jumpHeight=0;jumping=false;inCar=true;slideSlip=0;slideActive=false;person.visible=false;playerCar.visible=true;setNotice('Vehicle entered')}else{setNotice('Walk closer to your car')}}
 let introTime=0;
 const introCameraLook=new THREE.Vector3();
 const introShots=[
@@ -2321,7 +2338,15 @@ function updateCamera(dt){
  const distance=inCar?(camMode===0?16:camMode===1?27:10):(camMode===0?8.5:camMode===1?14:5);
  const altitude=(inCar?(camMode===0?7.5:camMode===1?15:5):(camMode===0?4.8:camMode===1?8:3.3))+orbitPitch*distance;
  camPos.set(focus.x-Math.sin(camYaw)*distance,altitude,focus.z-Math.cos(camYaw)*distance);
- camera.position.lerp(camPos,1-Math.exp(-11*dt));
+ // Retract the camera before it enters a building footprint.
+ if(collision(camPos.x,camPos.z,.3)){
+   for(let attempt=0;attempt<5;attempt++){
+     camPos.x=THREE.MathUtils.lerp(camPos.x,focus.x,.23);
+     camPos.z=THREE.MathUtils.lerp(camPos.z,focus.z,.23);
+     if(!collision(camPos.x,camPos.z,.3))break;
+   }
+   camera.position.copy(camPos);
+ }else camera.position.lerp(camPos,1-Math.exp(-11*dt));
  // At speed, look further down the road to keep junctions visible.
  const lead=inCar?Math.min(5.5,Math.abs(velocity)*.11):0;
  camLook.set(focus.x+Math.sin(angle)*lead,inCar?2.3:2.05,focus.z+Math.cos(angle)*lead);
