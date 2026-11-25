@@ -882,6 +882,18 @@ for(let i=-HALF;i<=HALF;i++){
   if((i+j)%2===0){addStreet('trash',x+2,.55,z,.75,1.1,.75)}
  }
 }
+// District gateways provide distinct street landmarks while leaving travel lanes clear.
+const districtSigns=[
+ [-198,-46,'WEST HAVEN / WATERFRONT'],[198,46,'EAST SOLARA / WORKS'],
+ [46,-198,'NORTH QUARTER / RESIDENCES'],[-46,198,'SOUTH PIER / MARKET'],
+ [14,-46,'SOLARA PLAZA / CITY CENTRE']
+];
+for(const [x,z,label] of districtSigns){
+ if(!clearsStreet(x,z,1.0,1.0,BLOCK,ROAD)||footprint.some(p=>Math.abs(p.x-x)<p.w+1&&Math.abs(p.z-z)<p.d+1))continue;
+ const post=cyl(.075,.10,3.4,x,1.7,z,mat('#53636a',.62,.3));
+ const sign=mesh(new THREE.PlaneGeometry(3.6,1.1),new THREE.MeshBasicMaterial({map:textTexture(label,'#24464b','#f1e6ce'),side:THREE.DoubleSide}));
+ sign.position.set(x,3.05,z);sign.rotation.y=Math.PI/2;
+}
 const streetscapeMats={
  lampPost:mat('#627d88',.35,.75),lampHead:new THREE.MeshBasicMaterial({color:0xf5dcaa}),
  bollard:mat('#728990',.42,.66),bench:mat('#916e55',.8),busGlass:mat('#689da8',.19,.28),
@@ -2594,7 +2606,7 @@ function updatePatrolAgents(dt){
  }
  }
 }
-const cityLife=createCityLife({THREE,scene,box,mesh,mat,roadPositions,rnd,collision,onStoryContact:offerMission,
+const cityLife=createCityLife({THREE,scene,box,mesh,mat,roadPositions,rnd,collision,publicSpaces:neighborhoods.filter(p=>p.kind==='plaza'||p.kind==='park').sort((a,b)=>Number(b.kind==='plaza')-Number(a.kind==='plaza')),onStoryContact:offerMission,
 getPlayer:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,inCar,speed:velocity,heading:angle}),
 isPlaying:()=>gameMode==='play',onNotice:setNotice,
 onReward:amount=>{save.money+=amount;persist();updateHUD()}});
