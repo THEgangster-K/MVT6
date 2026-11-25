@@ -18,6 +18,20 @@ for(const moduleName of ['city-life.js','client.js','game-core.js','model-assets
 }
 // Rendering regression checks: pedestrian models retain dialogue and interaction,
 // while detail groups and street props are distance-cullable.
+// Execute the real geometry helper and the exact waterfront pier construction
+// in a minimal scene stub. Syntax checks alone missed this invalid-parent crash.
+const helperStart=html.indexOf('function mesh(geometry,material,parent=scene)');
+const helperEnd=html.indexOf('function textTexture',helperStart);
+const pierLine=html.split('\n').find(line=>line.includes('for(const x of [-455,-437,-419])'));
+assert.ok(helperStart>=0&&helperEnd>helperStart&&pierLine,'Pier construction and helpers exist');
+const pierChildren=[];
+const pierSandbox={scene:{add:m=>pierChildren.push(m)},rail:{},THREE:{
+ Mesh:class {constructor(geometry,material){this.geometry=geometry;this.material=material;this.position={set:(...v)=>{this.coords=v}}}},
+ CylinderGeometry:class {constructor(...args){this.args=args}}
+}};
+vm.runInNewContext(html.slice(helperStart,helperEnd)+'\n'+pierLine,pierSandbox,{filename:'waterfront-startup'});
+assert.equal(pierChildren.length,6,'All six pier supports attach to scene');
+assert.ok(pierChildren.every(m=>m.geometry.args[3]===8),'Pier support detail argument reaches cylinder geometry');
 const cityLifeSource=read('city-life.js');
 assert.ok(cityLifeSource.includes('const fineDetail=new THREE.Group()'),'Pedestrians have close-up detail groups');
 assert.ok(cityLifeSource.includes('n.fineDetail.visible=distanceSq<35*35'),'Close-up detail is distance culled');
