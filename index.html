@@ -1205,11 +1205,11 @@ function setOccupantPose(rig,seated){
  }
 }
 function attachOccupant(car,id,hero=false){
- const rig=makeOccupant(id,true,hero);rig.group.position.set(-.67,.04,-.49);car.add(rig.group);car.userData.occupant=rig;return rig;
+ const rig=makeOccupant(id,true,hero);rig.group.position.set(-.67,.015,-.49);car.add(rig.group);car.userData.occupant=rig;return rig;
 }
 function occupantDetail(car,near,visible=true){
  const rig=car.userData.occupant;if(!rig)return;rig.group.visible=visible&&near;rig.fine.visible=near;
- const cabin=car.userData.cabin;if(cabin){cabin.material.opacity=near?.25:1;cabin.material.transparent=near;cabin.material.depthWrite=!near;}
+ const cabin=car.userData.cabin;if(cabin){const m=cabin.material;if(m.transparent!==near){m.transparent=near;m.depthWrite=!near;m.needsUpdate=true;}m.opacity=near?.25:1;}
 }
 
 function makeCar(color='#ed636a',police=false){const group=new THREE.Group();scene.add(group);
@@ -2603,7 +2603,8 @@ function exitedDriver(t){
  const direction=t.east?new THREE.Vector3(0,0,1):new THREE.Vector3(1,0,0);
  g.position.copy(t.pos).addScaledVector(direction,3.7);
  g.rotation.y=Math.atan2(direction.x,direction.z);
- formerDrivers.push({group:g,dir:direction,arms:rig.arms,legs:rig.legs,knees:rig.knees,age:0});
+ rig.hips.position.y=1.04;
+ formerDrivers.push({group:g,dir:direction,rig,arms:rig.arms,legs:rig.legs,knees:rig.knees,age:0});
 }
 function finishTakeover(){
  const t=takeoverTarget;if(!t){gameMode='play';return}
@@ -2696,9 +2697,11 @@ function advanceTraffic(dt){
  }
  for(let i=formerDrivers.length-1;i>=0;i--){
  const d=formerDrivers[i];d.age+=dt;
- const nextX=d.group.position.x+d.dir.x*dt*2.1,nextZ=d.group.position.z+d.dir.z*dt*2.1;
+ // Brief, non-violent standing transition, followed by ordinary walking.
+ const ease=Math.min(1,d.age/.55),stride=Math.sin(d.age*8)*.37*ease;
+ if(d.rig)d.rig.hips.position.y=1.04+.06*ease;
+ const nextX=d.group.position.x+d.dir.x*dt*2.1*ease,nextZ=d.group.position.z+d.dir.z*dt*2.1*ease;
  if(!collision(nextX,nextZ,.35)){d.group.position.x=nextX;d.group.position.z=nextZ;}
- const stride=Math.sin(d.age*8)*.37;
  d.legs[0].rotation.x=stride;d.legs[1].rotation.x=-stride;
  if(d.knees){d.knees[0].rotation.x=Math.max(0,-stride)*.7;d.knees[1].rotation.x=Math.max(0,stride)*.7;}
  if(d.arms[0])d.arms[0].rotation.x=-stride*.6;if(d.arms[1])d.arms[1].rotation.x=stride*.6;
