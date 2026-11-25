@@ -272,14 +272,16 @@ assert.ok(html.includes("luxieOccupant.group.visible=inCar&&playerCar.visible&&a
 assert.ok(cityLifeSource.includes('setPartner(activeLead)'),'Inactive protagonist contact can switch');
 const switchStart=html.indexOf('function switchLead(){'),switchEnd=html.indexOf("$('leadSwitch').onclick",switchStart);
 const switchCtx={save:{lead:'jawson'},gameMode:'play',inCar:false,jumping:false,mission:null,taxiJob:null,phoneOpen:false,wheelOpen:false,tutorialOpen:false,keys:{w:true},walkBlend:1,runBlend:1,cityLife:{setPartner:lead=>switchCtx.partner=lead},persist:()=>switchCtx.saved=true,updateHUD:()=>{},setNotice:()=>{},activeLead:()=>switchCtx.save.lead,leadName:()=>switchCtx.save.lead};
-vm.runInNewContext(html.slice(switchStart,switchEnd)+'\nglobalThis.switchTest=switchLead',switchCtx);
-assert.ok(switchCtx.switchTest(),'Character switching available on foot');
-assert.equal(switchCtx.save.lead,'luxie','Switch to Luxie');
-assert.equal(switchCtx.partner,'luxie','Partner updated');
+vm.runInNewContext(html.slice(switchStart,switchEnd)+`
+globalThis.results=[];
+globalThis.results.push(switchLead(),save.lead);
+mission={};globalThis.results.push(switchLead(),save.lead);
+mission=null;inCar=true;globalThis.results.push(switchLead());
+inCar=false;globalThis.results.push(switchLead(),save.lead);
+`,switchCtx);
+assert.deepEqual(Array.from(switchCtx.results),[true,'luxie',false,'luxie',false,true,'jawson'],'Switch guards and both directions');
+assert.equal(switchCtx.partner,'jawson','Partner updated');
 assert.ok(switchCtx.saved&&!switchCtx.keys.w,'Save and clear movement');
-switchCtx.mission={};assert.ok(!switchCtx.switchTest(),'Switch blocked during job');assert.equal(switchCtx.save.lead,'luxie','Active lead unchanged');
-switchCtx.mission=null;switchCtx.inCar=true;assert.ok(!switchCtx.switchTest(),'Switch blocked while driving');
-switchCtx.inCar=false;assert.ok(switchCtx.switchTest(),'Switch back to Jawson');assert.equal(switchCtx.save.lead,'jawson');
 assert.ok(read('server.js').includes("lead:v?.lead==='luxie'?'luxie':'jawson'"),'Server retains valid lead');
 assert.ok(read('server.js').includes('leadJobs:{jawson:limit'),'Server retains character chapter counts');
 
