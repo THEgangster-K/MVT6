@@ -685,7 +685,7 @@ const palette={tower:['#a0b6c0','#b5c2c8','#6b8b99'],apartment:['#e4ccab','#ac89
 for(let ix=-HALF;ix<HALF;ix++)for(let iz=-HALF;iz<HALF;iz++){
  const cx=(ix+.5)*BLOCK,cz=(iz+.5)*BLOCK,n=(ix+HALF)*10+iz+HALF;
  const plan=cityBlockPlan(cx,cz,n);
- neighborhoods.push({cx,cz,kind:plan.kind,district:plan.district});
+ neighborhoods.push({cx,cz,kind:plan.kind,district:plan.district,alley:plan.alley||null});
  plane(BLOCK-ROAD-1,BLOCK-ROAD-1,cx,cz,materials.sidewalk,.10);
  if(plan.kind==='plaza'||plan.kind==='park'){
    const plaza=plan.kind==='plaza';
@@ -929,7 +929,7 @@ for(let i=0;i<buildingMatrices.length;i++){
 }
 // Walk-in open-air venues, not fake storefronts embedded in solid buildings.
 const openVenues=[];
-const venueWood=mat('#aa7951',.76),venueSteel=mat('#344e52',.58,.25),venueRoof=mat('#487a79',.69),venueTile=mat('#e4d6bd',.87);
+const venueWood=mat('#aa7951',.76),venueSteel=mat('#344e52',.58,.25),venueRoof=mat('#487a79',.69),venueTile=mat('#e4d6bd',.87),venueWall=mat('#ece1cc',.92),venueGlass=new THREE.MeshStandardMaterial({color:0x9cc6c9,roughness:.24,transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide}),venueLight=new THREE.MeshBasicMaterial({color:0xffe4b8});
 const venueSites=[{x:46,z:-69,name:'PLAZA COFFEE',message:'PLAZA COFFEE · Take a break by the fountain.'},{x:138,z:66,name:'SOLARA MARKET HALL',message:'MARKET HALL · A neighbourhood meeting place.'}];
 const parkSites=neighborhoods.filter(p=>p.kind==='park').slice(0,4);
 for(const [i,p] of parkSites.entries())venueSites.push({x:p.cx,z:p.cz-23,name:i%2?'GARDEN CAFÉ':'CITY INFORMATION',message:i%2?'GARDEN CAFÉ · Enjoy the neighbourhood.':'CITY INFORMATION · Explore the city districts.'});
@@ -943,6 +943,20 @@ for(const site of venueSites){
    footprint.push({x:x+dx,z:z+dz,w:.19,d:.19});
  }
  box(11,.20,8,0,3.55,0,venueRoof,root);
+ // Back and side walls make an actual room while the front remains walk-in.
+ box(10.5,3.12,.19,0,1.74,-3.7,venueWall,root);
+ footprint.push({x,z:z-3.7,w:5.25,d:.11});
+ for(const side of [-1,1]){
+  box(.18,.89,7.35,side*5.12,.62,0,venueWall,root);
+  box(.09,1.95,7.3,side*5.12,2.04,0,venueGlass,root);
+  box(.19,.16,7.35,side*5.12,3.14,0,venueSteel,root);
+  footprint.push({x:x+side*5.12,z,w:.10,d:3.68});
+ }
+ // Interior shelving, signage and warm practical fixtures.
+ for(const y of [1.65,2.15,2.65])box(6.4,.12,.46,0,y,-3.34,venueWood,root);
+ const header=mesh(new THREE.PlaneGeometry(5,.55),new THREE.MeshBasicMaterial({map:textTexture(name.includes('CAF')||name.includes('COFFEE')?'COFFEE / TEA / PASTRIES':'WELCOME / LOCAL GUIDE','#263f43','#f3e3c7'),side:THREE.DoubleSide}),root);header.position.set(0,2.98,-3.56);
+ for(const dx of [-3.2,0,3.2]){const fixture=mesh(new THREE.CylinderGeometry(.36,.55,.24,12),venueSteel,root);fixture.position.set(dx,3.25,.4);const glow=mesh(new THREE.CylinderGeometry(.32,.35,.055,12),venueLight,root);glow.position.set(dx,3.10,.4);}
+
  box(7.4,1.05,.85,0,.73,-2.7,venueWood,root);
  box(7.6,.10,1.1,0,1.29,-2.7,venueTile,root);
  footprint.push({x,z:z-2.7,w:3.8,d:.55});
@@ -950,7 +964,7 @@ for(const site of venueSites){
    const table=mesh(new THREE.CylinderGeometry(.67,.67,.11,16),venueWood,root);table.position.set(dx,1.05,1.5);
    const leg=mesh(new THREE.CylinderGeometry(.08,.15,.94,10),venueSteel,root);leg.position.set(dx,.56,1.5);
    footprint.push({x:x+dx,z:z+1.5,w:.7,d:.7});
-   for(const dz of [-.9,.9]){const chair=mesh(new THREE.CylinderGeometry(.32,.32,.12,12),venueWood,root);chair.position.set(dx,.58,1.5+dz);}
+   for(const dz of [-.9,.9]){const chair=mesh(new THREE.CylinderGeometry(.32,.32,.12,12),venueWood,root);chair.position.set(dx,.58,1.5+dz);for(const lx of [-.19,.19])for(const lz of [-.19,.19])box(.055,.48,.055,dx+lx,.29,1.5+dz+lz,venueSteel,root);box(.60,.50,.085,dx,.86,1.5+dz+Math.sign(dz)*.26,venueWood,root);}
  }
  const sign=mesh(new THREE.PlaneGeometry(8,.8),new THREE.MeshBasicMaterial({map:textTexture(name,'#294c4b','#fff0d6'),side:THREE.DoubleSide}),root);sign.position.set(0,3.33,4.03);
  openVenues.push({x,z,name,message});
@@ -1195,6 +1209,7 @@ function attachOccupant(car,id,hero=false){
 }
 function occupantDetail(car,near,visible=true){
  const rig=car.userData.occupant;if(!rig)return;rig.group.visible=visible&&near;rig.fine.visible=near;
+ const cabin=car.userData.cabin;if(cabin){cabin.material.opacity=near?.25:1;cabin.material.transparent=near;cabin.material.depthWrite=!near;}
 }
 
 function makeCar(color='#ed636a',police=false){const group=new THREE.Group();scene.add(group);
@@ -1207,7 +1222,7 @@ function makeCar(color='#ed636a',police=false){const group=new THREE.Group();sce
  const cv=[-1.47,1.47,-2.18,1.47,1.47,-2.18,-1.52,1.47,1.22,1.52,1.47,1.22,-1.10,2.48,-1.37,1.10,2.48,-1.37,-1.11,2.48,-.02,1.11,2.48,-.02];
  const ci=[0,4,1,1,4,5,2,3,6,3,7,6,0,2,4,2,6,4,1,5,3,3,5,7,4,6,5,5,6,7];
  const cg=new THREE.BufferGeometry();cg.setAttribute('position',new THREE.Float32BufferAttribute(cv,3));cg.setIndex(ci);cg.computeVertexNormals();
- const cabin=mesh(cg,cabinShade,group);cabin.castShadow=false;cabin.renderOrder=3;
+ const cabin=mesh(cg,cabinShade,group);cabin.castShadow=false;cabin.renderOrder=3;group.userData.cabin=cabin;
  const roof=box(2.25,.10,1.48,0,2.51,-.70,paint,group);
  for(const side of [-1,1]){
    const pillar=box(.095,1.06,.10,side*1.30,1.99,.57,paint,group);pillar.rotation.x=-.48;pillar.rotation.z=-side*.20;
@@ -2843,6 +2858,7 @@ function drawMap(){
   const plan=neighborhoods[(i+HALF)*HALF*2+j+HALF];ctx.fillStyle=({park:'#526e4c',plaza:'#6d8062',parking:'#37454d',residential:'#6b7860',industrial:'#60686c',coast:'#777e76',commercial:'#6c6664',urban:'#465951'})[plan.kind]||'#465951';
   ctx.fillRect((cx-(BLOCK-ROAD)/2)*zoom,-(cz+(BLOCK-ROAD)/2)*zoom,(BLOCK-ROAD)*zoom,(BLOCK-ROAD)*zoom);
   ctx.strokeStyle='#d5ddbd66';ctx.lineWidth=.7;ctx.strokeRect((cx-34)*zoom,-(cz+34)*zoom,68*zoom,68*zoom);
+  if(plan.alley){const a=plan.alley;ctx.fillStyle='#24343b';const ax=cx+(a.axis==='x'?a.offset:0),az=cz+(a.axis==='z'?a.offset:0),aw=a.axis==='x'?a.width:70,ad=a.axis==='x'?70:a.width;ctx.fillRect((ax-aw/2)*zoom,-(az+ad/2)*zoom,aw*zoom,ad*zoom);}
  }
  ctx.fillStyle='#111e25';
  for(let i=-HALF;i<=HALF;i++){ctx.fillRect((i*BLOCK-ROAD/2)*zoom,-390*zoom,ROAD*zoom,780*zoom);ctx.fillRect(-390*zoom,-(i*BLOCK+ROAD/2)*zoom,780*zoom,ROAD*zoom)}
