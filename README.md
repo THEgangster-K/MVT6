@@ -1,5 +1,17 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v3.1 — POSTCARDS
+
+- Original eight-panel Solara City illustrated SVG cover with Jawson, Luxie, city scenes, waterfront and Sunset Coupe. Vibrant coastal palette and comic-panel layout, with MVT 6's own logo and typography. Used in the final intro reveal and main menu.
+- Preserves the Kang Dynasty Studios fade, six live cinematic shots, Skip Intro and reduced-motion support.
+- Four optional personal activities across existing story landmarks: two for Jawson and two for Luxie, with independent rewards and saved completion. Press K to mark the next personal activity and F to interact on foot.
+- Improved home interiors with wall prints, bedside lights and books; closer indoor camera and roof cutaway when inside.
+- Existing saves, characters, city layout and progression retained.
+- 3,111 assertions passed in the strict adapted regression environment, including cover structure, route, personal activity payouts and existing intro tests.
+
+**Scope:** Original vector illustration rather than copied GTA artwork or photorealistic gameplay. No major district expansion or new character rigs in this release. Actual browser appearance, gameplay, account persistence and FPS remain unverified.
+
+
 ## v3.0 — HORIZON
 
 - Five original Jawson and Luxie exhibition story stops across the five city districts, with new conversations, ordered landmark interactions, minimap markers and persistent completion rewards. Press B to mark the next site; F on foot to interact. Actual sites use checked open positions; unavailable placements are skipped.
