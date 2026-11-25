@@ -190,3 +190,38 @@ export function visualSpring(position,velocity,target,dt){
  const v=(velocity+(target-position)*30*step)*Math.exp(-7*step);
  return {position:Math.max(-.12,Math.min(.12,position+v*step)),velocity:v};
 }
+
+// Fictional showroom purchases and home furnishing choices.
+export const showroomCatalog=[
+ {id:'sedan',name:'Solara Standard',price:0,type:'sedan'},
+ {id:'compact',name:'Harbour Compact',price:480,type:'compact'},
+ {id:'wagon',name:'Vista Wagon',price:850,type:'wagon'},
+ {id:'utility',name:'Atlas Utility',price:1250,type:'utility'},
+ {id:'coupe',name:'Sunset Coupe',price:1800,type:'coupe'}
+];
+export function purchaseShowroom(progress,id){
+ const item=showroomCatalog.find(v=>v.id===id),owned=['sedan',...(Array.isArray(progress?.vehicles)?progress.vehicles:[])];
+ if(!item)return {ok:false,reason:'Unknown model'};
+ if(owned.includes(id))return {ok:true,money:progress.money,vehicles:[...new Set(owned)],selectedVehicle:id};
+ if(!Number.isFinite(progress.money)||progress.money<item.price)return {ok:false,reason:'Not enough cash'};
+ return {ok:true,money:progress.money-item.price,vehicles:[...new Set([...owned,id])],selectedVehicle:id};
+}
+export const furnishingCatalog=[
+ {id:'coastal',name:'Coastal blue',price:0,fabric:'#778d91',wood:'#9c7357',rug:'#caab88'},
+ {id:'modern',name:'Modern charcoal',price:160,fabric:'#454c55',wood:'#74685a',rug:'#a9b0b8'},
+ {id:'warm',name:'Warm terracotta',price:240,fabric:'#bd8063',wood:'#805e48',rug:'#d4ad87'}
+];
+export function purchaseFurnishing(progress,homeId,themeId){
+ if(!Array.isArray(progress?.homes)||!progress.homes.includes(homeId))return {ok:false,reason:'Own the home first'};
+ if(!homeCatalog.some(h=>h.id===homeId))return {ok:false,reason:'Unknown home'};
+ const theme=furnishingCatalog.find(t=>t.id===themeId);
+ if(!theme)return {ok:false,reason:'Unknown theme'};
+ const prior=progress.homeThemes?.[homeId]||'coastal';
+ if(prior===themeId)return {ok:false,reason:'Already applied'};
+ if(!Number.isFinite(progress.money)||progress.money<theme.price)return {ok:false,reason:'Not enough cash'};
+ return {ok:true,money:progress.money-theme.price,homeThemes:{...progress.homeThemes,[homeId]:themeId}};
+}
+export function cityWeather(seconds){
+ const t=((Math.floor(seconds/95)%4)+4)%4;
+ return ['clear','overcast','rain','clear'][t];
+}

@@ -71,7 +71,7 @@ for(const match of matches[1][1].matchAll(/\$\('([^']+)'\)/g)){
  assert.ok(ids.includes(match[1])||builtAtRuntime.has(match[1]),'Missing UI element: '+match[1]);
 }
 const coreSource=read('game-core.js').replace(/^export /gm,'')+
- '\n;globalThis.core={movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction,arcadeCarContact,secondaryLane,vehicleProfile,homeCatalog,purchaseHome,residentRoutine,visualSpring};';
+ '\n;globalThis.core={movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction,arcadeCarContact,secondaryLane,vehicleProfile,homeCatalog,purchaseHome,residentRoutine,visualSpring,showroomCatalog,purchaseShowroom,furnishingCatalog,purchaseFurnishing,cityWeather};';
 const context={Math};
 vm.runInNewContext(coreSource,context,{filename:'game-core.js'});
 const core=context.core;
@@ -105,7 +105,27 @@ assert.ok(html.includes('const nx=carPos.x+slide.dx,nz=carPos.z+slide.dz'),'New 
 assert.ok(html.includes('clearsStreet(x,z,w,h,d')===false,'Street guard uses the horizontal dimensions only');
 assert.ok(html.includes('clearsStreet(x,z,w,d,BLOCK,ROAD)'),'Street prop footprint guard is connected');
 assert.ok(html.includes('detailBatch(palmFronds,palmGeometry()'),'Original curved foliage is GPU-instanced');
-assert.ok(html.includes('HOMESTEAD · V2.8'),'Visible release marker');
+assert.ok(html.includes('SHOWROOM · V2.9'),'Visible release marker');
+assert.equal(core.showroomCatalog.length,5,'Five vehicle models');
+const boughtCar=core.purchaseShowroom({money:1000,vehicles:['sedan']},'wagon');
+assert.ok(boughtCar.ok,'Affordable model');assert.equal(boughtCar.money,150,'Vehicle purchase cost');
+assert.equal(boughtCar.selectedVehicle,'wagon','Purchased model selected');
+assert.ok(boughtCar.vehicles.includes('wagon'),'Ownership added');
+assert.equal(core.purchaseShowroom(boughtCar,'wagon').money,150,'Owned model selection is free');
+assert.ok(!core.purchaseShowroom({money:10},'coupe').ok,'Unaffordable car rejected');
+assert.ok(!core.purchaseShowroom({money:9000},'unknown').ok,'Unknown vehicle rejected');
+assert.ok(!core.purchaseFurnishing({money:500,homes:[]},'starter','modern').ok,'Ownership needed for furnishings');
+const decor=core.purchaseFurnishing({money:500,homes:['starter'],homeThemes:{}},'starter','modern');
+assert.ok(decor.ok,'Furnishing purchased');assert.equal(decor.money,340,'Theme cost');assert.equal(decor.homeThemes.starter,'modern','Theme saved');
+assert.ok(!core.purchaseFurnishing({money:1,homes:['starter']},'starter','warm').ok,'Unfunded theme rejected');
+assert.ok(!core.purchaseFurnishing({money:500,homes:['starter'],homeThemes:{starter:'modern'}},'starter','modern').ok,'Current theme cannot be charged twice');
+assert.equal(core.cityWeather(0),'clear');assert.equal(core.cityWeather(95),'overcast');assert.equal(core.cityWeather(190),'rain');assert.equal(core.cityWeather(285),'clear');assert.equal(core.cityWeather(380),'clear');
+assert.ok(html.includes('function applyOwnedVehicle()'),'Selected owned model applied');
+assert.ok(html.includes('function refreshHomeThemes()'),'Selected theme applied');
+assert.ok(html.includes('new THREE.LineSegments(rainGeo'),'Single batched rain mesh');
+assert.ok(html.includes("rainMesh.visible=playing&&kind==='rain'&&!reducedWeather"),'Rain respects reduced motion');
+assert.ok(read('server.js').includes('homeThemes:Object.fromEntries'),'Account validates themes');
+assert.ok(read('server.js').includes("selectedVehicle:['compact','wagon','utility','coupe']"),'Account validates selected vehicle');
 assert.equal(core.homeCatalog.length,3,'Three purchasable properties');
 const originalProgress={money:4000,homes:[]};
 let owned=originalProgress;
