@@ -109,11 +109,14 @@ assert.ok(html.includes('clearsStreet(x,z,w,h,d')===false,'Street guard uses the
 assert.ok(html.includes('clearsStreet(x,z,w,d,BLOCK,ROAD)'),'Street prop footprint guard is connected');
 assert.ok(html.includes('detailBatch(palmFronds,palmGeometry()'),'Original curved foliage is GPU-instanced');
 assert.ok(html.includes('CINEMATIC OVERHAUL · v0.4.0 PREVIEW'),'Visible release marker');
-assert.ok(html.includes('src="./models/solara-menu.jpg"')&&html.includes("classList.add('artworkReady')")&&html.includes("classList.remove('artworkReady')"),'Optional key art has loading and missing-image fallback');
+assert.ok(html.includes('src="./models/solara-cover.svg?rev=8"')&&html.includes("classList.add('artworkReady')")&&html.includes("classList.remove('artworkReady')"),'Local vector key art has loading and missing-image fallback');
 assert.ok(html.includes('#menu.artworkReady .menuActions{pointer-events:auto'),'Menu controls remain interactive over key art');
 assert.ok(html.includes('emissiveMap:windowGlowTexture(type,i)'),'Night glow uses a dedicated window mask');
 assert.ok(read('server.js').includes("'.jpg':'image/jpeg'"),'Server supports JPEG artwork');
 const cover=read('models/solara-cover.svg');
+assert.ok(cover.includes('viewBox="0 0 1600 900"')&&cover.includes('>MVT</text>')&&cover.includes('>6</text>'),'Widescreen artwork has integrated central title');
+assert.ok(!html.includes('src="./models/solara-menu.jpg"'),'No dependency on missing binary artwork');
+assert.ok(html.includes("introReducedMotion?.5:cubicEase(local)")&&html.includes("$('introFade').style.opacity"),'Intro uses accessible motion and timed fades');
 assert.ok(cover.startsWith('<svg xmlns="http://www.w3.org/2000/svg"'),'Original cover asset');
 assert.equal((cover.match(/<clipPath id="new\d+" clipPathUnits="userSpaceOnUse"><polygon/g)||[]).length,7,'Seven asymmetric cover panels');
 assert.ok(!/<text x="24" y="301"/.test(cover),'No individual artwork captions');

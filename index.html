@@ -479,6 +479,23 @@ body.bootPlaying #menu{visibility:hidden!important}
 .storyTurn b{color:#ffd3aa}
 #chapterBanner{background:linear-gradient(115deg,#191827f5,#14232ef2);border-top-color:#ffc19b;border-bottom-color:#b1a0bd66}
 @media(prefers-reduced-motion:reduce){#chapterBanner{transition:none}}
+
+/* Part VIII: local key art and film-style scene transitions. */
+#menu.artworkReady{background:#100d1c!important}
+#menu.artworkReady .menuHeroArt{inset:0 0 76px;width:100%;height:calc(100% - 76px);object-fit:contain}
+#menu.artworkReady .menuContent{padding-bottom:21px!important;background:linear-gradient(0deg,#100d1c 0%,#100d1c 8%,transparent 8.5%);justify-content:flex-end}
+#menu.artworkReady .menuActions{gap:10px}
+#menu.artworkReady #play{background:linear-gradient(115deg,#e1358b,#9c267b);box-shadow:0 0 16px #ea388d44}
+#menu.artworkReady #resetSave{background:#1b1c2f}
+#menu.artworkReady .menuDecor{right:12px;bottom:4px}
+#introFade{position:absolute;inset:0;background:#08070e;opacity:1;pointer-events:none;z-index:2}
+#storyIntro #introContent{z-index:3;max-width:min(500px,80vw);background:linear-gradient(90deg,#080710cf,#08071033 85%,transparent);border-left:2px solid #e4b3a0}
+#introProgress{height:2px;margin-top:14px;background:#ffffff30;overflow:hidden}
+#introProgress i{display:block;width:0;height:100%;background:#f6b1a4}
+#storyIntro #introSkip{border-radius:3px;background:#141222c9}
+@media(max-width:650px){#menu.artworkReady .menuHeroArt{inset:0 0 100px;height:calc(100% - 100px)}#menu.artworkReady .menuContent{padding-bottom:36px!important}#storyIntro #introContent{bottom:17%;padding:13px 15px}#storyIntro #introSkip{bottom:7%}}
+@media(max-height:420px){#menu.artworkReady .menuHeroArt{height:calc(100% - 62px);bottom:62px}#menu.artworkReady .menuContent{padding-bottom:15px!important}}
+@media(prefers-reduced-motion:reduce){#storyIntro.introTransition #introContent{animation:none!important}#introShade{animation:none!important}}
 </style>
 </head>
 <body>
@@ -543,14 +560,14 @@ body.bootPlaying #menu{visibility:hidden!important}
 <div class="loadingInfo"><span id="bootStatus">Preparing Solara City...</span><span id="bootPct">0%</span></div>
 <div class="loadingTrack"><div id="loadingFill"></div></div><p id="bootError">Jawson &amp; Luxie • Eight story chapters</p><div class="artDots"><i></i><i></i><i></i></div><div class="bootFeatureStrip"><span>NO MONEY</span><span>NO CONNECTIONS</span><span>EVERYTHING TO BUILD</span></div>
 <button id="bootRetry" style="display:none" onclick="location.reload()">RETRY</button></div></div>
-<div id="menu" class="overlay movieMenu"><div class="menuCity"></div><div class="coverArt menuCover" aria-hidden="true"></div><img class="menuHeroArt" alt="" decoding="async" onload="this.parentElement.classList.add('artworkReady')" onerror="this.parentElement.classList.remove('artworkReady')" src="./models/solara-menu.jpg"><div class="menuContent">
+<div id="menu" class="overlay movieMenu"><div class="menuCity"></div><div class="coverArt menuCover" aria-hidden="true"></div><img class="menuHeroArt" alt="" decoding="async" onload="this.parentElement.classList.add('artworkReady')" onerror="this.parentElement.classList.remove('artworkReady')" src="./models/solara-cover.svg?rev=8"><div class="menuContent">
 <div class="kicker">SOLARA CITY &nbsp; / &nbsp; CINEMATIC OVERHAUL</div><h1 class="movieLogo releaseMark" aria-label="MVT 6"><span class="letters">MVT</span><i class="slash" aria-hidden="true"></i><span class="digit">6</span></h1>
 <div class="movieSubtitle">MOTOR VEHICLE THEFT</div><h2>Two lives. One city.</h2>
 <p>Explore Solara City as Jawson and Luxie. Meet local contacts, take on jobs, customise your car and build your own story.</p>
 <div class="menuActions"><button id="play">PLAY STORY</button><button id="resetSave" class="secondary">START OVER</button></div>
 <div class="movieControls">WASD · MOVE &nbsp;&nbsp; CLICK · MOUSE LOOK &nbsp;&nbsp; F · INTERACT</div></div>
-<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">CINEMATIC OVERHAUL · v0.4.0 PREVIEW 7</div></div></div>
-<div id="storyIntro" aria-live="polite" style="display:none"><div id="introShade"></div><div id="introContent"><div id="introChapter">SOLARA CITY · CHAPTER ONE</div><div id="introCue">AN ORIGINAL MVT 6 FILM</div><h2 id="introTitle">START WITH NOTHING.</h2><p id="introCopy">New city. Empty pockets. Every choice counts.</p></div><button id="introSkip">SKIP INTRO →</button></div>
+<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">CINEMATIC OVERHAUL · v0.4.0 PREVIEW 8</div></div></div>
+<div id="storyIntro" aria-live="polite" style="display:none"><div id="introShade"></div><div id="introFade" aria-hidden="true"></div><div id="introContent"><div id="introChapter">SOLARA CITY · CHAPTER ONE</div><div id="introCue">AN ORIGINAL MVT 6 FILM</div><h2 id="introTitle">START WITH NOTHING.</h2><p id="introCopy">New city. Empty pockets. Every choice counts.</p><div id="introProgress" aria-hidden="true"><i></i></div></div><button id="introSkip">SKIP INTRO →</button></div>
 <div id="paused" class="overlay"><div class="panel"><div class="eyebrow">SOLARA CITY</div><h2>PAUSED</h2><p>Explore at your own pace. Your cash, upgrades and completed contracts are automatically saved.</p><button id="resume">RESUME</button><button id="pauseMap" class="secondary">MAP & MISSIONS</button>
 <div class="qualitySelector"><label for="graphicsQuality">GRAPHICS QUALITY</label><select id="graphicsQuality">
 <option value="auto" selected>AUTO · TARGET 60 FPS</option>
@@ -2327,6 +2344,7 @@ const introShots=[
  {duration:3.6,from:[5,4.7,-41],to:[9.4,3.2,-31],lookFrom:[15.35,2,-29],lookTo:[15.35,1.35,-29],title:'JAWSON',copy:'A fresh start. One chance to rebuild.'}
 ];
 const introDuration=introShots.reduce((a,x)=>a+x.duration,0);
+const introReducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function startIntro(){
  safeWalkingPosition();gameMode='intro';introTime=0;introStage=-1;cityLife.setPartner('jawson');
  $('menu').style.display='none';$('hud').style.display='none';$('storyIntro').style.display='block';
@@ -2365,7 +2383,11 @@ function cubicEase(t){return t*t*(3-2*t)}
 function cinematicCamera(time){
  let rest=time,index=0;
  while(index<introShots.length-1&&rest>introShots[index].duration){rest-=introShots[index].duration;index++}
- const shot=introShots[index],p=cubicEase(Math.min(1,rest/shot.duration));camera.fov=THREE.MathUtils.lerp(69,59,p);camera.updateProjectionMatrix();
+ const shot=introShots[index],local=THREE.MathUtils.clamp(rest/shot.duration,0,1),p=introReducedMotion?.5:cubicEase(local);
+ const fovs=[50,61,48,44];camera.fov=fovs[index];camera.updateProjectionMatrix();
+ const fade=introReducedMotion?0:Math.max(0,1-rest/.30,1-(shot.duration-rest)/.25);
+ $('introFade').style.opacity=String(Math.min(1,fade));
+ $('introProgress').firstElementChild.style.width=(100*Math.min(1,time/introDuration)).toFixed(1)+'%';
  const at=(a,b)=>a+(b-a)*p;
  camera.position.set(at(shot.from[0],shot.to[0]),at(shot.from[1],shot.to[1]),at(shot.from[2],shot.to[2]));
  introCameraLook.set(at(shot.lookFrom[0],shot.lookTo[0]),at(shot.lookFrom[1],shot.lookTo[1]),at(shot.lookFrom[2],shot.lookTo[2]));
@@ -2374,7 +2396,7 @@ function cinematicCamera(time){
     introStage=index;
     $('introTitle').textContent=shot.title;
     $('introCopy').textContent=shot.copy;
-    $('introChapter').textContent='SOLARA CITY / '+String(index+1).padStart(2,'0')+' OF 04';
+    $('introChapter').textContent='SOLARA CITY / '+String(index+1).padStart(2,'0')+' OF '+String(introShots.length).padStart(2,'0');
     $('storyIntro').classList.remove('introTransition');
     void $('storyIntro').offsetWidth;
     $('storyIntro').classList.add('introTransition');
