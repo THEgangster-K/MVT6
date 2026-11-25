@@ -165,3 +165,28 @@ export function vehicleProfile(type='sedan'){
  };
  return profiles[type]||profiles.sedan;
 }
+
+// Shared in-game property catalogue. All prices are fictional game currency.
+export const homeCatalog=[
+ {id:'starter',name:'Harbour Studio',x:138,z:-46,price:550,roof:'#657d87'},
+ {id:'garden',name:'Garden Apartment',x:230,z:-46,price:1200,roof:'#7d8b65'},
+ {id:'loft',name:'Solara Loft',x:230,z:46,price:2400,roof:'#a6795c'}
+];
+export function purchaseHome(progress,id){
+ const home=homeCatalog.find(h=>h.id===id),owned=Array.isArray(progress?.homes)?progress.homes:[];
+ if(!home)return {ok:false,reason:'Unknown property'};
+ if(owned.includes(id))return {ok:false,reason:'Already owned'};
+ if(!Number.isFinite(progress.money)||progress.money<home.price)return {ok:false,reason:'Not enough cash'};
+ return {ok:true,money:progress.money-home.price,homes:[...owned,id]};
+}
+// Game-time neighbourhood routines, offset by citizen identity.
+export function residentRoutine(seconds,id){
+ const t=((Math.floor(seconds/18)+id*3)%12+12)%12;
+ return t<3?'rest':t<7?'walk':t<9?'browse':'walk';
+}
+// Small cosmetic spring response, independent of game driving physics.
+export function visualSpring(position,velocity,target,dt){
+ const step=Math.max(0,Math.min(.05,dt));
+ const v=(velocity+(target-position)*30*step)*Math.exp(-7*step);
+ return {position:Math.max(-.12,Math.min(.12,position+v*step)),velocity:v};
+}
