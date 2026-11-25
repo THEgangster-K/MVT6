@@ -2312,6 +2312,7 @@ function applyGraphicsPreset(profile,announce=false){
  renderer.shadowMap.enabled=graphicsPreset==='cinematic';
  renderer.shadowMap.needsUpdate=true;
  const scale=graphicsPreset==='performance'?.60:graphicsPreset==='cinematic'?1:.82;
+ for(const [material,texture] of [[materials.asphalt,materialsTexture.asphalt],[materials.sidewalk,materialsTexture.pavement],[materials.grass,materialsTexture.grass]]){const bump=graphicsPreset==='performance'?null:texture;if(material.bumpMap!==bump){material.bumpMap=bump;material.needsUpdate=true;}}
  for(const light of customsAccentLights){light.intensity=graphicsPreset==='performance'?0:26*scale}
  const selector=document.getElementById('graphicsQuality');
  if(selector)selector.value=graphicsPreset;
@@ -3188,13 +3189,15 @@ const luxieFallback=makeOccupant(2,false);luxieFallback.group.scale.setScalar(1.
 const trailSites=[];
 const sculptureMat=mat('#b0a18c',.48,.55),plinthMat=mat('#566b72',.84),trailGlow=new THREE.MeshBasicMaterial({color:0x9ddfe9});
 for(const [i,site] of horizonTrail.entries()){
- const pos=trailPlacement(site,(x,z,m)=>collision(x,z,m)||reactiveTrees.some(t=>Math.hypot(t.x-x,t.z-z)<3));
+ const pos=trailPlacement(site,(x,z,m)=>collision(x,z,m)||reactiveTrees.some(t=>Math.hypot(t.x-x,t.z-z)<3)||neighborhoods.some(n=>n.alley&&Math.abs(x-n.cx)<36&&Math.abs(z-n.cz)<36&&Math.abs((n.alley.axis==='x'?x-n.cx:z-n.cz)-n.alley.offset)<n.alley.width/2+m));
  if(!pos)continue;
  const root=new THREE.Group();root.position.set(pos.x,0,pos.z);scene.add(root);shopBuildings.push({root,x:pos.x,z:pos.z});
  box(1.7,.22,1.7,0,.24,0,plinthMat,root);
  const stand=mesh(new THREE.CylinderGeometry(.24,.4,1.45,12),sculptureMat,root);stand.position.y=.98;
- const ring=mesh(new THREE.TorusGeometry(.58,.10,8,24),sculptureMat,root);ring.position.y=1.94;ring.rotation.y=i*.43;
- const orb=mesh(new THREE.IcosahedronGeometry(.26,1),trailGlow,root);orb.position.y=1.94;
+ const ring=mesh(new THREE.TorusGeometry(.58,.10,8,i===2?6:24),sculptureMat,root);ring.position.y=1.94;ring.rotation.y=i*.43;
+ const orb=mesh(i===0?new THREE.IcosahedronGeometry(.26,1):i===1?new THREE.OctahedronGeometry(.32,0):i===2?new THREE.BoxGeometry(.44,.44,.44):i===3?new THREE.CylinderGeometry(.18,.32,.6,8):new THREE.SphereGeometry(.30,12,8),trailGlow,root);orb.position.y=1.94;
+ if(i===1||i===4){const arc=mesh(new THREE.TorusGeometry(.71,.045,6,20),sculptureMat,root);arc.position.y=1.94;arc.rotation.x=Math.PI/2;}
+ if(i===3){for(const side of [-1,1])box(.13,.45,.15,side*.59,1.94,0,sculptureMat,root);}
  const label=mesh(new THREE.PlaneGeometry(2.8,.56),new THREE.MeshBasicMaterial({map:textTexture(site.name.toUpperCase(),'#344a54','#f5dfbf'),side:THREE.DoubleSide}),root);label.position.set(0,2.85,0);
  footprint.push({x:pos.x,z:pos.z,w:.85,d:.85});trailSites.push({...site,...pos,root,orb});
 }
