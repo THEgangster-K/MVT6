@@ -57,7 +57,7 @@ for(const match of matches[1][1].matchAll(/\$\('([^']+)'\)/g)){
  assert.ok(ids.includes(match[1])||builtAtRuntime.has(match[1]),'Missing UI element: '+match[1]);
 }
 const coreSource=read('game-core.js').replace(/^export /gm,'')+
- '\n;globalThis.core={movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet};';
+ '\n;globalThis.core={movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan};';
 const context={Math};
 vm.runInNewContext(coreSource,context,{filename:'game-core.js'});
 const core=context.core;
@@ -91,7 +91,35 @@ assert.ok(html.includes('const nx=carPos.x+slide.dx,nz=carPos.z+slide.dz'),'New 
 assert.ok(html.includes('clearsStreet(x,z,w,h,d')===false,'Street guard uses the horizontal dimensions only');
 assert.ok(html.includes('clearsStreet(x,z,w,d,BLOCK,ROAD)'),'Street prop footprint guard is connected');
 assert.ok(html.includes('detailBatch(palmFronds,palmGeometry()'),'Original curved foliage is GPU-instanced');
-assert.ok(html.includes('AFTERGLOW · V1.8'),'Visible release marker');
+assert.ok(html.includes('CITY LIFE · V1.9'),'Visible release marker');
+assert.ok(!html.includes('const wallFacade='),'Artificial spawn wall removed');
+assert.ok(!html.includes('const shopBrick='),'Old decorative wall material removed');
+assert.equal(core.cityBlockPlan(46,-46,0).kind,'plaza','Spawn block is a plaza');
+assert.equal(core.cityBlockPlan(46,-46,0).parcels.length,0,'Spawn block has no building footprint');
+assert.equal(core.cityBlockPlan(138,46,0).kind,'parking','Customs approach remains open');
+const kinds=new Set(),types=new Set();let count=0;
+for(let i=-4;i<4;i++)for(let j=-4;j<4;j++){
+ const cx=(i+.5)*92,cz=(j+.5)*92,seed=(i+4)*10+j+4;
+ const plan=core.cityBlockPlan(cx,cz,seed);
+ kinds.add(plan.kind);
+ for(const p of plan.parcels){
+  count++;types.add(p.type);
+  assert.ok(core.clearsStreet(p.x,p.z,p.w,p.d),'Building stays off road');
+  assert.ok(p.h>0&&Number.isFinite(p.h),'Positive finite building height');
+  for(const q of plan.parcels){
+   if(q===p)continue;
+   assert.ok(Math.abs(p.x-q.x)>=(p.w+q.w)/2||Math.abs(p.z-q.z)>=(p.d+q.d)/2,'Parcel footprints do not overlap');
+  }
+ }
+}
+assert.ok(kinds.size>=7&&types.size>=6&&count>80,'Distinct city districts and building archetypes');
+assert.ok(html.includes('detailBatch(houseRoofs,gabledRoof()'),'Pitched residential roofs');
+assert.ok(html.includes('detailBatch(warehouseRoofs,gabledRoof()'),'Industrial roof geometry');
+assert.ok(html.includes('detailBatch(parkMounds'),'Landscaped relief');
+assert.ok(html.includes('detailBatch(fountainBases'),'Spawn plaza centerpiece');
+assert.ok(html.includes('publicSpaces:neighborhoods.filter'),'Public spaces connected to residents');
+assert.ok(cityLifeSource.includes('resident.pathAxis=p.axis'),'Walkers follow sidewalk direction');
+
 assert.ok(html.includes('coachworkGeometry(police)'),'Vehicles use original longitudinal coachwork mesh');
 assert.ok(html.includes('assembly.spin.children'),'Wheel rim customisation addresses nested wheel meshes');
 assert.ok(html.includes('exitOffsets.find'),'Vehicle exit checks nearby open space');
