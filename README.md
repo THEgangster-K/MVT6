@@ -1,5 +1,16 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v2.9 — SHOWROOM
+
+- Vehicle collection available through the pause menu between jobs or the marked showroom frontage near Solara Customs. Five original models with purchasable ownership and free switching between owned vehicles. The selected model changes the existing player car's body, glazing, roof and pillars, retaining its upgrades and collision system.
+- Owned properties offer coastal blue, modern charcoal and warm terracotta furnishing themes; furniture, wood and rug colours update independently by home.
+- Clear, overcast and rainy game-time weather cycles, with lighting, fog, wet-road material appearance and a bounded batched rain effect. Reduced motion disables rain streaks; performance mode reduces their count.
+- Existing money, chapters, properties, characters and account progress retained; new ownership and appearance fields validated in account saves.
+- 3,038 assertions passed in the strict adapted regression environment.
+
+**Scope:** The collection uses one active vehicle at a time with shared performance upgrades; showroom is a menu and street frontage rather than a full walk-in dealership. Furnishings change materials rather than furniture layouts. Weather is visual only. No additional campaign missions or character animations included. Interactive rendering, browser gameplay, account persistence and FPS have not been verified.
+
+
 ## v2.8 — HOMESTEAD
 
 - Three fictional purchasable properties: Harbour Studio ($550), Garden Apartment ($1,200), and Solara Loft ($2,400). Walk-in rooms include furniture, lighting, signage and collision footprints; locations are subject to existing scenery clearance checks.
