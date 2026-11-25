@@ -1,5 +1,17 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v2.8 — HOMESTEAD
+
+- Three fictional purchasable properties: Harbour Studio ($550), Garden Apartment ($1,200), and Solara Loft ($2,400). Walk-in rooms include furniture, lighting, signage and collision footprints; locations are subject to existing scenery clearance checks.
+- Press F near a home, confirm the in-game purchase, and retain shared ownership in local and account saves. HUD ownership count and gold/green minimap markers distinguish available and owned homes.
+- Residents now alternate between resting, walking and browsing on staggered game-time schedules, retaining existing sidewalk routes and distance-based rendering.
+- Chapter briefings display Jawson and Luxie's dialogue as separate animated speaker cards, respecting reduced-motion preferences.
+- Cosmetic damped vehicle pitch and roll replace the previous interpolation; the driving and collision model remains unchanged.
+- 3,004 assertions passed in the strict adapted regression environment.
+
+**Scope:** No new campaign mission stages, full physical suspension, separate NPC destination pathfinding, or complete interior camera system. Actual property placement, interactive browser visuals, account persistence and FPS remain unverified.
+
+
 ## v2.7 — AVENUES
 
 - 52 curved secondary lanes replace straight alley strips within the existing reserved corridors. The minimap follows their new curves and tree placement avoids the reserved envelopes.
