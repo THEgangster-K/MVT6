@@ -71,7 +71,7 @@ for(const match of matches[1][1].matchAll(/\$\('([^']+)'\)/g)){
  assert.ok(ids.includes(match[1])||builtAtRuntime.has(match[1]),'Missing UI element: '+match[1]);
 }
 const coreSource=read('game-core.js').replace(/^export /gm,'')+
- '\n;globalThis.core={movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction,arcadeCarContact,secondaryLane,vehicleProfile,homeCatalog,purchaseHome,residentRoutine,visualSpring,showroomCatalog,purchaseShowroom,furnishingCatalog,purchaseFurnishing,cityWeather,horizonTrail,trailPlacement,completeTrailStop};';
+ '\n;globalThis.core={movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction,arcadeCarContact,secondaryLane,vehicleProfile,homeCatalog,purchaseHome,residentRoutine,visualSpring,showroomCatalog,purchaseShowroom,furnishingCatalog,purchaseFurnishing,cityWeather,horizonTrail,trailPlacement,completeTrailStop,postcardJobs,completePostcard};';
 const context={Math};
 vm.runInNewContext(coreSource,context,{filename:'game-core.js'});
 const core=context.core;
@@ -105,7 +105,23 @@ assert.ok(html.includes('const nx=carPos.x+slide.dx,nz=carPos.z+slide.dz'),'New 
 assert.ok(html.includes('clearsStreet(x,z,w,h,d')===false,'Street guard uses the horizontal dimensions only');
 assert.ok(html.includes('clearsStreet(x,z,w,d,BLOCK,ROAD)'),'Street prop footprint guard is connected');
 assert.ok(html.includes('detailBatch(palmFronds,palmGeometry()'),'Original curved foliage is GPU-instanced');
-assert.ok(html.includes('HORIZON · V3.0'),'Visible release marker');
+assert.ok(html.includes('POSTCARDS · V3.1'),'Visible release marker');
+const cover=read('models/solara-cover.svg');
+assert.ok(cover.startsWith('<svg xmlns="http://www.w3.org/2000/svg"'),'Original cover asset');
+assert.equal((cover.match(/<clipPath id="clip\d+"/g)||[]).length,8,'Eight cover panels');
+for(const label of ['JAWSON','LUXIE','WEST HAVEN','SUNSET COUPE','SOLARA NIGHTS','THE WATERFRONT','SOLARA CUSTOMS','A NEW HORIZON'])assert.ok(cover.includes('>'+label+'</text>'),'Original cover caption '+label);
+assert.ok(!/<script|<image|https?:\/\/(?!www.w3.org)/i.test(cover),'Cover is self-contained artwork');
+assert.ok(html.includes('coverArt bootCover')&&html.includes('coverArt menuCover'),'Cover in title and menu');
+assert.ok(read('server.js').includes("relative!==path.join('models','solara-cover.svg')"),'Explicit safe cover route');
+assert.ok(read('server.js').includes("'.svg':'image/svg+xml'"),'SVG response type');
+assert.equal(core.postcardJobs.length,4,'Four personal activities');
+let personal={money:0,postcardVisits:[]};
+for(const j of core.postcardJobs){const result=core.completePostcard(personal,j.lead,j.site);assert.ok(result.ok,'Valid character activity');assert.equal(result.money,personal.money+j.reward);personal={money:result.money,postcardVisits:result.postcardVisits};assert.ok(!core.completePostcard(personal,j.lead,j.site).ok,'No repeated payout');}
+assert.equal(personal.money,480);
+assert.ok(!core.completePostcard({money:0,postcardVisits:[]},'jawson','plaza').ok,'Character-specific activity');
+assert.ok(html.includes('home.roof.visible=home!==insideHome'),'Roof cutaway when inside');
+assert.ok(read('server.js').includes('postcardVisits:Array.isArray'),'Independent progression persists');
+
 assert.equal(core.horizonTrail.length,5,'Five authored story stops');
 let trailProgress={money:0,trailVisited:[]};
 assert.ok(!core.completeTrailStop(trailProgress,'south').ok,'Cannot skip trail order');

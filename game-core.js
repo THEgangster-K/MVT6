@@ -249,3 +249,16 @@ export function completeTrailStop(progress,id,available=horizonTrail.map(s=>s.id
  if(!next||next.id!==id||!Number.isFinite(progress.money))return {ok:false,reason:'Follow the next story marker'};
  return {ok:true,money:progress.money+next.reward,trailVisited:[...completed,id]};
 }
+
+export const postcardJobs=[
+ {lead:'jawson',site:'haven',name:'Harbour Sketch',line:'The harbour would look great in the workshop. I will sketch the old pier.',reward:90},
+ {lead:'jawson',site:'east',name:'Workshop Sign',line:'A new sign for Nico: made right here in Solara.',reward:140},
+ {lead:'luxie',site:'plaza',name:'Community Portrait',line:'I want to record the voices of the people who keep this plaza alive.',reward:100},
+ {lead:'luxie',site:'north',name:'Neighbourhood Postcards',line:'These postcards will help share our exhibition with the city.',reward:150}
+];
+export function completePostcard(progress,lead,site){
+ const job=postcardJobs.find(p=>p.lead===lead&&p.site===site);
+ const id=lead+':'+site,visits=Array.isArray(progress?.postcardVisits)?progress.postcardVisits:[];
+ if(!job||visits.includes(id)||!Number.isFinite(progress.money))return {ok:false};
+ return {ok:true,money:progress.money+job.reward,postcardVisits:[...visits,id]};
+}
