@@ -1,5 +1,16 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v2.5 — CROSSWINDS
+
+- Jawson is the playable lead and Luxie is the recurring co-lead and story contact. Eight chapter briefings and completion lines follow their original workshop and harbour mystery. The opening introduces both characters with dedicated shots.
+- The original articulated player asset now uses its own seated and standing joint poses instead of intentionally swapping to the old model during the prologue. The procedural fallback remains available if the asset fails to load.
+- Palm fronds and broadleaf tree canopies react to nearby movement with a brief recoverable rattle, using the existing instanced geometry. No full structural destruction simulation.
+- Existing mission stages, rewards, save format, road grid, graphics profiles and prior releases are preserved.
+- 1,778 assertions passed in the strict adapted test environment, including model joint references, pose interpolation, story dialogue and foliage matrix restoration.
+
+**Scope:** Luxie is an NPC co-lead, not a second playable character. The existing mission mechanics remain; browser visual quality and FPS are not measured. No violent passenger-ejection animation, professional vehicle assets or new road network included.
+
+
 ## v2.4 — STREETSCAPE
 
 - Original jointed seated characters in civilian traffic, police vehicles and the player's car, with facial details, hair, clothing, hands and footwear.

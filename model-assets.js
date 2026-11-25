@@ -1,16 +1,33 @@
+
+export function applyStoryPose(model,joints,baseY,amount){
+ const a=Math.max(0,Math.min(1,amount));
+ model.position.y=baseY+.64*a;
+ const {pelvis,spine,legs,knees,arms,elbows}=joints;
+ pelvis.position.y=1.25-.63*a;spine.rotation.x=-.14*a;
+ for(let i=0;i<2;i++){
+  legs[i].rotation.x=-1.48*a;knees[i].rotation.x=1.42*a;
+  arms[i].rotation.x=-.4*a;elbows[i].rotation.x=-.32*a;
+ }
+}
 // Optional original GLB/GLTF player character pipeline.
 // A missing, malformed or incompatible model never prevents the game from booting.
 // Add files under /models and opt in via /models/manifest.json.
 export function createPlayerModelSystem({THREE, root, fallbackChildren, onStatus=()=>{}}) {
   let mixer=null, model=null, actions={}, activeAction=null, loaded=false,showing=false;
   const original=fallbackChildren.slice();
-  let lastState='idle';
+  let lastState='idle',poseJoints=null,posing=false,baseY=0;
   function status(message) { onStatus(message); }
-  function update(dt,{walking=0,running=0,jumping=false,enabled=true}={}) {
+  function update(dt,{walking=0,running=0,jumping=false,enabled=true,seatAmount=null}={}) {
     if(!loaded || !mixer)return;
-    // Keep the original character for story seating, standing, and other special poses.
+    // The same loaded hero is used for the seated-to-standing story pose and ordinary movement.
     if(enabled!==showing){showing=enabled;model.visible=enabled;for(const child of original)child.visible=!enabled;}
     if(!enabled)return;
+    if(seatAmount!==null&&poseJoints){
+      if(!posing){mixer.stopAllAction();activeAction=null;posing=true}
+      applyStoryPose(model,poseJoints,baseY,seatAmount);
+      lastState='seated';return;
+    }
+    if(posing){posing=false;model.position.y=baseY;poseJoints.pelvis.position.y=1.25;poseJoints.spine.rotation.set(0,0,0);for(const j of [...poseJoints.legs,...poseJoints.knees,...poseJoints.arms,...poseJoints.elbows])j.rotation.set(0,0,0);activeAction=null}
     const next=jumping&&actions.jump?'jump':running>.55&&actions.run?'run':walking>.12&&actions.walk?'walk':'idle';
     const clip=actions[next]||actions.idle;
     if(clip && clip!==activeAction){
@@ -48,6 +65,10 @@ export function createPlayerModelSystem({THREE, root, fallbackChildren, onStatus
       asset.scale.multiplyScalar(scale);
       asset.position.set(-center.x*scale,-bounds.min.y*scale,-center.z*scale);
       asset.traverse(node=>{if(node.isMesh){node.frustumCulled=false;node.castShadow=true}});
+      const find=name=>asset.getObjectByName(name);
+      const joints={pelvis:find('Pelvis'),spine:find('Spine'),legs:[find('LeftHip'),find('RightHip')],knees:[find('LeftKnee'),find('RightKnee')],arms:[find('LeftShoulder'),find('RightShoulder')],elbows:[find('LeftElbow'),find('RightElbow')]};
+      poseJoints=[joints.pelvis,joints.spine,...joints.legs,...joints.knees,...joints.arms,...joints.elbows].every(Boolean)?joints:null;
+      baseY=asset.position.y;
       const nextMixer=new THREE.AnimationMixer(asset);
       const nextActions={};
       for(const [key,clip] of Object.entries(clips))nextActions[key]=nextMixer.clipAction(clip);
@@ -60,7 +81,7 @@ export function createPlayerModelSystem({THREE, root, fallbackChildren, onStatus
       // Restore the original procedural model if loading or validation fails.
       if(model){root.remove(model);model=null}
       for(const child of original)child.visible=true;
-      mixer=null;loaded=false;showing=false;actions={};activeAction=null;
+      mixer=null;loaded=false;showing=false;actions={};activeAction=null;poseJoints=null;posing=false;
       console.warn('MVT6 character model fallback:',String(err?.message||err));
       status('Using built-in character');
     }

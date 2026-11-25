@@ -139,7 +139,7 @@ function streetPoint(i){
  return horizontal?{x:travel,z:road+offset,axis:'x'}:{x:road+offset,z:travel,axis:'z'};
 }
 // Named contact for story jobs, stays by the start-of-game sidewalk.
-const fixer=human(29,12.5,-18);fixer.name='Rae';fixer.role='fixer';fixer.root.rotation.y=Math.PI/2;
+const fixer=human(29,12.5,-18);fixer.name='Luxie';fixer.role='fixer';fixer.root.rotation.y=Math.PI/2;
 // Walkers follow the sidewalk axis; public spaces attract small local groups.
 for(let i=0;i<48;i++){
  let p=i<18?{x:i%2===0?14:-14,z:-175+i*19,axis:'z'}:streetPoint(i+12);
@@ -248,7 +248,7 @@ function update(dt,now){
  }
  if(!isPlaying()){pop.style.display='none';dialog.style.display='none';return}
  const n=nearest();
- pop.style.display=n?'block':'none';if(n)pop.textContent=n.role==='fixer'?'F  ·  Talk to Rae (street jobs)':'F  ·  Talk to '+n.name;
+ pop.style.display=n?'block':'none';if(n)pop.textContent=n.role==='fixer'?'F  ·  Talk to Luxie (story chapter)':'F  ·  Talk to '+n.name;
  if(!n||now>dialogUntil)dialog.style.display='none';
 }
 
