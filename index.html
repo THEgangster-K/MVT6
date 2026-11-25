@@ -408,7 +408,7 @@ body.bootPlaying #menu{visibility:hidden!important}
 <body>
 <div id="game"></div>
 <div id="hud">
- <div id="top"><div class="pill"><small>PLAYING AS · V</small><span id="activeLeadName">JAWSON</span></div><div class="pill"><small>HOMES</small><span id="homeCount">0 / 3</span></div><div class="pill"><small>CASH</small><span class="money" id="money">$0</span></div><div class="pill"><small>WANTED</small><span class="stars" id="heat">☆☆☆☆☆</span></div><div class="pill"><small>DISTRICT</small><span id="district">DOWNTOWN</span></div><div class="pill"><small>STREET STATUS</small><span id="streetRank">UNKNOWN</span></div></div>
+ <div id="top"><div class="pill"><small>PLAYING AS · V</small><span id="activeLeadName">JAWSON</span></div><div class="pill"><small>WEATHER</small><span id="weatherLabel">CLEAR</span></div><div class="pill"><small>HOMES</small><span id="homeCount">0 / 3</span></div><div class="pill"><small>CASH</small><span class="money" id="money">$0</span></div><div class="pill"><small>WANTED</small><span class="stars" id="heat">☆☆☆☆☆</span></div><div class="pill"><small>DISTRICT</small><span id="district">DOWNTOWN</span></div><div class="pill"><small>STREET STATUS</small><span id="streetRank">UNKNOWN</span></div></div>
  <div id="fps"></div>
  <div id="objective"><b>CURRENT OBJECTIVE</b><strong id="missionTitle">—</strong><p id="missionText">—</p></div>
  <div id="notice"></div><div id="pickupPrompt">F · COLLECT GEAR</div><div id="equippedStatus">✋ HANDS</div><div id="speed">0 <small>KM/H</small></div>
@@ -1493,6 +1493,8 @@ function interactHome(x,z){
  if(!confirm('Buy '+home.name+' for $'+home.price+' in game cash?'))return true;
  save.money=result.money;save.homes=result.homes;refreshHomeThemes();persist();updateHUD();setNotice('PROPERTY PURCHASED · '+home.name);return true;
 }
+// Showroom sign at existing Customs frontage; no new footprint on the road.
+const showroomSign=mesh(new THREE.PlaneGeometry(5.4,.75),new THREE.MeshBasicMaterial({map:textTexture('SOLARA SHOWROOM','#254050','#e4e9df'),side:THREE.DoubleSide}));showroomSign.position.set(196,3.15,-12.5);showroomSign.rotation.y=Math.PI/2;
 const person=new THREE.Group();scene.add(person);
 const walkingShadow=mesh(new THREE.PlaneGeometry(2.2,2.4),contactMaterial);walkingShadow.rotation.x=-Math.PI/2;walkingShadow.position.y=.12;
 const skin=mat('#d79a72'),jacket=mat('#1c4f72'),jeans=mat('#273548');
@@ -2161,6 +2163,7 @@ function tagWall(){
 }
 function interact(){
  if(gameMode!=='play')return;
+ if(!inCar&&!mission&&!taxiJob&&Math.hypot(playerPos.x-196,playerPos.z+12.5)<5){openLifestyle('cars');return;}
  if(collectEquipment())return;
  if(interactMission()){gestureTime=.65;return}
  if(inCar&&nearCustoms()){openGarage();return}
@@ -3039,6 +3042,7 @@ function drawMap(){
  for(const home of homes)dot(home.x,home.z,(save.homes||[]).includes(home.id)?'#7de0b4':'#edc27e',7,true);
  dot(cityLife.fixer.root.position.x,cityLife.fixer.root.position.z,'#c3e0a4',5);
  dot(184,0,'#d9b378',5);
+ dot(196,-12.5,'#91d5ee',6,true);
  if(taxiJob){const target=taxiObjective();if(target)dot(target.x,target.z,'#76deed',9,true)}
  if(mission){const target=missionObjective();if(target){
    ctx.strokeStyle='#ffdf8c';ctx.lineWidth=2.9;ctx.setLineDash([5,8]);ctx.beginPath();
@@ -3169,6 +3173,31 @@ const luxieFallback=makeOccupant(2,false);luxieFallback.group.scale.setScalar(1.
 const modelAssets=createPlayerModelSystem({THREE,root:person,fallbackChildren:[]});
 const luxieAssets=createPlayerModelSystem({THREE,root:person,fallbackChildren:[],manifestKey:'luxie'});
 modelAssets.load();luxieAssets.load();cityLife.setPartner(activeLead());
+// One camera-local line-segment batch; purely visual weather does not change controls.
+const rainCount=160,rainPositions=new Float32Array(rainCount*6),rainDrops=[];
+for(let i=0;i<rainCount;i++)rainDrops.push({x:rnd(i*3+870)*38-19,y:rnd(i*3+871)*23,z:rnd(i*3+872)*38-19});
+const rainGeo=new THREE.BufferGeometry();rainGeo.setAttribute('position',new THREE.BufferAttribute(rainPositions,3));
+const rainMesh=new THREE.LineSegments(rainGeo,new THREE.LineBasicMaterial({color:0xb9d1dd,transparent:true,opacity:.38,depthWrite:false}));rainMesh.frustumCulled=false;rainMesh.visible=false;scene.add(rainMesh);
+let lastWeather='',lastWeatherAtmosphere=-1;
+const reducedWeather=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function updateWeather(dt){
+ const playing=gameMode==='play',kind=playing?cityWeather(clockTime):'clear';
+ if(kind!==lastWeather||atmosphereIndex!==lastWeatherAtmosphere){
+  lastWeather=kind;lastWeatherAtmosphere=atmosphereIndex;
+  const mode=atmosphereModes[atmosphereIndex];
+  scene.fog.color.set(kind==='clear'?mode.fog:atmosphereIndex===2?'#476177':'#9aaab5');
+  scene.fog.density=kind==='rain'?.0033:kind==='overcast'?.0025:.0019;
+  sun.intensity=mode.intensity*(kind==='rain'?.53:kind==='overcast'?.76:1);
+  materials.asphalt.roughness=kind==='rain'?.48:.91;
+  $('weatherLabel').textContent=kind.toUpperCase();
+ }
+ rainMesh.visible=playing&&kind==='rain'&&!reducedWeather;
+ if(!rainMesh.visible)return;
+ const count=graphicsPreset==='performance'?70:rainCount;rainGeo.setDrawRange(0,count*2);
+ rainMesh.position.set(camera.position.x,Math.max(0,camera.position.y-8),camera.position.z);
+ for(let i=0;i<count;i++){const p=rainDrops[i];p.y-=dt*19;if(p.y<0)p.y+=23;const a=i*6;rainPositions[a]=p.x;rainPositions[a+1]=p.y;rainPositions[a+2]=p.z;rainPositions[a+3]=p.x+.16;rainPositions[a+4]=p.y+.72;rainPositions[a+5]=p.z+.05;}
+ rainGeo.attributes.position.needsUpdate=true;
+}
 let firstFrameReady=false,lastWaveUpdate=0;let last=performance.now(),fpsCounter=0,fpsWindowStart=last,lastShopUpdate=0,lastHudUpdate=0,lastMapUpdate=0;function frame(now){requestAnimationFrame(frame);if(now-lastShopUpdate>800){lastShopUpdate=now;touchJump.style.display=gameMode==='play'&&!inCar&&matchMedia('(pointer:coarse)').matches?'block':'none';const gearNear=gameMode==='play'&&!inCar?nearestEquipment():null;$('pickupPrompt').style.display=gearNear?'block':'none';if(gearNear)$('pickupPrompt').textContent='F · COLLECT '+gadgetNames[gearNear.id];carHint.style.display=(gameMode==='play'&&!inCar&&nearestTrafficCar())?'block':'none';const px=inCar?carPos.x:playerPos.x,pz=inCar?carPos.z:playerPos.z;
  // Keep the hero car richly detailed; use squared-distance checks for nearby traffic/police.
  if(playerCar.userData.detail)playerCar.userData.detail.visible=true;
@@ -3194,7 +3223,7 @@ luxieFallback.group.visible=showLuxie&&!luxieAssets.loaded;
 if(luxieFallback.group.visible){const gait=Math.sin(gaitPhase)*walkBlend*.6;for(let i=0;i<2;i++){const v=i===0?gait:-gait;luxieFallback.legs[i].rotation.x=v;luxieFallback.arms[i].rotation.x=-v*.7;luxieFallback.knees[i].rotation.x=Math.max(0,-v)*.7;}}
 if(now-lastWaveUpdate>80){const sceneryDt=Math.min(.15,(now-lastWaveUpdate)/1000);lastWaveUpdate=now;waveMap.offset.x=(now*.000007)%1;waveMap.offset.y=(now*.000004)%1;if(animatedShore)animatedShore.position.x=Math.sin(now*.0006)*.7;updateFoliage(sceneryDt,inCar?carPos.x:playerPos.x,inCar?carPos.z:playerPos.z);}
 heroOccupant.group.visible=inCar&&playerCar.visible&&activeLead()==='jawson';luxieOccupant.group.visible=inCar&&playerCar.visible&&activeLead()==='luxie';walkingShadow.visible=person.visible&&!inCar;walkingShadow.position.x=person.position.x;walkingShadow.position.z=person.position.z;
-updateGameAudio(now);network.frame(now,camera);renderer.render(scene,camera);if(!firstFrameReady){firstFrameReady=true;if(window.__mvtLoaded)window.__mvtLoaded()}fpsCounter++;
+updateWeather(dt);updateGameAudio(now);network.frame(now,camera);renderer.render(scene,camera);if(!firstFrameReady){firstFrameReady=true;if(window.__mvtLoaded)window.__mvtLoaded()}fpsCounter++;
 // Measure wall-clock frame throughput, not the clamped physics timestep.
 // AUTO uses hysteresis, a cooldown, and small resolution steps to avoid oscillation.
 if(now-fpsWindowStart>=1500){
