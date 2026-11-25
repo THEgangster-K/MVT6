@@ -105,7 +105,7 @@ assert.ok(html.includes('const nx=carPos.x+slide.dx,nz=carPos.z+slide.dz'),'New 
 assert.ok(html.includes('clearsStreet(x,z,w,h,d')===false,'Street guard uses the horizontal dimensions only');
 assert.ok(html.includes('clearsStreet(x,z,w,d,BLOCK,ROAD)'),'Street prop footprint guard is connected');
 assert.ok(html.includes('detailBatch(palmFronds,palmGeometry()'),'Original curved foliage is GPU-instanced');
-assert.ok(html.includes('CROSSWINDS · V2.5'),'Visible release marker');
+assert.ok(html.includes('DUAL PATHS · V2.6'),'Visible release marker');
 assert.ok(html.includes('heroOccupant.group.visible=inCar&&playerCar.visible'),'Hero seated character visible when driving');
 assert.ok(html.includes('const driverRig=attachOccupant(car,i)'),'Traffic uses detailed occupant');
 assert.ok(html.includes('attachOccupant(c,i+8)'),'Police vehicles use detailed occupant');
@@ -261,7 +261,28 @@ for(const anim of hero.animations)for(const ch of anim.channels){assert.ok(ch.ta
 
 assert.ok(html.includes("import {createPlayerModelSystem} from './model-assets.js';"),'Character pipeline is imported');
 assert.ok(html.includes('modelAssets.load()'),'Optional character loading begins');
-assert.ok(html.includes("modelAssets.update(dt,{walking:walkBlend,running:runBlend,jumping,enabled:person.visible&&!inCar,seatAmount:gameMode==='intro'||gameMode==='standing'?storySeatAmount:null})"),'Same asset used for story poses');
+assert.ok(html.includes("modelAssets.update(dt,{...motion,enabled:showPerson&&!showLuxie})")&&html.includes("luxieAssets.update(dt,{...motion,enabled:showPerson&&showLuxie})"),'Separate active animated character assets');
+assert.equal(modelManifest.luxie,'models/solara-luxie.gltf','Luxie asset registered');
+const luxieAsset=JSON.parse(read(modelManifest.luxie));
+assert.equal(luxieAsset.asset.version,'2.0','Luxie glTF version');
+assert.ok(luxieAsset.animations.length===hero.animations.length,'Luxie shares compatible animation clips');
+assert.ok(JSON.stringify(luxieAsset.materials)!==JSON.stringify(hero.materials),'Distinct clothing palette');
+assert.ok(luxieAsset.nodes.some(n=>n.name==='Luxie hair silhouette'),'Distinct hair');
+assert.ok(html.includes("luxieOccupant.group.visible=inCar&&playerCar.visible&&activeLead()==='luxie'"),'Matching driver model');
+assert.ok(cityLifeSource.includes('setPartner(activeLead)'),'Inactive protagonist contact can switch');
+const switchStart=html.indexOf('function switchLead(){'),switchEnd=html.indexOf("$('leadSwitch').onclick",switchStart);
+const switchCtx={save:{lead:'jawson'},gameMode:'play',inCar:false,jumping:false,mission:null,taxiJob:null,phoneOpen:false,wheelOpen:false,tutorialOpen:false,keys:{w:true},walkBlend:1,runBlend:1,cityLife:{setPartner:lead=>switchCtx.partner=lead},persist:()=>switchCtx.saved=true,updateHUD:()=>{},setNotice:()=>{},activeLead:()=>switchCtx.save.lead,leadName:()=>switchCtx.save.lead};
+vm.runInNewContext(html.slice(switchStart,switchEnd)+'\nglobalThis.switchTest=switchLead',switchCtx);
+assert.ok(switchCtx.switchTest(),'Character switching available on foot');
+assert.equal(switchCtx.save.lead,'luxie','Switch to Luxie');
+assert.equal(switchCtx.partner,'luxie','Partner updated');
+assert.ok(switchCtx.saved&&!switchCtx.keys.w,'Save and clear movement');
+switchCtx.mission={};assert.ok(!switchCtx.switchTest(),'Switch blocked during job');assert.equal(switchCtx.save.lead,'luxie','Active lead unchanged');
+switchCtx.mission=null;switchCtx.inCar=true;assert.ok(!switchCtx.switchTest(),'Switch blocked while driving');
+switchCtx.inCar=false;assert.ok(switchCtx.switchTest(),'Switch back to Jawson');assert.equal(switchCtx.save.lead,'jawson');
+assert.ok(read('server.js').includes("lead:v?.lead==='luxie'?'luxie':'jawson'"),'Server retains valid lead');
+assert.ok(read('server.js').includes('leadJobs:{jawson:limit'),'Server retains character chapter counts');
+
 assert.ok(cityLifeSource.includes("fixer.name='Luxie'"),'Luxie is recurring named NPC');
 const storyStart=html.indexOf('const chapterBeats=['),storyEnd=html.indexOf('const chapterScreen=',storyStart);
 const storySandbox={};vm.runInNewContext(html.slice(storyStart,storyEnd)+'\nglobalThis.storyTest={chapterBeats,chapterAftermath}',storySandbox);
