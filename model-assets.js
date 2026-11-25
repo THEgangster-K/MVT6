@@ -12,7 +12,7 @@ export function applyStoryPose(model,joints,baseY,amount){
 // Optional original GLB/GLTF player character pipeline.
 // A missing, malformed or incompatible model never prevents the game from booting.
 // Add files under /models and opt in via /models/manifest.json.
-export function createPlayerModelSystem({THREE, root, fallbackChildren, onStatus=()=>{}}) {
+export function createPlayerModelSystem({THREE, root, fallbackChildren, manifestKey='player', onStatus=()=>{}}) {
   let mixer=null, model=null, actions={}, activeAction=null, loaded=false,showing=false;
   const original=fallbackChildren.slice();
   let lastState='idle',poseJoints=null,posing=false,baseY=0;
@@ -43,7 +43,7 @@ export function createPlayerModelSystem({THREE, root, fallbackChildren, onStatus
       const response=await fetch('./models/manifest.json',{cache:'no-cache'});
       if(!response.ok)return;
       const manifest=await response.json();
-      const src=manifest?.player;
+      const src=manifest?.[manifestKey];
       if(typeof src!=='string'||!/^models\/[a-zA-Z0-9_./-]+\.(glb|gltf)$/i.test(src)||src.includes('..'))return;
       // Import the Three.js loader only if a real local asset is configured.
       const {GLTFLoader}=await import('https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/loaders/GLTFLoader.js');
