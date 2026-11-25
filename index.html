@@ -403,11 +403,11 @@ body.bootPlaying #menu{visibility:hidden!important}
 <body>
 <div id="game"></div>
 <div id="hud">
- <div id="top"><div class="pill"><small>CASH</small><span class="money" id="money">$0</span></div><div class="pill"><small>WANTED</small><span class="stars" id="heat">☆☆☆☆☆</span></div><div class="pill"><small>DISTRICT</small><span id="district">DOWNTOWN</span></div><div class="pill"><small>STREET STATUS</small><span id="streetRank">UNKNOWN</span></div></div>
+ <div id="top"><div class="pill"><small>PLAYING AS · V</small><span id="activeLeadName">JAWSON</span></div><div class="pill"><small>CASH</small><span class="money" id="money">$0</span></div><div class="pill"><small>WANTED</small><span class="stars" id="heat">☆☆☆☆☆</span></div><div class="pill"><small>DISTRICT</small><span id="district">DOWNTOWN</span></div><div class="pill"><small>STREET STATUS</small><span id="streetRank">UNKNOWN</span></div></div>
  <div id="fps"></div>
  <div id="objective"><b>CURRENT OBJECTIVE</b><strong id="missionTitle">—</strong><p id="missionText">—</p></div>
  <div id="notice"></div><div id="pickupPrompt">F · COLLECT GEAR</div><div id="equippedStatus">✋ HANDS</div><div id="speed">0 <small>KM/H</small></div>
- <div id="help"><span>WASD · MOVE</span><span>F · INTERACT</span><button id="helpTutorial">? TUTORIAL</button></div>
+ <div id="help"><span>WASD · MOVE</span><span>V · SWITCH LEAD</span><span>F · INTERACT</span><button id="helpTutorial">? TUTORIAL</button></div>
  <button id="wheelToggle" title="Open gadget wheel (Q)">◉ GADGETS · Q</button>
 <div id="gadgetWheel" aria-label="Gadget selection">
  <div id="gadgetRing">
@@ -463,12 +463,12 @@ body.bootPlaying #menu{visibility:hidden!important}
 <div class="loadingTrack"><div id="loadingFill"></div></div><p id="bootError">Jawson &amp; Luxie • Eight story chapters</p><div class="artDots"><i></i><i></i><i></i></div><div class="bootFeatureStrip"><span>NO MONEY</span><span>NO CONNECTIONS</span><span>EVERYTHING TO BUILD</span></div>
 <button id="bootRetry" style="display:none" onclick="location.reload()">RETRY</button></div></div>
 <div id="menu" class="overlay movieMenu"><div class="menuCity"></div><div class="menuContent">
-<div class="kicker">SOLARA CITY &nbsp; / &nbsp; CROSSWINDS</div><h1 class="movieLogo releaseMark" aria-label="MVT 6"><span class="letters">MVT</span><i class="slash" aria-hidden="true"></i><span class="digit">6</span></h1>
+<div class="kicker">SOLARA CITY &nbsp; / &nbsp; DUAL PATHS</div><h1 class="movieLogo releaseMark" aria-label="MVT 6"><span class="letters">MVT</span><i class="slash" aria-hidden="true"></i><span class="digit">6</span></h1>
 <div class="movieSubtitle">MOTOR VEHICLE THEFT</div><h2>Every street has a story.</h2>
 <p>Explore Solara City. Meet local contacts, take on jobs, customise your car and build your own story.</p>
 <div class="menuActions"><button id="play">PLAY STORY</button><button id="resetSave" class="secondary">START OVER</button></div>
 <div class="movieControls">WASD · MOVE &nbsp;&nbsp; CLICK · MOUSE LOOK &nbsp;&nbsp; F · INTERACT</div></div>
-<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">CROSSWINDS · V2.5</div></div></div>
+<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">DUAL PATHS · V2.6</div></div></div>
 <div id="storyIntro" aria-live="polite" style="display:none"><div id="introShade"></div><div id="introContent"><div id="introChapter">SOLARA CITY · CHAPTER ONE</div><div id="introCue">AN ORIGINAL MVT 6 FILM</div><h2 id="introTitle">START WITH NOTHING.</h2><p id="introCopy">New city. Empty pockets. Every choice counts.</p></div><button id="introSkip">SKIP INTRO →</button></div>
 <div id="paused" class="overlay"><div class="panel"><div class="eyebrow">SOLARA CITY</div><h2>PAUSED</h2><p>Explore at your own pace. Your cash, upgrades and completed contracts are automatically saved.</p><button id="resume">RESUME</button><button id="pauseMap" class="secondary">MAP & MISSIONS</button>
 <div class="qualitySelector"><label for="graphicsQuality">GRAPHICS QUALITY</label><select id="graphicsQuality">
@@ -476,7 +476,7 @@ body.bootPlaying #menu{visibility:hidden!important}
 <option value="performance">PERFORMANCE · BEST FPS</option>
 <option value="balanced">BALANCED · DEFAULT</option>
 <option value="cinematic">CINEMATIC · SHARPER TEXTURES</option>
-</select></div><button id="soundToggle" class="secondary" type="button">SOUND · ON</button><button id="toMenu" class="secondary">MAIN MENU</button></div></div>
+</select></div><button id="leadSwitch" class="secondary" type="button">SWITCH CHARACTER · V</button><button id="soundToggle" class="secondary" type="button">SOUND · ON</button><button id="toMenu" class="secondary">MAIN MENU</button></div></div>
 <div id="arrestScene">
  <div id="arrestFlash"></div>
  <div class="arrestCinematic"><span>POLICE DEPARTMENT · SOLARA CITY</span><h2>YOU ARE UNDER ARREST</h2><p>Patrol officers have detained you. You will be processed at Solara Central.</p></div>
@@ -974,7 +974,7 @@ function interactShop(x,z){
  let chosen=null,dist=5.2;
  for(const shop of shopFronts){const d=Math.hypot(shop.x-x,shop.z-z);if(d<dist){dist=d;chosen=shop}}
  if(!chosen)return false;
- if(!chosen.visited){chosen.visited=true;save.money+=35;persist();setNotice(chosen.name+': Thanks for helping with the storefront. +$35');updateHUD()}
+ if(!chosen.visited){chosen.visited=true;const pay=activeLead()==='luxie'?45:35;save.money+=pay;persist();setNotice(chosen.name+': Thanks for helping with the storefront. +$'+pay);updateHUD()}
  else setNotice(chosen.name+' is open · Visit other shops and talk to locals for more opportunities.');
  gestureTime=.7;return true;
 }
@@ -1367,12 +1367,15 @@ wheelRim.rotation.x=Math.PI/2+.3;wheelRim.position.set(-.62,2.05,.37);
  if(police){box(2,.22,.55,0,2.7,-.4,mat('#e8f0f9'),group);box(.75,.25,.55,-.54,2.86,-.4,mat('#ec394a'),group);box(.75,.25,.55,.54,2.86,-.4,mat('#418bff'),group)}
  const contact=mesh(carContactGeometry,contactMaterial,group);contact.rotation.x=-Math.PI/2;contact.position.y=.095;
  return group}
-let save;const defaultSave=()=>({money:45,completed:0,speed:0,handling:0,nitro:0,lifeTier:0});try{save={...defaultSave(),...JSON.parse(localStorage.getItem('mvt6-save')||'{}')}}catch{save=defaultSave()}
+let save;const defaultSave=()=>({money:45,completed:0,speed:0,handling:0,nitro:0,lifeTier:0,lead:'jawson',leadJobs:{jawson:0,luxie:0}});try{save={...defaultSave(),...JSON.parse(localStorage.getItem('mvt6-save')||'{}')}}catch{save=defaultSave()}
+function activeLead(){return save.lead==='luxie'?'luxie':'jawson'}
+function leadName(){return activeLead()==='luxie'?'Luxie':'Jawson'}
 function persist(){try{localStorage.setItem('mvt6-save',JSON.stringify(save))}catch{};if(network)network.save(save)}
 // No freestanding fake wall: use the real shop building that bounds the sidewalk.
 // Spawn plaza is an intentionally open lot. The freestanding brick facade has been removed.
 const playerCar=makeCar('#e96e5d');
 const heroOccupant=attachOccupant(playerCar,1,true);heroOccupant.group.visible=false;
+const luxieOccupant=makeOccupant(2,true);luxieOccupant.group.position.copy(heroOccupant.group.position);playerCar.add(luxieOccupant.group);luxieOccupant.group.visible=false;
 // Parked cars are static scenery confined to marked parking bays, never in road lanes.
 const parkedVehicles=[];
 for(const district of neighborhoods.filter(p=>p.kind==='parking')){
@@ -1665,7 +1668,7 @@ function safeWalkingPosition(){
 
 function setNotice(t){$('notice').textContent=t;$('notice').style.opacity='1';clearTimeout(setNotice.timer);setNotice.timer=setTimeout(()=>$('notice').style.opacity='0',2800)}
 function getRank(){if(save.lifeTier>=4)return 'CITY LEGEND';if(save.lifeTier>=3)return 'HIGH SOCIETY';if(save.lifeTier>=2)return 'CREW LEADER';if(save.lifeTier>=1||save.completed>=2)return 'STREET RUNNER';return 'NEW TO THE STREETS'}
-function updateHUD(){ $('streetRank').textContent=getRank();$('money').textContent='$'+Math.floor(save.money).toLocaleString();$('heat').textContent='★'.repeat(Math.ceil(heat))+'☆'.repeat(5-Math.ceil(heat));$('speed').style.visibility=inCar?'visible':'hidden';$('speed').innerHTML=(inCar?Math.round(Math.abs(velocity)*3.6):0)+' <small>KM/H</small>'+(inCar?'<div class="vehicleConditionMini">'+Math.round(vehicleCondition)+'% CONDITION · '+(slideActive?'SLIDING · ':'')+'J HORN · L LIGHTS</div>':'');const p=inCar?carPos:playerPos;$('district').textContent=cityDistrict(p.x,p.z);if(mission){$('missionTitle').textContent=mission.title;$('missionText').textContent=({
+function updateHUD(){ $('activeLeadName').textContent=leadName().toUpperCase();$('streetRank').textContent=getRank();$('money').textContent='$'+Math.floor(save.money).toLocaleString();$('heat').textContent='★'.repeat(Math.ceil(heat))+'☆'.repeat(5-Math.ceil(heat));$('speed').style.visibility=inCar?'visible':'hidden';$('speed').innerHTML=(inCar?Math.round(Math.abs(velocity)*3.6):0)+' <small>KM/H</small>'+(inCar?'<div class="vehicleConditionMini">'+Math.round(vehicleCondition)+'% CONDITION · '+(slideActive?'SLIDING · ':'')+'J HORN · L LIGHTS</div>':'');const p=inCar?carPos:playerPos;$('district').textContent=cityDistrict(p.x,p.z);if(mission){$('missionTitle').textContent=mission.title;$('missionText').textContent=({
  pickup:'Find the package and press F to collect.',
  deliver:'Meet your contact and press F.',
  terminal:'Find the terminal and press F for the decoder puzzle.',
@@ -1675,7 +1678,7 @@ function updateHUD(){ $('streetRank').textContent=getRank();$('money').textConte
  escape:'Keep moving and lose the patrol.'
 }[mission.stage]||'Follow the next story objective.')+
  ' · '+Math.round(Math.hypot(p.x-missionObjective().x,p.z-missionObjective().z))+'m TO TARGET'+
- ' · '+Math.max(0,Math.ceil(missionTime))+'s'}else if(taxiJob){const o=taxiObjective();$('missionTitle').textContent='TAXI · '+(taxiJob.stage==='pickup'?'PICKUP':'DROP OFF');$('missionText').textContent='Stop at '+o.name+' · '+Math.round(Math.hypot(p.x-o.x,p.z-o.z))+'m · '+Math.ceil(taxiJob.time)+'s'}else{$('missionTitle').textContent='The city is yours';$('missionText').textContent='Talk to Luxie for story chapters or take a taxi fare in your phone.'}}
+ ' · '+Math.max(0,Math.ceil(missionTime))+'s'}else if(taxiJob){const o=taxiObjective();$('missionTitle').textContent='TAXI · '+(taxiJob.stage==='pickup'?'PICKUP':'DROP OFF');$('missionText').textContent='Stop at '+o.name+' · '+Math.round(Math.hypot(p.x-o.x,p.z-o.z))+'m · '+Math.ceil(taxiJob.time)+'s'}else{$('missionTitle').textContent='The city is yours';$('missionText').textContent='Talk to your partner for story chapters or take a taxi fare in your phone.'}}
 // Original crime-fiction campaign: Lost Solara, a city of rival crews and secret debts.
 // Jawson is playable; Luxie is the story's second lead.
 const chapterBeats=[
@@ -1746,7 +1749,7 @@ function offerMission(){
  gameMode='briefing';for(const k in keys)keys[k]=false;
  document.getElementById('briefingChapter').textContent='CHAPTER '+(n+1)+' · '+job.kind.toUpperCase();
  document.getElementById('briefingTitle').textContent=job.title.replace(/CHAPTER \d+ · /,'');
- document.getElementById('briefingDialogue').textContent=narrative[1]+' '+job.description;
+ document.getElementById('briefingDialogue').textContent=narrative[1]+' '+job.description+' · Playing as '+leadName()+'.';
  const tasks={
  courier:['Meet Luxie','Collect the package','Deliver it to the receiving contact'],
  vehicle:['Find a working vehicle','Drive to Solara Customs','Talk to Nico in the workshop'],
@@ -1897,8 +1900,8 @@ function startMission(){
 }
 function finishMission(){
  if(!mission)return;
- const wasLocked=save.completed<2;save.money+=mission.reward;save.completed++;missionCount=save.completed;persist();
- setNotice('CHAPTER COMPLETE · +$'+mission.reward+' · '+getRank()+' · '+chapterAftermath[Math.min(save.completed-1,chapterAftermath.length-1)]);
+ const wasLocked=save.completed<2;const lead=activeLead();const bonus=lead==='jawson'&&mission.kind==='courier'?Math.round(mission.reward*.1):0;save.money+=mission.reward+bonus;save.leadJobs={jawson:0,luxie:0,...save.leadJobs};save.leadJobs[lead]++;save.completed++;missionCount=save.completed;persist();
+ setNotice('CHAPTER COMPLETE · +$'+(mission.reward+bonus)+' · '+leadName().toUpperCase()+' · '+getRank()+' · '+chapterAftermath[Math.min(save.completed-1,chapterAftermath.length-1)]);
  mission=null;mapWaypoint=null;mapWaypointName='';parcelMesh.visible=false;courierMesh.visible=false;jobTerminal.visible=false;targetRing.visible=false;heat=Math.max(0,heat-.9);
  if(wasLocked&&save.completed===2){playerCar.visible=true;setTimeout(()=>setNotice('YOUR FIRST RIDE IS READY! Find your parked car and press E.'),700)}
 }
@@ -2058,7 +2061,7 @@ function interact(){
  if(Math.hypot(p.x-184,p.z)<16){setNotice('SOLARA CUSTOMS · Drive into the service bay, stop, and press F.');return}
  if(!inCar&&interactShop(p.x,p.z))return;
  if(cityLife.interact()){gestureTime=.65;return;}
- setNotice(mission?'Collect the parcel or speak to the receiving NPC.':'Talk to Luxie near the starting pavement to find work.');
+ setNotice(mission?'Collect the parcel or speak to the receiving NPC.':'Talk to your partner near the starting pavement to find work.');
 }
 function enterExit(){if(gameMode!=='play')return;if(inCar){if(Math.abs(velocity)>3){setNotice('Slow down before exiting');return}const exitOffsets=[[-4,0],[4,0],[0,-4],[0,4],[-3,-3],[3,3]];
  const exit=exitOffsets.find(([x,z])=>!collision(carPos.x+x,carPos.z+z,.45));
@@ -2075,7 +2078,7 @@ const introShots=[
 ];
 const introDuration=introShots.reduce((a,x)=>a+x.duration,0);
 function startIntro(){
- safeWalkingPosition();gameMode='intro';introTime=0;introStage=-1;
+ safeWalkingPosition();gameMode='intro';introTime=0;introStage=-1;cityLife.setPartner('jawson');
  $('menu').style.display='none';$('hud').style.display='none';$('storyIntro').style.display='block';
  person.visible=true;setSeatPose(save.completed===0?1:0);
  playerCar.visible=save.completed>=2||hasTakenVehicle;cinematicCamera(0);
@@ -2091,7 +2094,7 @@ function endIntro(){
  if(save.completed===0){
    gameMode='standing';standTimer=0;setSeatPose(1);
  }else{
-   gameMode='play';setSeatPose(0);
+   gameMode='play';setSeatPose(0);cityLife.setPartner(activeLead());
    setNotice('Welcome back to Solara City. Click to look around.');maybeTutorial();
  }
 }
@@ -2102,7 +2105,7 @@ function updateStanding(dt){
  camera.position.lerp(new THREE.Vector3(playerPos.x-4.5,4.3,playerPos.z-7.5),Math.min(1,dt*5));
  camera.lookAt(playerPos.x,1.6,playerPos.z);
  if(t>=1){
-   setSeatPose(0);gameMode='play';camYaw=0;
+   setSeatPose(0);gameMode='play';camYaw=0;cityLife.setPartner(activeLead());
    setNotice('You are free to explore. Talk to Luxie for a story job.');maybeTutorial();
  }
 }
@@ -2339,10 +2342,15 @@ if([' ','spacebar','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e
 if(on&&!e.repeat&&k==='q'){e.preventDefault();if(wheelOpen)closeGadgetWheel();else if(gameMode==='play')openGadgetWheel();return}
 if(k==='escape'&&on){if(gameMode==='briefing'){closeBriefing();return}if(tutorialOpen){closeTutorial();return}if(wheelOpen){closeGadgetWheel();return}if(phoneOpen){closePhone();return}}
 if(k==='p'&&on&&!e.repeat){if(phoneOpen)closePhone();else if(gameMode==='play')openPhone();return}
-if(gameMode!=='play'&&k!=='escape')return;keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(document.pointerLockElement)document.exitPointerLock();else if(gameMode==='play')pause();else if(gameMode==='pause')resume();}if((k===' '||k==='spacebar')&&!inCar)beginJump();if(k==='e')enterExit();if(k==='f')interact();if(k==='t')tagWall();if(k==='g')activateGadget();if(k==='j')drivingHorn();if(k==='l'&&inCar)setHeadlights(!headlightsOn);if(k==='n')setAtmosphere(atmosphereIndex+1);if(k==='c'){camMode=(camMode+1)%3;orbitOffset=0};if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;playerCar.position.copy(carPos);playerCar.rotation.y=angle;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
+if(gameMode!=='play'&&k!=='escape')return;keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(document.pointerLockElement)document.exitPointerLock();else if(gameMode==='play')pause();else if(gameMode==='pause')resume();}if((k===' '||k==='spacebar')&&!inCar)beginJump();if(k==='e')enterExit();if(k==='v')switchLead();if(k==='f')interact();if(k==='t')tagWall();if(k==='g')activateGadget();if(k==='j')drivingHorn();if(k==='l'&&inCar)setHeadlights(!headlightsOn);if(k==='n')setAtmosphere(atmosphereIndex+1);if(k==='c'){camMode=(camMode+1)%3;orbitOffset=0};if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;playerCar.position.copy(carPos);playerCar.rotation.y=angle;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
 addEventListener('keydown',e=>keyState(e,true));addEventListener('keyup',e=>keyState(e,false));addEventListener('blur',()=>{for(let k in keys)keys[k]=false});
+function switchLead(){
+ if(!['play','pause'].includes(gameMode)||inCar||jumping||mission||taxiJob||phoneOpen||wheelOpen||tutorialOpen){setNotice('Switch characters on foot between jobs.');return false;}
+ save.lead=activeLead()==='jawson'?'luxie':'jawson';persist();cityLife.setPartner(activeLead());walkBlend=0;runBlend=0;for(const k in keys)keys[k]=false;updateHUD();setNotice(leadName().toUpperCase()+' · '+(activeLead()==='luxie'?'LOCAL CONTACTS · SHOP BONUS':'WORKSHOP EXPERIENCE · DELIVERY BONUS'));return true;
+}
+$('leadSwitch').onclick=()=>{if(switchLead())resume()};
 function pause(){if(document.pointerLockElement)document.exitPointerLock();gameMode='pause';$('paused').style.display='flex'}function resume(){gameMode='play';$('paused').style.display='none';$('garage').style.display='none'}function closeGarage(){gameMode='play';$('garage').style.display='none';camera.fov=65;camera.updateProjectionMatrix();setNotice('Thanks for visiting Solara Customs!')}
-$('play').onclick=()=>{enableGameAudio();startIntro()};$('resetSave').onclick=()=>{if(confirm('Reset all MVT 6 money, chapters, gear and upgrades?')){save=defaultSave();vehicleCondition=100;saveVehicleCondition();cosmetics={paint:'#e96e5d',spoiler:false,lightKit:false,rims:false};try{localStorage.removeItem('mvt6-customs')}catch{}applyCustoms();collectedGear=[];selectedGadget=0;try{localStorage.removeItem('mvt6-gear-v2')}catch{};updateGadgetWheel();persist();setNotice('New campaign started · Equipment wheel cleared')}};$('resume').onclick=resume;$('pauseMap').onclick=()=>{ $('paused').style.display='none';gameMode='play';openPhone() };$('closeGarage').onclick=closeGarage;$('toMenu').onclick=()=>{gameMode='menu';$('paused').style.display='none';$('hud').style.display='none';$('menu').style.display='flex'};
+$('play').onclick=()=>{enableGameAudio();startIntro()};$('resetSave').onclick=()=>{if(confirm('Reset all MVT 6 money, chapters, gear and upgrades?')){save=defaultSave();cityLife.setPartner(activeLead());vehicleCondition=100;saveVehicleCondition();cosmetics={paint:'#e96e5d',spoiler:false,lightKit:false,rims:false};try{localStorage.removeItem('mvt6-customs')}catch{}applyCustoms();collectedGear=[];selectedGadget=0;try{localStorage.removeItem('mvt6-gear-v2')}catch{};updateGadgetWheel();persist();setNotice('New campaign started · Equipment wheel cleared')}};$('resume').onclick=resume;$('pauseMap').onclick=()=>{ $('paused').style.display='none';gameMode='play';openPhone() };$('closeGarage').onclick=closeGarage;$('toMenu').onclick=()=>{gameMode='menu';$('paused').style.display='none';$('hud').style.display='none';$('menu').style.display='flex'};
 const touchJump=document.createElement('button');touchJump.id='touchJump';touchJump.textContent='JUMP';touchJump.setAttribute('aria-label','Jump');
 touchJump.style.cssText='position:fixed;right:18px;bottom:445px;z-index:14;background:#3d7e84;color:white;border:1px solid #ade0cf;border-radius:12px;padding:12px;font:900 12px system-ui;display:none';
 document.body.append(touchJump);
@@ -3041,8 +3049,11 @@ isPlaying:()=>gameMode==='play',onNotice:setNotice,
 onReward:amount=>{save.money+=amount;persist();updateHUD()}});
 let network=multiplayer({THREE,scene,makeCar,box,mat,mesh,getState:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,angle:inCar?angle:person.rotation.y,inCar}),onAccount:progress=>{if(progress){save={...defaultSave(),...progress};updateHUD()}},onMessage:message=>setNotice(message)});
 // Optional high-detail character assets only replace the fallback after validation.
-const modelAssets=createPlayerModelSystem({THREE,root:person,fallbackChildren:[...person.children]});
-modelAssets.load();
+const jawsonFallback=[...person.children];
+const luxieFallback=makeOccupant(2,false);luxieFallback.group.scale.setScalar(1.15);person.add(luxieFallback.group);luxieFallback.group.visible=false;
+const modelAssets=createPlayerModelSystem({THREE,root:person,fallbackChildren:[]});
+const luxieAssets=createPlayerModelSystem({THREE,root:person,fallbackChildren:[],manifestKey:'luxie'});
+modelAssets.load();luxieAssets.load();cityLife.setPartner(activeLead());
 let firstFrameReady=false,lastWaveUpdate=0;let last=performance.now(),fpsCounter=0,fpsWindowStart=last,lastShopUpdate=0,lastHudUpdate=0,lastMapUpdate=0;function frame(now){requestAnimationFrame(frame);if(now-lastShopUpdate>800){lastShopUpdate=now;touchJump.style.display=gameMode==='play'&&!inCar&&matchMedia('(pointer:coarse)').matches?'block':'none';const gearNear=gameMode==='play'&&!inCar?nearestEquipment():null;$('pickupPrompt').style.display=gearNear?'block':'none';if(gearNear)$('pickupPrompt').textContent='F · COLLECT '+gadgetNames[gearNear.id];carHint.style.display=(gameMode==='play'&&!inCar&&nearestTrafficCar())?'block':'none';const px=inCar?carPos.x:playerPos.x,pz=inCar?carPos.z:playerPos.z;
  // Keep the hero car richly detailed; use squared-distance checks for nearby traffic/police.
  if(playerCar.userData.detail)playerCar.userData.detail.visible=true;
@@ -3059,9 +3070,15 @@ let firstFrameReady=false,lastWaveUpdate=0;let last=performance.now(),fpsCounter
    occupantDetail(p.car,p.active&&(p.pos.x-px)**2+(p.pos.z-pz)**2<36*36);
  }
  for(const p of parkedVehicles){p.car.visible=(p.x-px)**2+(p.z-pz)**2<115*115||gameMode==='intro'||gameMode==='menu'}
- for(const sh of shopBuildings){sh.root.visible=gameMode==='intro'||gameMode==='menu'||Math.hypot(px-sh.x,pz-sh.z)<155}}const dt=Math.max(.001,Math.min(.04,(now-last)/1000));last=now;animateCustoms(dt);if(gameMode==='play'){clockTime+=dt;if(atmosphereTime>0){atmosphereTime=Math.max(0,atmosphereTime-dt);if(atmosphereTime===0)atmosphereToast.classList.remove('show')}if(detailingShine>0)detailingShine=Math.max(0,detailingShine-dt);if(chapterBannerTime>0){chapterBannerTime-=dt;if(chapterBannerTime<=0)chapterScreen.classList.remove('show')}updateEquipmentWorld(dt);if(inCar)moveCar(dt);else movePerson(dt);updateVfx(dt);advanceTraffic(dt);advancePolice(dt);updatePatrolAgents(dt);if(mission){missionTime-=dt;updateMissionActivity(dt);if(missionTime<=0)failMission()}if(taxiJob)updateTaxiJob(dt);cityLife.update(dt,now);if(now-lastHudUpdate>100){lastHudUpdate=now;updateHUD()}updateCamera(dt);if(now-lastMapUpdate>95){lastMapUpdate=now;drawMap()}}else if(gameMode==='arrest'){animateArrest(dt);cityLife.update(dt,now)}else if(gameMode==='jail'){cityLife.update(dt,now)}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='takeover'){clockTime+=dt;updateVfx(dt);updateTakeover(dt);advanceTraffic(dt);cityLife.update(dt,now);updateCamera(dt);if(now-lastMapUpdate>95){lastMapUpdate=now;drawMap()}}else if(gameMode==='menu'){cityLife.update(dt,now);if(window.__mvtTitleStart!=null&&!matchMedia('(prefers-reduced-motion: reduce)').matches)liveTitleCamera(now,dt);else{restoreTitleAtmosphere();const a=now*.00007;camera.fov=65;camera.updateProjectionMatrix();camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}}modelAssets.update(dt,{walking:walkBlend,running:runBlend,jumping,enabled:person.visible&&!inCar,seatAmount:gameMode==='intro'||gameMode==='standing'?storySeatAmount:null});
+ for(const sh of shopBuildings){sh.root.visible=gameMode==='intro'||gameMode==='menu'||Math.hypot(px-sh.x,pz-sh.z)<155}}const dt=Math.max(.001,Math.min(.04,(now-last)/1000));last=now;animateCustoms(dt);if(gameMode==='play'){clockTime+=dt;if(atmosphereTime>0){atmosphereTime=Math.max(0,atmosphereTime-dt);if(atmosphereTime===0)atmosphereToast.classList.remove('show')}if(detailingShine>0)detailingShine=Math.max(0,detailingShine-dt);if(chapterBannerTime>0){chapterBannerTime-=dt;if(chapterBannerTime<=0)chapterScreen.classList.remove('show')}updateEquipmentWorld(dt);if(inCar)moveCar(dt);else movePerson(dt);updateVfx(dt);advanceTraffic(dt);advancePolice(dt);updatePatrolAgents(dt);if(mission){missionTime-=dt;updateMissionActivity(dt);if(missionTime<=0)failMission()}if(taxiJob)updateTaxiJob(dt);cityLife.update(dt,now);if(now-lastHudUpdate>100){lastHudUpdate=now;updateHUD()}updateCamera(dt);if(now-lastMapUpdate>95){lastMapUpdate=now;drawMap()}}else if(gameMode==='arrest'){animateArrest(dt);cityLife.update(dt,now)}else if(gameMode==='jail'){cityLife.update(dt,now)}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='takeover'){clockTime+=dt;updateVfx(dt);updateTakeover(dt);advanceTraffic(dt);cityLife.update(dt,now);updateCamera(dt);if(now-lastMapUpdate>95){lastMapUpdate=now;drawMap()}}else if(gameMode==='menu'){cityLife.update(dt,now);if(window.__mvtTitleStart!=null&&!matchMedia('(prefers-reduced-motion: reduce)').matches)liveTitleCamera(now,dt);else{restoreTitleAtmosphere();const a=now*.00007;camera.fov=65;camera.updateProjectionMatrix();camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}}const storyPose=gameMode==='intro'||gameMode==='standing',showLuxie=activeLead()==='luxie'&&!storyPose,showPerson=person.visible&&!inCar;
+const motion={walking:walkBlend,running:runBlend,jumping,seatAmount:storyPose?storySeatAmount:null};
+modelAssets.update(dt,{...motion,enabled:showPerson&&!showLuxie});
+luxieAssets.update(dt,{...motion,enabled:showPerson&&showLuxie});
+for(const part of jawsonFallback)part.visible=!showLuxie&&!modelAssets.loaded;
+luxieFallback.group.visible=showLuxie&&!luxieAssets.loaded;
+if(luxieFallback.group.visible){const gait=Math.sin(gaitPhase)*walkBlend*.6;for(let i=0;i<2;i++){const v=i===0?gait:-gait;luxieFallback.legs[i].rotation.x=v;luxieFallback.arms[i].rotation.x=-v*.7;luxieFallback.knees[i].rotation.x=Math.max(0,-v)*.7;}}
 if(now-lastWaveUpdate>80){const sceneryDt=Math.min(.15,(now-lastWaveUpdate)/1000);lastWaveUpdate=now;waveMap.offset.x=(now*.000007)%1;waveMap.offset.y=(now*.000004)%1;if(animatedShore)animatedShore.position.x=Math.sin(now*.0006)*.7;updateFoliage(sceneryDt,inCar?carPos.x:playerPos.x,inCar?carPos.z:playerPos.z);}
-heroOccupant.group.visible=inCar&&playerCar.visible;walkingShadow.visible=person.visible&&!inCar;walkingShadow.position.x=person.position.x;walkingShadow.position.z=person.position.z;
+heroOccupant.group.visible=inCar&&playerCar.visible&&activeLead()==='jawson';luxieOccupant.group.visible=inCar&&playerCar.visible&&activeLead()==='luxie';walkingShadow.visible=person.visible&&!inCar;walkingShadow.position.x=person.position.x;walkingShadow.position.z=person.position.z;
 updateGameAudio(now);network.frame(now,camera);renderer.render(scene,camera);if(!firstFrameReady){firstFrameReady=true;if(window.__mvtLoaded)window.__mvtLoaded()}fpsCounter++;
 // Measure wall-clock frame throughput, not the clamped physics timestep.
 // AUTO uses hysteresis, a cooldown, and small resolution steps to avoid oscillation.
