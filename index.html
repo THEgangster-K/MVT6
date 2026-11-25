@@ -526,7 +526,7 @@ body.bootPlaying #menu{visibility:hidden!important}
 <p>Explore Solara City as Jawson and Luxie. Meet local contacts, take on jobs, customise your car and build your own story.</p>
 <div class="menuActions"><button id="play">PLAY STORY</button><button id="resetSave" class="secondary">START OVER</button></div>
 <div class="movieControls">WASD · MOVE &nbsp;&nbsp; CLICK · MOUSE LOOK &nbsp;&nbsp; F · INTERACT</div></div>
-<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">CINEMATIC OVERHAUL · v0.4.0 PREVIEW 3</div></div></div>
+<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">CINEMATIC OVERHAUL · v0.4.0 PREVIEW 4</div></div></div>
 <div id="storyIntro" aria-live="polite" style="display:none"><div id="introShade"></div><div id="introContent"><div id="introChapter">SOLARA CITY · CHAPTER ONE</div><div id="introCue">AN ORIGINAL MVT 6 FILM</div><h2 id="introTitle">START WITH NOTHING.</h2><p id="introCopy">New city. Empty pockets. Every choice counts.</p></div><button id="introSkip">SKIP INTRO →</button></div>
 <div id="paused" class="overlay"><div class="panel"><div class="eyebrow">SOLARA CITY</div><h2>PAUSED</h2><p>Explore at your own pace. Your cash, upgrades and completed contracts are automatically saved.</p><button id="resume">RESUME</button><button id="pauseMap" class="secondary">MAP & MISSIONS</button>
 <div class="qualitySelector"><label for="graphicsQuality">GRAPHICS QUALITY</label><select id="graphicsQuality">
@@ -1249,6 +1249,26 @@ for(const x of [-455,-437,-419])for(const z of [43,49])cyl(.34,.44,1.8,x,-.7,z,r
 // Original coachwork mesh. Longitudinal sections define actual tapered silhouettes,
 // with shared geometry across vehicles instead of identical extruded rectangles.
 const coachworkCache=new Map();
+// One inexpensive, original reflection map shared by all car paint and brightwork.
+// No live reflection cameras or additional per-frame scene renders.
+const vehicleReflection=(()=>{
+ let source=null,generator=null;
+ try{
+  const canvas=document.createElement('canvas');canvas.width=512;canvas.height=256;
+  const ctx=canvas.getContext('2d');if(!ctx)return null;
+  const sky=ctx.createLinearGradient(0,0,0,256);
+  for(const [p,c] of [[0,'#6587a8'],[.27,'#a9c5d9'],[.46,'#f5d4b0'],[.52,'#aeb9b9'],[.62,'#4c5966'],[1,'#242b36']])sky.addColorStop(p,c);
+  ctx.fillStyle=sky;ctx.fillRect(0,0,512,256);
+  for(let i=0;i<24;i++){const x=i*23,h=9+rnd(i*73)*29;ctx.fillStyle=i%3===0?'#74848d':'#56636f';ctx.fillRect(x,130-h,14+rnd(i)*8,h+11);}
+  const glow=ctx.createRadialGradient(390,91,1,390,91,55);glow.addColorStop(0,'#fff5dd');glow.addColorStop(1,'#fff5dd00');ctx.fillStyle=glow;ctx.fillRect(335,36,110,110);
+  source=new THREE.CanvasTexture(canvas);source.colorSpace=THREE.SRGBColorSpace;source.mapping=THREE.EquirectangularReflectionMapping;
+  generator=new THREE.PMREMGenerator(renderer);
+  return generator.fromEquirectangular(source).texture;
+ }catch(error){console.warn('Optional vehicle reflections unavailable',error);return null;}
+ finally{source?.dispose();generator?.dispose();}
+})();
+const vehicleWheelGeo={tire:new THREE.CylinderGeometry(.87,.87,.43,24),hub:new THREE.CylinderGeometry(.45,.45,.48,20),spoke:new THREE.BoxGeometry(.035,.54,.11)};
+
 // Lightweight contact shadow for everyday graphics modes; no dynamic light is required.
 const contactCanvas=document.createElement('canvas');contactCanvas.width=64;contactCanvas.height=64;
 const contactCtx=contactCanvas.getContext('2d'),contactGradient=contactCtx.createRadialGradient(32,32,3,32,32,31);
@@ -1327,8 +1347,9 @@ function occupantDetail(car,near,visible=true){
 }
 
 function makeCar(color='#ed636a',police=false,type='sedan'){const group=new THREE.Group();scene.add(group);
- const paint=new THREE.MeshPhysicalMaterial({color,roughness:.24,metalness:.54,clearcoat:.9,clearcoatRoughness:.12});
+ const paint=new THREE.MeshPhysicalMaterial({color,roughness:.24,metalness:.42,clearcoat:1,clearcoatRoughness:.14,envMap:vehicleReflection,envMapIntensity:.95});
  const dark=mat('#192735',.4,.2),lamp=mat('#fff6c5',.2),rear=mat('#e0454c',.25),wheel=mat('#101820',.92),trim=mat('#d7e5ea',.24,.65);
+ trim.envMap=vehicleReflection;trim.envMapIntensity=.85;
  // Sculpted nose, rear deck, shoulder line and wheel-side contours.
  const profile=vehicleProfile(type);group.userData.vehicleType=type;
  const hull=mesh(coachworkGeometry(police,type),paint,group);hull.castShadow=true;hull.receiveShadow=true;
@@ -1350,11 +1371,11 @@ function makeCar(color='#ed636a',police=false,type='sedan'){const group=new THRE
  for(const side of [-1,1])for(const along of [-2.42,2.42]){
   const steering=new THREE.Group();steering.position.set(side*1.82,.86,along);group.add(steering);
   const spin=new THREE.Group();steering.add(spin);
-  const tire=mesh(new THREE.CylinderGeometry(.87,.87,.43,20),wheel,spin);tire.rotation.z=Math.PI/2;
-  const hub=mesh(new THREE.CylinderGeometry(.45,.45,.48,16),trim,spin);hub.rotation.z=Math.PI/2;
+  const tire=mesh(vehicleWheelGeo.tire,wheel,spin);tire.rotation.z=Math.PI/2;
+  const hub=mesh(vehicleWheelGeo.hub,trim,spin);hub.rotation.z=Math.PI/2;
   const hubColor=mat('#647a86',.27,.85);
   for(let n=0;n<6;n++){
-   const a=n*Math.PI/3,spoke=box(.035,.54,.11,side*.25,.28*Math.cos(a),.28*Math.sin(a),hubColor,spin);
+   const a=n*Math.PI/3,spoke=mesh(vehicleWheelGeo.spoke,hubColor,spin);spoke.position.set(side*.25,.28*Math.cos(a),.28*Math.sin(a));
    spoke.rotation.x=a;
   }
   wheelAssemblies.push({steering,spin,front:along>0});
@@ -1375,6 +1396,7 @@ function makeCar(color='#ed636a',police=false,type='sedan'){const group=new THRE
 const vehicleDetail=new THREE.Group();group.add(vehicleDetail);
 group.userData.detail=vehicleDetail;
 const rubber=mat('#101923',.95),chrome=mat('#a9b8c0',.33,.72);
+chrome.envMap=vehicleReflection;chrome.envMapIntensity=.82;
 const seam=new THREE.MeshStandardMaterial({color:0x26313a,roughness:.66});
 const reflector=new THREE.MeshStandardMaterial({color:0xffb44a,emissive:0x5e2600,emissiveIntensity:.16,roughness:.25});
 const cockpit=new THREE.MeshStandardMaterial({color:0x222b31,roughness:.83});
