@@ -36,3 +36,32 @@ export function nextMissionPhase(mission, completedAction) {
   if(mission.stage==='terminal')return mission.kind==='finale'?'escape':'deliver';
   return mission.stage;
 }
+
+// MVT6 arcade movement only: visual heading and travel direction are separate.
+// All values are game-tuning parameters, not a simulation of real vehicle dynamics.
+export function arcadeSlideStep(state, input, dt) {
+  const cap=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
+  dt=cap(Number.isFinite(dt)?dt:0,0,.05);
+  const speed=Number.isFinite(input.speed)?input.speed:0;
+  const steer=cap(input.steer||0,-1,1),rate=cap(input.turnRate||1.55,.5,2.5);
+  const active=Boolean(input.slide&&Math.abs(speed)>7);
+  let yaw=Number.isFinite(state.yaw)?state.yaw:0;
+  let slip=Number.isFinite(state.slip)?state.slip:0;
+  const steerFactor=Math.min(1,Math.abs(speed)/8);
+  yaw=wrap(yaw+steer*rate*steerFactor*Math.sign(speed)*(active?1.28:1)*dt);
+  const wanted=active?steer*.78*steerFactor:0;
+  // Sustained slide, gradual recovery, and reversal rather than a lateral position teleport.
+  slip+=(wanted-slip)*(1-Math.exp(-(active?3.5:8.8)*dt));
+  slip=cap(slip,-.85,.85);
+  const travel=yaw-slip;
+  const tractionLoss=active?1-.20*Math.abs(slip):1;
+  return {yaw,slip,dx:Math.sin(travel)*speed*tractionLoss*dt,dz:Math.cos(travel)*speed*tractionLoss*dt,sliding:active&&Math.abs(slip)>.10};
+}
+
+// A street object's complete horizontal footprint must avoid both axes of the road grid.
+export function clearsStreet(x,z,width,depth,block=92,road=20,padding=.35){
+  if(![x,z,width,depth,block,road,padding].every(Number.isFinite)||width<0||depth<0||block<=0||road<=0)return false;
+  const laneDistance=v=>Math.abs(v-Math.round(v/block)*block);
+  return laneDistance(x)>=road/2+width/2+padding&&laneDistance(z)>=road/2+depth/2+padding;
+}
