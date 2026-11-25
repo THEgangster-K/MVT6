@@ -237,6 +237,7 @@ export const horizonTrail=[
 export function trailPlacement(site,blocked){
  // Try positions within the buildable block, then adjacent sidewalk edges.
  const offsets=[[0,24],[-24,0],[24,0],[0,-24],[-25,25],[25,25],[-25,-25],[25,-25],[-32,0],[32,0],[0,-32],[0,32]];
+ for(const x of [-30,-20,-10,0,10,20,30])for(const z of [-30,-20,-10,0,10,20,30])offsets.push([x,z]);
  for(const [dx,dz] of offsets){
   const x=site.x+dx,z=site.z+dz;
   if(clearsStreet(x,z,1.8,1.8)&&!blocked(x,z,1.1))return {x,z};
