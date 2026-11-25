@@ -393,12 +393,12 @@ button:hover{filter:none;background:#ffe0ba}button:focus-visible,select:focus-vi
 <div class="loadingTrack"><div id="loadingFill"></div></div><p id="bootError">Three original Solara City chapters • A world to make your own</p><div class="artDots"><i></i><i></i><i></i></div><div class="bootFeatureStrip"><span>NO MONEY</span><span>NO CONNECTIONS</span><span>EVERYTHING TO BUILD</span></div>
 <button id="bootRetry" style="display:none" onclick="location.reload()">RETRY</button></div></div>
 <div id="menu" class="overlay movieMenu"><div class="menuCity"></div><div class="menuContent">
-<div class="kicker">SOLARA CITY &nbsp; / &nbsp; BOULEVARDS</div><h1 class="movieLogo releaseMark" aria-label="MVT 6"><span class="letters">MVT</span><i class="slash" aria-hidden="true"></i><span class="digit">6</span></h1>
+<div class="kicker">SOLARA CITY &nbsp; / &nbsp; CROSSROADS</div><h1 class="movieLogo releaseMark" aria-label="MVT 6"><span class="letters">MVT</span><i class="slash" aria-hidden="true"></i><span class="digit">6</span></h1>
 <div class="movieSubtitle">MOTOR VEHICLE THEFT</div><h2>Every street has a story.</h2>
 <p>Explore Solara City. Meet local contacts, take on jobs, customise your car and build your own story.</p>
 <div class="menuActions"><button id="play">PLAY STORY</button><button id="resetSave" class="secondary">START OVER</button></div>
 <div class="movieControls">WASD · MOVE &nbsp;&nbsp; CLICK · MOUSE LOOK &nbsp;&nbsp; F · INTERACT</div></div>
-<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">BOULEVARDS · V2.0</div></div></div>
+<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">CROSSROADS · V2.1</div></div></div>
 <div id="storyIntro" aria-live="polite" style="display:none"><div id="introShade"></div><div id="introContent"><div id="introChapter">SOLARA CITY · CHAPTER ONE</div><div id="introCue">AN ORIGINAL MVT 6 FILM</div><h2 id="introTitle">START WITH NOTHING.</h2><p id="introCopy">New city. Empty pockets. Every choice counts.</p></div><button id="introSkip">SKIP INTRO →</button></div>
 <div id="paused" class="overlay"><div class="panel"><div class="eyebrow">SOLARA CITY</div><h2>PAUSED</h2><p>Explore at your own pace. Your cash, upgrades and completed contracts are automatically saved.</p><button id="resume">RESUME</button><button id="pauseMap" class="secondary">MAP & MISSIONS</button>
 <div class="qualitySelector"><label for="graphicsQuality">GRAPHICS QUALITY</label><select id="graphicsQuality">
@@ -444,7 +444,7 @@ window.addEventListener('error',e=>fail(e.message||'Game asset could not load'))
 import {createPlayerModelSystem} from './model-assets.js';
 import {multiplayer} from './client.js';
 import {createCityLife} from './city-life.js';
-import {movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction} from './game-core.js';
+import {movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction,arcadeCarContact} from './game-core.js';
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';
 // MVT 6: an original browser game and city, not GTA assets or source.
 const $=id=>document.getElementById(id), world=$('game');
@@ -462,10 +462,14 @@ for(let n=0;n<48;n++){
  sk.fillStyle=mist;sk.beginPath();sk.ellipse(x,y,radius,radius*.30,0,0,Math.PI*2);sk.fill();
 }
 const skyTexture=new THREE.CanvasTexture(skyCanvas);skyTexture.colorSpace=THREE.SRGBColorSpace;
+// Static sky reflection for metal and glass, generated once from the game's own sky.
+const reflectionCanvas=document.createElement('canvas');reflectionCanvas.width=256;reflectionCanvas.height=128;reflectionCanvas.getContext('2d').drawImage(skyCanvas,0,0,256,128);
+const reflectionTexture=new THREE.CanvasTexture(reflectionCanvas);reflectionTexture.colorSpace=THREE.SRGBColorSpace;reflectionTexture.mapping=THREE.EquirectangularReflectionMapping;
+const pmrem=new THREE.PMREMGenerator(renderer);const skyEnvironment=pmrem.fromEquirectangular(reflectionTexture);scene.environment=skyEnvironment.texture;pmrem.dispose();reflectionTexture.dispose();
 const skySphere=new THREE.Mesh(new THREE.SphereGeometry(970,32,16),new THREE.MeshBasicMaterial({map:skyTexture,side:THREE.BackSide,depthWrite:false,fog:false}));
 scene.add(skySphere);
 const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,0.6,1150);camera.position.set(0,9,-17);
-const ambient=new THREE.HemisphereLight(0xcbe6ff,0x60605a,2.15);scene.add(ambient);const sun=new THREE.DirectionalLight(0xffe4b7,2.2);sun.position.set(-120,210,-90);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-155;sun.shadow.camera.right=155;sun.shadow.camera.top=155;sun.shadow.camera.bottom=-155;sun.shadow.bias=-.0003;scene.add(sun);
+const ambient=new THREE.HemisphereLight(0xcbe6ff,0x60605a,2.15);scene.add(ambient);const sun=new THREE.DirectionalLight(0xffe4b7,2.2);sun.position.set(-100,160,-65);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-85;sun.shadow.camera.right=85;sun.shadow.camera.top=85;sun.shadow.camera.bottom=-85;sun.shadow.camera.far=450;sun.shadow.bias=-.0003;sun.shadow.normalBias=.12;scene.add(sun,sun.target);
 // Cinematic but readable daylight, golden-hour, and night presentation.
 const atmosphereModes=[
  {label:'DAYLIGHT',sky:'#9ccce2',fog:'#d1dbe0',sun:'#fff2df',intensity:2.8,ambient:1.85,exposure:1.04},
@@ -491,7 +495,7 @@ function mesh(geometry,material,parent=scene){const m=new THREE.Mesh(geometry,ma
 function box(w,h,d,x,y,z,material,parent=scene){const m=mesh(new THREE.BoxGeometry(w,h,d),material,parent);m.position.set(x,y,z);return m}
 function cyl(rt,rb,h,x,y,z,material,parent=scene,n=10){const m=mesh(new THREE.CylinderGeometry(rt,rb,h,n),material,parent);m.position.set(x,y,z);return m}
 function textTexture(text,bg,fg){const c=document.createElement('canvas');c.width=512;c.height=160;const ctx=c.getContext('2d');ctx.fillStyle=bg;ctx.fillRect(0,0,512,160);ctx.fillStyle=fg;ctx.textAlign='center';ctx.font='900 69px system-ui';ctx.fillText(text,256,102);const tx=new THREE.CanvasTexture(c);tx.colorSpace=THREE.SRGBColorSpace;return tx}
-function plane(w,d,x,z,material,y=0){const m=mesh(new THREE.PlaneGeometry(w,d),material);m.rotation.x=-Math.PI/2;m.position.set(x,y,z);return m}
+function plane(w,d,x,z,material,y=0){const m=mesh(new THREE.PlaneGeometry(w,d),material);m.rotation.x=-Math.PI/2;m.position.set(x,y,z);m.receiveShadow=true;return m}
 function rnd(n){let v=Math.sin(n*127.1+71.31)*43758.5453;return v-Math.floor(v)}
 const BLOCK=92,ROAD=20,HALF=4, CITY=HALF*BLOCK, roadPositions=[];for(let i=-HALF;i<=HALF;i++)roadPositions.push(i*BLOCK);
 plane(1600,1600,0,0,materials.grass,-.15);
@@ -634,12 +638,16 @@ for(let ix=-HALF;ix<HALF;ix++)for(let iz=-HALF;iz<HALF;iz++){
    lawnTiles.push(parcelMatrix(cx,.12,cz,64,.035,64));
    gardenPaths.push(parcelMatrix(cx,.15,cz,5,.035,64),parcelMatrix(cx,.155,cz,64,.035,5));
  }else if(plan.kind==='urban'){
-   plane(8,65,cx,cz,materials.asphalt,.14);plane(65,8,cx,cz,materials.asphalt,.185);
-   alleys.push({x:cx,z:cz});
+   // Open space between the offset parcels is kept as a paved court.
  }else{
    parkingTiles.push(parcelMatrix(cx,.13,cz,63,.03,63));
    if(plan.kind==='coast')coastDecks.push(parcelMatrix(cx,.185,cz,6,.06,60));
    for(let z=-24;z<=24;z+=6)parkingLines.push(parcelMatrix(cx+29,.16,cz+z,5,.025,.12));
+ }
+ if(plan.alley){
+   const a=plan.alley;
+   const ax=cx+(a.axis==='x'?a.offset:0),az=cz+(a.axis==='z'?a.offset:0);
+   plane(a.axis==='x'?a.width:70,a.axis==='x'?70:a.width,ax,az,materials.asphalt,.205);
  }
  for(const [bi,p] of plan.parcels.entries()){
   const {x:bx,z:bz,w:bw,d:depth,h:height,type}=p;
@@ -678,7 +686,7 @@ for(let ix=-HALF;ix<HALF;ix++)for(let iz=-HALF;iz<HALF;iz++){
 const buildingMaterial=mat('#ffffff',.92);buildingMaterial.map=materialsTexture.concrete;buildingMaterial.transparent=false;buildingMaterial.opacity=1;buildingMaterial.side=THREE.FrontSide;buildingMaterial.depthWrite=true;buildingMaterial.needsUpdate=true;
 const buildingBatch=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),buildingMaterial,buildingMatrices.length);
 for(let i=0;i<buildingMatrices.length;i++){buildingBatch.setMatrixAt(i,buildingMatrices[i]);buildingBatch.setColorAt(i,buildingTints[i])}
-buildingBatch.instanceMatrix.needsUpdate=true;buildingBatch.instanceColor.needsUpdate=true;buildingBatch.frustumCulled=false;scene.add(buildingBatch);
+buildingBatch.instanceMatrix.needsUpdate=true;buildingBatch.instanceColor.needsUpdate=true;buildingBatch.frustumCulled=false;buildingBatch.castShadow=true;buildingBatch.receiveShadow=true;scene.add(buildingBatch);
 const roofBatch=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),mat('#e8e5df'),roofMatrices.length);
 for(let i=0;i<roofMatrices.length;i++)roofBatch.setMatrixAt(i,roofMatrices[i]);
 roofBatch.instanceMatrix.needsUpdate=true;roofBatch.frustumCulled=false;scene.add(roofBatch);
@@ -1015,13 +1023,13 @@ function makeCar(color='#ed636a',police=false){const group=new THREE.Group();sce
  const paint=new THREE.MeshPhysicalMaterial({color,roughness:.24,metalness:.54,clearcoat:.9,clearcoatRoughness:.12});
  const dark=mat('#192735',.4,.2),lamp=mat('#fff6c5',.2),rear=mat('#e0454c',.25),wheel=mat('#101820',.92),trim=mat('#d7e5ea',.24,.65);
  // Sculpted nose, rear deck, shoulder line and wheel-side contours.
- const hull=mesh(coachworkGeometry(police),paint,group);hull.castShadow=false;
+ const hull=mesh(coachworkGeometry(police),paint,group);hull.castShadow=true;hull.receiveShadow=true;
  const cabinShade=new THREE.MeshStandardMaterial({color:0x273d46,roughness:.25,metalness:.24,side:THREE.DoubleSide});
  // Tapered glass cabin: a roof ridge, sloped front/rear glass and integrated pillars.
  const cv=[-1.47,1.47,-2.18,1.47,1.47,-2.18,-1.52,1.47,1.22,1.52,1.47,1.22,-1.10,2.48,-1.37,1.10,2.48,-1.37,-1.11,2.48,-.02,1.11,2.48,-.02];
  const ci=[0,4,1,1,4,5,2,3,6,3,7,6,0,2,4,2,6,4,1,5,3,3,5,7,4,6,5,5,6,7];
  const cg=new THREE.BufferGeometry();cg.setAttribute('position',new THREE.Float32BufferAttribute(cv,3));cg.setIndex(ci);cg.computeVertexNormals();
- mesh(cg,cabinShade,group);
+ const cabin=mesh(cg,cabinShade,group);cabin.castShadow=true;
  const roof=box(2.25,.10,1.48,0,2.51,-.70,paint,group);
  for(const side of [-1,1]){
    const pillar=box(.095,1.06,.10,side*1.30,1.99,.57,paint,group);pillar.rotation.x=-.48;pillar.rotation.z=-side*.20;
@@ -1918,6 +1926,8 @@ function applyGraphicsPreset(profile,announce=false){
  const desired=graphicsPreset==='cinematic'?1.55:graphicsPreset==='performance'?.83:graphicsPreset==='auto'?1.17:1.12;
  qualityPixelRatio=Math.min(devicePixelRatio,desired);
  renderer.setPixelRatio(qualityPixelRatio);
+ renderer.shadowMap.enabled=graphicsPreset==='cinematic';
+ renderer.shadowMap.needsUpdate=true;
  const scale=graphicsPreset==='performance'?.60:graphicsPreset==='cinematic'?1:.82;
  for(const light of customsAccentLights){light.intensity=graphicsPreset==='performance'?0:26*scale}
  const selector=document.getElementById('graphicsQuality');
@@ -2120,7 +2130,7 @@ const particles=Array.from({length:42},()=>{
  const sprite=new THREE.Sprite(m);sprite.visible=false;effectGroup.add(sprite);
  return {sprite,life:0,total:1,vx:0,vy:0,vz:0};
 });
-let particleCursor=0,driftElapsed=0,driftIntensity=0,driftDistance=0,driftCombo=0,slideSlip=0,slideActive=false;
+let particleCursor=0,driftElapsed=0,driftIntensity=0,driftDistance=0,driftCombo=0,slideSlip=0,slideActive=false,impactKick=0;
 function emitVfx(x,y,z,color=0xabb7c3,size=1.0,vx=0,vy=1.2,vz=0,ttl=.7){
  const p=particles[particleCursor++%particles.length],o=p.sprite;
  p.life=ttl;p.total=ttl;p.vx=vx;p.vy=vy;p.vz=vz;
@@ -2189,6 +2199,7 @@ function checkPedestrianTraffic(dt){
  }
 }
 function moveCar(dt){
+ impactKick*=Math.exp(-7*dt);
  const accel=26+save.speed*4,maxSpeed=(31+save.speed*5.2)*(1+Math.max(0,(save.lifeTier||0)-1)*.06);
  const driftActive=Boolean(keys.shift&&Math.abs(velocity)>7),boost=1;
  const throttle=Number(!!(keys.w||keys.arrowup))-Number(!!(keys.s||keys.arrowdown));
@@ -2203,15 +2214,17 @@ function moveCar(dt){
  // Position advances along travel direction, with the same collision checks as normal movement.
  driftFx(dt,turning);
  const nx=carPos.x+slide.dx,nz=carPos.z+slide.dz;
- if(!collision(nx,nz)){carPos.x=nx;carPos.z=nz}else{
-  if(!collision(nx,carPos.z))carPos.x=nx;else if(!collision(carPos.x,nz))carPos.z=nz;
+ if(!collision(nx,nz,1.8)){carPos.x=nx;carPos.z=nz}else{
+  if(!collision(nx,carPos.z,1.8))carPos.x=nx;else if(!collision(carPos.x,nz,1.8))carPos.z=nz;
+  impactKick=Math.min(.17,Math.abs(velocity)*.007);
   if(clockTime>vehicleImpactCooldown){vehicleImpactCooldown=clockTime+1.2;impactFx(carPos.x,carPos.z,'spark');vehicleCondition=Math.max(5,vehicleCondition-Math.min(12,Math.abs(velocity)*.28));saveVehicleCondition();setNotice('BODYWORK IMPACT · '+Math.round(vehicleCondition)+'% CONDITION')}
   velocity*=-.15;slideSlip=0;slideActive=false;heat=Math.min(5,heat+.08);
  }
+ resolveTrafficContact();
  checkPedestrianTraffic(dt);
  playerCar.position.copy(carPos);playerCar.rotation.y=angle;
  playerCar.rotation.z=THREE.MathUtils.lerp(playerCar.rotation.z,-turning*Math.min(Math.abs(velocity)/35,1)*(driftActive?.12:.045),Math.min(1,dt*5));
- playerCar.rotation.x=THREE.MathUtils.lerp(playerCar.rotation.x,throttle*-.012,Math.min(1,dt*4));
+ playerCar.rotation.x=THREE.MathUtils.lerp(playerCar.rotation.x,throttle*-.012+impactKick,Math.min(1,dt*4));
  if(detailingShine>0&&playerCar.children[0]?.material){
   playerCar.children[0].material.roughness=THREE.MathUtils.lerp(playerCar.children[0].material.roughness,.12,Math.min(1,dt*2));
  }else if(playerCar.children[0]?.material)playerCar.children[0].material.roughness=THREE.MathUtils.lerp(playerCar.children[0].material.roughness,.26,Math.min(1,dt));
@@ -2350,6 +2363,26 @@ function updateTakeover(dt){
  }catch(e){console.warn('Recovered takeover animation error:',e);takeoverElapsed=1.85}
  if(takeoverElapsed>=1.85)finishTakeover();
 }
+// Vehicle contacts resolve overlap before applying small game-only recoil.
+function resolveTrafficContact(){
+ for(const t of traffic){
+  if(t.taken||t.pos.distanceToSquared(carPos)>100)continue;
+  const hit=arcadeCarContact({x:carPos.x,z:carPos.z,yaw:angle},{x:t.pos.x,z:t.pos.z,yaw:t.east?(t.dir>0?Math.PI/2:-Math.PI/2):(t.dir>0?0:Math.PI)});
+  if(!hit)continue;
+  const push=Math.min(2.8,hit.overlap+.10);
+  const nx=carPos.x+hit.x*push,nz=carPos.z+hit.z*push;
+  if(!collision(nx,nz,1.8)){carPos.x=nx;carPos.z=nz}
+  t.speed=Math.min(t.speed,2);t.bumpUntil=clockTime+.65;
+  if(Math.abs(velocity)>2&&clockTime>vehicleImpactCooldown){
+   vehicleImpactCooldown=clockTime+.8;
+   impactFx(carPos.x-hit.x*2,carPos.z-hit.z*2,'spark');
+   impactKick=Math.min(.17,Math.abs(velocity)*.009);
+   vehicleCondition=Math.max(5,vehicleCondition-Math.min(14,Math.abs(velocity)*.4));saveVehicleCondition();
+   setNotice('VEHICLE CONTACT · '+Math.round(vehicleCondition)+'% CONDITION');
+  }
+  velocity*=.18;slideSlip*=.35;slideActive=false;
+ }
+}
 function advanceTraffic(dt){
  updateSignals(dt);
  const you=inCar?carPos:playerPos;
@@ -2371,19 +2404,17 @@ function advanceTraffic(dt){
  const ix=t.east?Math.round(intersection/BLOCK):road,iz=t.east?road:Math.round(intersection/BLOCK);
  const gap=Math.abs(intersection-t.pos[axis]);
  if(Math.abs(ix)<=2&&Math.abs(iz)<=2&&gap>10&&gap<45&&junctionPhase(trafficClock,ix,iz)!==(t.east?'east':'north'))stopDistance=gap-10;
- const target=t===takeoverTarget?0:trafficQueueSpeed(t.baseSpeed,obstacle,stopDistance);
+ const target=t===takeoverTarget||clockTime<(t.bumpUntil||0)?0:trafficQueueSpeed(t.baseSpeed,obstacle,stopDistance);
  t.speed+=THREE.MathUtils.clamp(target-t.speed,-23*dt,9*dt);
  const v=t.dir*Math.max(0,t.speed)*dt;
  if(t.east)t.pos.x+=v;else t.pos.z+=v;
  if(t.east&&Math.abs(t.pos.x)>386)t.pos.x=-Math.sign(t.pos.x)*383;
  if(!t.east&&Math.abs(t.pos.z)>386)t.pos.z=-Math.sign(t.pos.z)*383;
+ if(inCar){const contact=arcadeCarContact({x:carPos.x,z:carPos.z,yaw:angle},{x:t.pos.x,z:t.pos.z,yaw:t.east?Math.PI/2:0});if(contact){t.pos[axis]-=v;t.speed=0}}
  t.car.position.copy(t.pos);t.car.rotation.y=t.east?(t.dir>0?Math.PI/2:-Math.PI/2):(t.dir>0?0:Math.PI);
  if(t.pos.distanceToSquared(you)<120*120){t.steeringArm.rotation.x=.9+.08*Math.sin(clockTime*2+t.id);
  for(const wheel of t.car.userData.wheels||[])wheel.spin.rotation.x+=Math.max(0,t.speed)*dt/.87;}
- if(inCar&&t.pos.distanceTo(carPos)<5.3&&Math.abs(velocity)>7){
-  velocity*=-.31;heat=Math.min(5,heat+.34);heatTimer=0;
-  if(clockTime>vehicleImpactCooldown){vehicleImpactCooldown=clockTime+1;vehicleCondition=Math.max(5,vehicleCondition-8);saveVehicleCondition()}
- }
+
  }
  for(let i=formerDrivers.length-1;i>=0;i--){
  const d=formerDrivers[i];d.age+=dt;
@@ -2699,6 +2730,7 @@ modelAssets.load();
 let last=performance.now(),fpsCounter=0,fpsWindowStart=last,lastShopUpdate=0,lastHudUpdate=0,lastMapUpdate=0;function frame(now){requestAnimationFrame(frame);if(now-lastShopUpdate>800){lastShopUpdate=now;touchJump.style.display=gameMode==='play'&&!inCar&&matchMedia('(pointer:coarse)').matches?'block':'none';const gearNear=gameMode==='play'&&!inCar?nearestEquipment():null;$('pickupPrompt').style.display=gearNear?'block':'none';if(gearNear)$('pickupPrompt').textContent='F · COLLECT '+gadgetNames[gearNear.id];carHint.style.display=(gameMode==='play'&&!inCar&&nearestTrafficCar())?'block':'none';const px=inCar?carPos.x:playerPos.x,pz=inCar?carPos.z:playerPos.z;
  // Keep the hero car richly detailed; use squared-distance checks for nearby traffic/police.
  if(playerCar.userData.detail)playerCar.userData.detail.visible=true;
+ if(renderer.shadowMap.enabled){sun.target.position.set(px,0,pz);sun.position.set(px-100,160,pz-65);sun.target.updateMatrixWorld();}
  for(const t of traffic){
    const detail=t.car.userData.detail;
    if(detail)detail.visible=(t.pos.x-px)**2+(t.pos.z-pz)**2<78*78;
