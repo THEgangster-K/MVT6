@@ -26,7 +26,7 @@ assert.ok(cityLifeSource.includes('prop.visible=!sceneActive||dx*dx+dz*dz<190*19
 assert.ok(cityLifeSource.includes('onStoryContact?.()'),'Story contact interaction remains available');
 const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
 assert.equal(ids.length,new Set(ids).size,'Duplicate HTML IDs');
-assert.ok(html.includes('<option value="auto">AUTO · TARGET 60 FPS</option>'),'Adaptive quality option exists');
+assert.ok(/<option value="auto"(?: selected)?>AUTO · TARGET 60 FPS<\/option>/.test(html),'Adaptive quality option exists');
 assert.ok(html.includes("graphicsPreset='auto'"),'Auto quality is the default for new players');
 assert.ok(html.includes('fpsCounter*1000/elapsed'),'FPS uses real elapsed time, not clamped physics dt');
 assert.ok(html.includes('autoQualityGoodWindows>=3'),'Adaptive quality recovery uses hysteresis');
@@ -57,7 +57,7 @@ for(const match of matches[1][1].matchAll(/\$\('([^']+)'\)/g)){
  assert.ok(ids.includes(match[1])||builtAtRuntime.has(match[1]),'Missing UI element: '+match[1]);
 }
 const coreSource=read('game-core.js').replace(/^export /gm,'')+
- '\n;globalThis.core={movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase};';
+ '\n;globalThis.core={movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet};';
 const context={Math};
 vm.runInNewContext(coreSource,context,{filename:'game-core.js'});
 const core=context.core;
@@ -70,6 +70,36 @@ assert.ok(near(core.approachAngle(0,Math.PI,.2),.2),'Police heading has turn-rat
 assert.equal(core.bailAmount(3.1),700,'Bail rounds up to next wanted star');
 assert.equal(core.nextMissionPhase({stage:'pickup',kind:'escape'},true),'escape');
 assert.equal(core.nextMissionPhase({stage:'pickup',kind:'courier'},true),'deliver');
+// Actual behavior tests for the release's arcade motion and map-placement math.
+let arc={yaw:0,slip:0};
+for(let i=0;i<45;i++)arc=core.arcadeSlideStep(arc,{speed:20,steer:1,slide:true},1/60);
+assert.ok(arc.sliding&&arc.slip>.4,'Arcade drift builds a sustained travel/heading offset');
+assert.ok(Math.abs(Math.atan2(arc.dx,arc.dz)-arc.yaw)>.3,'Travel direction differs from car heading');
+assert.ok(Math.hypot(arc.dx,arc.dz)<20/60,'Drift translation does not exceed configured speed');
+for(let i=0;i<60;i++)arc=core.arcadeSlideStep(arc,{speed:20,steer:0,slide:false},1/60);
+assert.ok(Math.abs(arc.slip)<.01,'Slide recovers smoothly on release');
+const straight=core.arcadeSlideStep({yaw:0,slip:0},{speed:10,steer:0,slide:false},.02);
+assert.ok(near(straight.dx,0)&&near(straight.dz,.2),'Straight motion remains unchanged');
+const reverse=core.arcadeSlideStep({yaw:0,slip:0},{speed:-10,steer:0,slide:false},.02);
+assert.ok(near(reverse.dz,-.2),'Reversing remains possible');
+assert.ok(core.clearsStreet(46,14,8,3.4),'Safe sidewalk shelter footprint');
+assert.ok(!core.clearsStreet(0,46,1,1),'Reject object centered in street');
+assert.ok(!core.clearsStreet(12,46,8,3),'Reject object partially crossing street');
+assert.ok(!core.clearsStreet(46,9,1,1),'Check both road axes');
+assert.ok(html.includes('arcadeSlideStep({yaw:angle,slip:slideSlip}'),'Game uses the tested arcade movement');
+assert.ok(html.includes('const nx=carPos.x+slide.dx,nz=carPos.z+slide.dz'),'New movement passes through collision checks');
+assert.ok(html.includes('clearsStreet(x,z,w,h,d')===false,'Street guard uses the horizontal dimensions only');
+assert.ok(html.includes('clearsStreet(x,z,w,d,BLOCK,ROAD)'),'Street prop footprint guard is connected');
+assert.ok(html.includes('detailBatch(palmFronds,palmGeometry()'),'Original curved foliage is GPU-instanced');
+assert.ok(html.includes('AFTERGLOW · V1.8'),'Visible release marker');
+assert.ok(html.includes('coachworkGeometry(police)'),'Vehicles use original longitudinal coachwork mesh');
+assert.ok(html.includes('assembly.spin.children'),'Wheel rim customisation addresses nested wheel meshes');
+assert.ok(html.includes('exitOffsets.find'),'Vehicle exit checks nearby open space');
+assert.ok(html.includes('if(collision(camPos.x,camPos.z,.3))'),'Camera retracts when inside a building footprint');
+assert.ok(cityLifeSource.includes('!clearsStreet(x,z,3.2,1.2)'),'Secondary street furniture uses clearance guards');
+
+assert.ok(html.includes('prefers-reduced-motion:reduce'),'Reduced-motion opening variant');
+
 assert.ok(read('server.js').includes("'game-core.js'"),'Server serves game core');
 assert.ok(read('server.js').includes("'model-assets.js'"),'Server serves model loader');
 assert.ok(read('server.js').includes("'.glb'"),'Server can serve local model format');

@@ -1,5 +1,6 @@
 // MVT 6 City Life Update — low-poly detailed props, street residents and dialogue.
 // No copyrighted assets. All geometry is procedural.
+import {clearsStreet} from './game-core.js';
 export function createCityLife({THREE,scene,box,mesh,mat,roadPositions,rnd,collision,getPlayer,isPlaying,onNotice,onReward,onStoryContact}){
 const citizens=[],props=[],clock=new THREE.Clock(),npcNames=['Ava','Mason','Nia','Kai','Sofia','Jordan','Riley','Sam','Aria','Luca','Noah','Maya','Zoe','Max','Ellie','Leo','Ivy','Finn','Nova','Alex','Charlie','Harper','Jules','Jamie'];
 const stories=[
@@ -148,13 +149,14 @@ const dark=mat('#1d323a',.85),silver=mat('#85949b'),glow=new THREE.MeshBasicMate
 // Sparse street furniture near intersections. Keep draw calls moderate.
 for(let i=-4;i<=4;i+=2)for(let j=-4;j<=4;j+=2){
  const x=i*92+17,z=j*92+17;
+ if(!clearsStreet(x-1.2,z,3.4,1.0)||collision(x,z,.5))continue;
  const pole=new THREE.Group();scene.add(pole);pole.position.set(x,0,z);props.push(pole);
  box(.24,8.5,.24,0,4.25,0,dark,pole);box(2.3,.22,.28,-1.05,8.43,0,dark,pole);
  box(.9,.2,.5,-2.1,8.24,0,glow,pole);
 }
 for(let i=0;i<16;i++){
  const x=(i%4-1.5)*182+30,z=(Math.floor(i/4)-1.5)*182+30;
- if(collision(x,z))continue;
+ if(collision(x,z,1.8)||!clearsStreet(x,z,3.2,1.2))continue;
  const b=new THREE.Group();scene.add(b);b.position.set(x,0,z);props.push(b);
  box(3,.36,.9,0,.95,0,wood,b);for(const side of [-1,1])box(.15,1,.16,side*1.1,.50,0,dark,b);
  box(3,.78,.18,0,1.42,-.4,wood,b);
