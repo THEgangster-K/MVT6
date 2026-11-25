@@ -1043,7 +1043,7 @@ detailBatch(shoreStreaks,new THREE.BoxGeometry(1,1,1),seaFoam);
 box(52,.48,8,-436,.2,46,deck);
 for(const z of [42.4,49.6])for(let x=-460;x<=-411;x+=8)box(.3,1.35,.3,x,.78,z,rail);
 for(const z of [42.4,49.6])box(49,.12,.12,-435,1.4,z,rail);
-for(const x of [-455,-437,-419])for(const z of [43,49])cyl(.34,.44,1.8,x,-.7,z,rail,8);
+for(const x of [-455,-437,-419])for(const z of [43,49])cyl(.34,.44,1.8,x,-.7,z,rail,scene,8);
 
 // Original coachwork mesh. Longitudinal sections define actual tapered silhouettes,
 // with shared geometry across vehicles instead of identical extruded rectangles.
