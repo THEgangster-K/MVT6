@@ -65,3 +65,35 @@ export function clearsStreet(x,z,width,depth,block=92,road=20,padding=.35){
   const laneDistance=v=>Math.abs(v-Math.round(v/block)*block);
   return laneDistance(x)>=road/2+width/2+padding&&laneDistance(z)>=road/2+depth/2+padding;
 }
+
+/** District classification and reproducible parcel plans. Coordinates remain compatible with existing saves and jobs. */
+export function cityDistrict(x,z){
+ if(x<-184)return 'WEST HAVEN';
+ if(z>184)return 'SOUTH PIER';
+ if(x>184)return 'EAST SOLARA';
+ if(z<-184)return 'NORTH QUARTER';
+ return 'DOWNTOWN';
+}
+export function cityBlockPlan(cx,cz,seed=0){
+ const district=cityDistrict(cx,cz);
+ const rand=i=>{const v=Math.sin((seed+i*17.31)*127.1+71.31)*43758.5453;return v-Math.floor(v)};
+ const parcel=(dx,dz,w,d,h,type)=>({x:cx+dx,z:cz+dz,w,d,h,type});
+ if(cx===46&&cz===-46)return {district,kind:'plaza',parcels:[]};
+ // Reserve the workshop's approach and its surrounding courtyards.
+ if(Math.abs(cx-184)<50&&Math.abs(cz)<50)return {district,kind:'parking',parcels:[]};
+ if(district==='WEST HAVEN'){
+  if(rand(1)<.26)return {district,kind:'park',parcels:[]};
+  return {district,kind:'coast',parcels:[parcel(-15,-17,25,23,16+rand(2)*18,'hotel'),parcel(17,16,23,25,9+rand(3)*8,'market')]};
+ }
+ if(district==='NORTH QUARTER'){
+  if(rand(1)<.19)return {district,kind:'park',parcels:[]};
+  return {district,kind:'residential',parcels:[-19,19].flatMap(dx=>[-19,19].map(dz=>parcel(dx,dz,12+rand(dx+dz)*5,14+rand(dx-dz)*5,4.8+rand(dx+dz+2)*3,'house')))};
+ }
+ if(district==='EAST SOLARA')return {district,kind:'industrial',parcels:[parcel(0,-17,51,24,9+rand(4)*5,'warehouse'),parcel(16,17,25,22,7+rand(5)*6,'warehouse')]};
+ if(district==='SOUTH PIER'){
+  if(rand(1)<.35)return {district,kind:'park',parcels:[]};
+  return {district,kind:'commercial',parcels:[parcel(-17,-12,24,32,9+rand(5)*5,'market'),parcel(17,15,25,22,15+rand(6)*11,'apartment')]};
+ }
+ if(rand(1)<.14)return {district,kind:'park',parcels:[]};
+ return {district,kind:'urban',parcels:[parcel(-18,-17,26,27,49+rand(3)*49,'tower'),parcel(18,-17,24,27,27+rand(4)*26,'apartment'),parcel(-17,18,27,23,7+rand(5)*9,'market'),parcel(17,18,24,23,20+rand(6)*22,'apartment')]};
+}

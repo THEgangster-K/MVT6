@@ -1,7 +1,7 @@
 // MVT 6 City Life Update — low-poly detailed props, street residents and dialogue.
 // No copyrighted assets. All geometry is procedural.
 import {clearsStreet} from './game-core.js';
-export function createCityLife({THREE,scene,box,mesh,mat,roadPositions,rnd,collision,getPlayer,isPlaying,onNotice,onReward,onStoryContact}){
+export function createCityLife({THREE,scene,box,mesh,mat,roadPositions,rnd,collision,publicSpaces=[],getPlayer,isPlaying,onNotice,onReward,onStoryContact}){
 const citizens=[],props=[],clock=new THREE.Clock(),npcNames=['Ava','Mason','Nia','Kai','Sofia','Jordan','Riley','Sam','Aria','Luca','Noah','Maya','Zoe','Max','Ellie','Leo','Ivy','Finn','Nova','Alex','Charlie','Harper','Jules','Jamie'];
 const stories=[
  ['The city looks great from the waterfront after sunset.','Thanks for showing me around. Here is a small tip!',75],
@@ -136,14 +136,25 @@ function streetPoint(i){
  const road=roadPositions[Math.floor(rnd(i*7+1)*roadPositions.length)],horizontal=rnd(i*9+2)>.5;
  const offset=(rnd(i*9+3)>.5?1:-1)*14.4;
  const travel=(rnd(i*9+4)-.5)*710;
- return horizontal?{x:travel,z:road+offset}:{x:road+offset,z:travel};
+ return horizontal?{x:travel,z:road+offset,axis:'x'}:{x:road+offset,z:travel,axis:'z'};
 }
 // Named contact for story jobs, stays by the start-of-game sidewalk.
 const fixer=human(29,12.5,-18);fixer.name='Rae';fixer.role='fixer';fixer.root.rotation.y=Math.PI/2;
+// Walkers follow the sidewalk axis; public spaces attract small local groups.
 for(let i=0;i<48;i++){
- let p=i<18?{x:i%2===0?14:-14,z:-175+i*19}:streetPoint(i+12);
- if(collision(p.x,p.z)){p=streetPoint(i+101)}
- if(!collision(p.x,p.z))citizens.push(human(i,p.x,p.z));
+ let p=i<18?{x:i%2===0?14:-14,z:-175+i*19,axis:'z'}:streetPoint(i+12);
+ if(collision(p.x,p.z)||!clearsStreet(p.x,p.z,.6,.6)){p=streetPoint(i+101)}
+ if(!collision(p.x,p.z)&&clearsStreet(p.x,p.z,.6,.6)){
+  const resident=human(i,p.x,p.z);resident.pathAxis=p.axis;citizens.push(resident);
+ }
+}
+for(const [i,space] of publicSpaces.slice(0,8).entries()){
+ for(let j=0;j<(i===0?4:2);j++){
+  const x=space.cx-16+j*8,z=space.cz-8;
+  if(collision(x,z,.6)||!clearsStreet(x,z,.7,.7))continue;
+  const resident=human(48+i*4+j,x,z);resident.pathAxis='x';resident.pathRange=7;resident.pace=.6+rnd(i+j)*.35;
+  citizens.push(resident);
+ }
 }
 const dark=mat('#1d323a',.85),silver=mat('#85949b'),glow=new THREE.MeshBasicMaterial({color:0xffe3a4}),wood=mat('#87644c'),planter=mat('#596f65');
 // Sparse street furniture near intersections. Keep draw calls moderate.
@@ -210,7 +221,7 @@ function update(dt,now){
        const speed=n.pace*step*n.direction,axis=n.pathAxis;
        nx=axis==='x'?px+speed:px;nz=axis==='z'?pz+speed:pz;
        const dFromBase=Math.abs((axis==='x'?nx-n.baseX:nz-n.baseZ));
-       if(dFromBase>26||collision(nx,nz,.25)){n.direction*=-1}
+       if(dFromBase>(n.pathRange||26)||collision(nx,nz,.25)||!clearsStreet(nx,nz,.6,.6)){n.direction*=-1}
        else{n.root.position.x=nx;n.root.position.z=nz;walking=Math.abs(speed)>.0001}
      }
      const movedX=n.root.position.x-px,movedZ=n.root.position.z-pz;
