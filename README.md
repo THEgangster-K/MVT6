@@ -1,5 +1,18 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v2.1 — CROSSROADS
+
+- Replace uniform district building rows with irregular, mixed-use parcels. Each of the five districts has a weighted mixture of building categories; 158 planned structures, variable gaps, offset through-alleys and varied lot counts are generated across the 64 blocks.
+- Add open-air café, information and market venues in clear public spaces, with interiors, furniture, signage and interaction prompts.
+- Replace the illustrated startup montage with three real-time rendered views of the existing game world. The story introduction also has revised camera shots and shorter pacing. Reduced-motion users skip the moving title montage.
+- Add an original, locally hosted articulated glTF character (8,784 triangles, 44 mesh parts, four animation clips), enabled during ordinary gameplay, with the previous character kept for special story poses and loading failures.
+- Add an inexpensive contact-shadow texture, static sky-derived reflections, and optional dynamic directional shadows in Cinematic mode.
+- Add non-graphic arcade vehicle contact checks, overlap separation, recoil, brief traffic stopping, impact particles and condition changes. Static building and parked-car contacts use the world footprint collision system.
+- Preserve the main road network, missions, saved progression, workshop and multiplayer interfaces.
+
+**Scope:** The character is an original stylised articulated model, not a photorealistic professionally skinned model. Shadows in Cinematic mode may reduce FPS. Contacts are simplified arcade gameplay, not a full rigid-body simulation. Public venues are open-sided rather than full enterable buildings. Native browser rendering, asset appearance and measured FPS have not been verified.
+
+
 ## v2.0 — BOULEVARDS
 
 - Reworked West Haven coastline: separate water and land, beach strip, boardwalk segments, railings and an offshore pier landmark. Main roads end at the map edge and crossing markings sit near the road surface.
