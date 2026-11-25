@@ -92,6 +92,12 @@ assert.ok(html.includes('clearsStreet(x,z,w,h,d')===false,'Street guard uses the
 assert.ok(html.includes('clearsStreet(x,z,w,d,BLOCK,ROAD)'),'Street prop footprint guard is connected');
 assert.ok(html.includes('detailBatch(palmFronds,palmGeometry()'),'Original curved foliage is GPU-instanced');
 assert.ok(html.includes('AFTERGLOW · V1.8'),'Visible release marker');
+assert.ok(html.includes('coachworkGeometry(police)'),'Vehicles use original longitudinal coachwork mesh');
+assert.ok(html.includes('assembly.spin.children'),'Wheel rim customisation addresses nested wheel meshes');
+assert.ok(html.includes('exitOffsets.find'),'Vehicle exit checks nearby open space');
+assert.ok(html.includes('if(collision(camPos.x,camPos.z,.3))'),'Camera retracts when inside a building footprint');
+assert.ok(cityLifeSource.includes('!clearsStreet(x,z,3.2,1.2)'),'Secondary street furniture uses clearance guards');
+
 assert.ok(html.includes('prefers-reduced-motion:reduce'),'Reduced-motion opening variant');
 
 assert.ok(read('server.js').includes("'game-core.js'"),'Server serves game core');
