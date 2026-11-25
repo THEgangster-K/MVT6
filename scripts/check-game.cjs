@@ -71,7 +71,7 @@ for(const match of matches[1][1].matchAll(/\$\('([^']+)'\)/g)){
  assert.ok(ids.includes(match[1])||builtAtRuntime.has(match[1]),'Missing UI element: '+match[1]);
 }
 const coreSource=read('game-core.js').replace(/^export /gm,'')+
- '\n;globalThis.core={movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction,arcadeCarContact,secondaryLane,vehicleProfile,homeCatalog,purchaseHome,residentRoutine,visualSpring,showroomCatalog,purchaseShowroom,furnishingCatalog,purchaseFurnishing,cityWeather};';
+ '\n;globalThis.core={movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction,arcadeCarContact,secondaryLane,vehicleProfile,homeCatalog,purchaseHome,residentRoutine,visualSpring,showroomCatalog,purchaseShowroom,furnishingCatalog,purchaseFurnishing,cityWeather,horizonTrail,trailPlacement,completeTrailStop};';
 const context={Math};
 vm.runInNewContext(coreSource,context,{filename:'game-core.js'});
 const core=context.core;
@@ -105,7 +105,31 @@ assert.ok(html.includes('const nx=carPos.x+slide.dx,nz=carPos.z+slide.dz'),'New 
 assert.ok(html.includes('clearsStreet(x,z,w,h,d')===false,'Street guard uses the horizontal dimensions only');
 assert.ok(html.includes('clearsStreet(x,z,w,d,BLOCK,ROAD)'),'Street prop footprint guard is connected');
 assert.ok(html.includes('detailBatch(palmFronds,palmGeometry()'),'Original curved foliage is GPU-instanced');
-assert.ok(html.includes('SHOWROOM · V2.9'),'Visible release marker');
+assert.ok(html.includes('HORIZON · V3.0'),'Visible release marker');
+assert.equal(core.horizonTrail.length,5,'Five authored story stops');
+let trailProgress={money:0,trailVisited:[]};
+assert.ok(!core.completeTrailStop(trailProgress,'south').ok,'Cannot skip trail order');
+for(const stop of core.horizonTrail){
+ const p=core.trailPlacement(stop,()=>false);
+ assert.ok(p&&core.clearsStreet(p.x,p.z,1.8,1.8),'Landmark candidate is off main streets');
+ assert.equal(core.trailPlacement(stop,()=>true),null,'Blocked plots are skipped');
+ const result=core.completeTrailStop(trailProgress,stop.id);
+ assert.ok(result.ok,'Correct story stop accepted');
+ assert.equal(result.money,trailProgress.money+stop.reward,'Exact reward');
+ trailProgress={money:result.money,trailVisited:result.trailVisited};
+ assert.ok(!core.completeTrailStop(trailProgress,stop.id).ok,'No duplicate reward');
+}
+assert.equal(trailProgress.trailVisited.length,5);
+assert.equal(trailProgress.money,1030);
+assert.ok(core.completeTrailStop({money:0,trailVisited:[]},'haven',['haven','east']).ok,'Only built sites are required');
+assert.ok(html.includes('function interactTrail()'),'Trail interactions');
+assert.ok(html.includes("gesture:gameMode==='play'?gestureTime:0"),'Loaded hero interaction gestures');
+assert.ok(read('model-assets.js').includes('joint.rotation.copy(rotation)'),'Gesture pose restored before next animation frame');
+assert.ok(html.includes('materials.asphalt.bumpMap=materialsTexture.asphalt'),'Road relief');
+assert.ok(html.includes('material.emissiveMap=material.map'),'Night facade glow');
+assert.ok(html.includes('coastGain.gain.setTargetAtTime'),'Coastal ambient sound');
+assert.ok(read('server.js').includes('trailVisited:Array.isArray'),'Story progress saved on accounts');
+
 assert.equal(core.showroomCatalog.length,5,'Five vehicle models');
 const boughtCar=core.purchaseShowroom({money:1000,vehicles:['sedan']},'wagon');
 assert.ok(boughtCar.ok,'Affordable model');assert.equal(boughtCar.money,150,'Vehicle purchase cost');
