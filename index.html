@@ -3047,7 +3047,7 @@ const cityLife=createCityLife({THREE,scene,box,mesh,mat,roadPositions,rnd,collis
 getPlayer:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,inCar,speed:velocity,heading:angle}),
 isPlaying:()=>gameMode==='play',onNotice:setNotice,
 onReward:amount=>{save.money+=amount;persist();updateHUD()}});
-let network=multiplayer({THREE,scene,makeCar,box,mat,mesh,getState:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,angle:inCar?angle:person.rotation.y,inCar}),onAccount:progress=>{if(progress){save={...defaultSave(),...progress};updateHUD()}},onMessage:message=>setNotice(message)});
+let network=multiplayer({THREE,scene,makeCar,box,mat,mesh,getState:()=>({x:(inCar?carPos:playerPos).x,z:(inCar?carPos:playerPos).z,angle:inCar?angle:person.rotation.y,inCar}),onAccount:progress=>{if(progress){save={...defaultSave(),...progress};cityLife.setPartner(activeLead());try{localStorage.setItem('mvt6-save',JSON.stringify(save))}catch{}updateHUD()}},onMessage:message=>setNotice(message)});
 // Optional high-detail character assets only replace the fallback after validation.
 const jawsonFallback=[...person.children];
 const luxieFallback=makeOccupant(2,false);luxieFallback.group.scale.setScalar(1.15);person.add(luxieFallback.group);luxieFallback.group.visible=false;
