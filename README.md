@@ -1,5 +1,16 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v3.0 — HORIZON
+
+- Five original Jawson and Luxie exhibition story stops across the five city districts, with new conversations, ordered landmark interactions, minimap markers and persistent completion rewards. Press B to mark the next site; F on foot to interact. Actual sites use checked open positions; unavailable placements are skipped.
+- Distinct landmark sculptures, subtle road/pavement/grass surface relief, warmer lighting, night facade glow and higher cinematic shadow resolution. Performance mode disables the added surface bump maps.
+- Coastal and rain ambience using original synthesized sound; friendly interaction gestures for both animated character rigs.
+- Previous eight-chapter campaign, property themes, vehicle collection, character selection and save fields retained.
+- 3,080 assertions passed in the strict adapted regression environment. All five sites fit the generated building and alley plans in the placement simulation.
+
+**Scope:** This is an incremental visual and content upgrade, not a new rendering engine. The original campaign stages and main road grid remain unchanged. Actual landmark placement against all runtime scenery, visual quality, browser playability, account persistence and FPS have not been verified.
+
+
 ## v2.9 — SHOWROOM
 
 - Vehicle collection available through the pause menu between jobs or the marked showroom frontage near Solara Customs. Five original models with purchasable ownership and free switching between owned vehicles. The selected model changes the existing player car's body, glazing, roof and pillars, retaining its upgrades and collision system.
