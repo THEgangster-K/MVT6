@@ -105,7 +105,7 @@ assert.ok(html.includes('const nx=carPos.x+slide.dx,nz=carPos.z+slide.dz'),'New 
 assert.ok(html.includes('clearsStreet(x,z,w,h,d')===false,'Street guard uses the horizontal dimensions only');
 assert.ok(html.includes('clearsStreet(x,z,w,d,BLOCK,ROAD)'),'Street prop footprint guard is connected');
 assert.ok(html.includes('detailBatch(palmFronds,palmGeometry()'),'Original curved foliage is GPU-instanced');
-assert.ok(html.includes('STREETSCAPE · V2.4'),'Visible release marker');
+assert.ok(html.includes('CROSSWINDS · V2.5'),'Visible release marker');
 assert.ok(html.includes('heroOccupant.group.visible=inCar&&playerCar.visible'),'Hero seated character visible when driving');
 assert.ok(html.includes('const driverRig=attachOccupant(car,i)'),'Traffic uses detailed occupant');
 assert.ok(html.includes('attachOccupant(c,i+8)'),'Police vehicles use detailed occupant');
@@ -261,7 +261,36 @@ for(const anim of hero.animations)for(const ch of anim.channels){assert.ok(ch.ta
 
 assert.ok(html.includes("import {createPlayerModelSystem} from './model-assets.js';"),'Character pipeline is imported');
 assert.ok(html.includes('modelAssets.load()'),'Optional character loading begins');
-assert.ok(html.includes("modelAssets.update(dt,{walking:walkBlend,running:runBlend,jumping,enabled:gameMode==='play'&&!inCar})"),'Animation mixer preserves special story poses');
+assert.ok(html.includes("modelAssets.update(dt,{walking:walkBlend,running:runBlend,jumping,enabled:person.visible&&!inCar,seatAmount:gameMode==='intro'||gameMode==='standing'?storySeatAmount:null})"),'Same asset used for story poses');
+assert.ok(cityLifeSource.includes("fixer.name='Luxie'"),'Luxie is recurring named NPC');
+const storyStart=html.indexOf('const chapterBeats=['),storyEnd=html.indexOf('const chapterScreen=',storyStart);
+const storySandbox={};vm.runInNewContext(html.slice(storyStart,storyEnd)+'\nglobalThis.storyTest={chapterBeats,chapterAftermath}',storySandbox);
+assert.equal(storySandbox.storyTest.chapterBeats.length,8,'Eight chapter conversations');
+assert.equal(storySandbox.storyTest.chapterAftermath.length,8,'Eight chapter follow-ups');
+for(const [title,dialogue] of storySandbox.storyTest.chapterBeats){assert.ok(title&&dialogue.includes('JAWSON:')&&dialogue.includes('LUXIE:'),'Both leads participate in every briefing')}
+const modelJointNames=new Set(hero.nodes.map(n=>n.name));
+for(const name of ['Pelvis','Spine','LeftHip','RightHip','LeftKnee','RightKnee','LeftShoulder','RightShoulder','LeftElbow','RightElbow'])assert.ok(modelJointNames.has(name),'Articulated hero includes '+name);
+const poseSource=read('model-assets.js').split('// Optional original GLB/GLTF player character pipeline.')[0].replace(/^export /gm,'');
+const poseSandbox={};vm.runInNewContext(poseSource+'\nglobalThis.poseTest=applyStoryPose',poseSandbox);
+const joint=()=>({position:{y:0},rotation:{x:0}});
+const jointPair=()=>[joint(),joint()];
+const j={pelvis:joint(),spine:joint(),legs:jointPair(),knees:jointPair(),arms:jointPair(),elbows:jointPair()},m={position:{y:0}};
+poseSandbox.poseTest(m,j,0,1);
+assert.ok(j.pelvis.position.y<1&&j.legs.every(x=>x.rotation.x<0)&&j.knees.every(x=>x.rotation.x>0),'Seated character pose uses the actual rig');
+poseSandbox.poseTest(m,j,0,.5);assert.ok(j.pelvis.position.y>.62&&j.pelvis.position.y<1.25,'Intermediate stand pose');
+poseSandbox.poseTest(m,j,0,0);assert.equal(j.pelvis.position.y,1.25,'Standing restores pelvis');
+assert.ok(j.legs.every(x=>x.rotation.x===0)&&j.knees.every(x=>x.rotation.x===0),'Standing restores legs');
+assert.equal(m.position.y,0,'Restores root position');
+const foliageStart=html.indexOf('function updateFoliage(dt,nearX,nearZ)'),foliageEnd=html.indexOf('// Coastal visual:',foliageStart);
+const matrix=()=>({elements:Array(16).fill(0),copy(src){this.elements=src.elements.slice();return this}});
+const src=matrix(),out=[],batch={instanceMatrix:{needsUpdate:false},setMatrixAt(i,m){out[i]=m.elements.slice()}};
+const tree={x:0,z:0,palm:false,first:0,count:1,phase:0,active:false};
+const foliageSandbox={reactiveTrees:[tree],foliageMatrix:matrix(),canopyBatch:batch,frondBatch:null,treeCanopies:[src],palmFronds:[]};
+vm.runInNewContext(html.slice(foliageStart,foliageEnd)+'\nglobalThis.swayTest=updateFoliage',foliageSandbox);
+foliageSandbox.swayTest(.1,0,0);assert.ok(out[0][12]!==0&&batch.instanceMatrix.needsUpdate,'Nearby foliage responds');
+foliageSandbox.swayTest(1.4,10,10);assert.equal(out[0][12],0,'Foliage restores original matrix');
+assert.ok(!tree.active,'Foliage returns to idle');
+
 assert.ok(html.includes('new THREE.CapsuleGeometry(.185,.68'),'New rounded fallback arms are present');
 assert.ok(html.includes('new THREE.CapsuleGeometry(.206,.79'),'New rounded fallback legs are present');
 
