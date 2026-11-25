@@ -403,6 +403,7 @@ body.bootPlaying #menu{visibility:hidden!important}
 .storyTurn b{font-size:10px;letter-spacing:.18em;color:#e9c49a}.storyTurn span{color:#f2e9dd}.storySummary{display:block;margin-top:12px;color:#b8ced5;font-size:12px}
 @media(prefers-reduced-motion:no-preference){.storyTurn{animation:storyTurnIn .35s ease both}.storyTurn:nth-child(2){animation-delay:.12s}@keyframes storyTurnIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}}
 #lifestylePanel{z-index:95}#lifestylePanel .panel{max-height:85vh;overflow:auto}#lifestyleItems{display:grid;gap:8px;margin:14px 0}#lifestyleItems button{margin:0;text-align:left}#lifestyleItems button:disabled{opacity:.55}
+#trailPanel{z-index:96}#trailPanel .panel{max-width:580px;max-height:85vh;overflow:auto}#trailPanel #trailReward{color:#e4b9d6}
 </style>
 </head>
 <body>
@@ -468,12 +469,12 @@ body.bootPlaying #menu{visibility:hidden!important}
 <div class="loadingTrack"><div id="loadingFill"></div></div><p id="bootError">Jawson &amp; Luxie • Eight story chapters</p><div class="artDots"><i></i><i></i><i></i></div><div class="bootFeatureStrip"><span>NO MONEY</span><span>NO CONNECTIONS</span><span>EVERYTHING TO BUILD</span></div>
 <button id="bootRetry" style="display:none" onclick="location.reload()">RETRY</button></div></div>
 <div id="menu" class="overlay movieMenu"><div class="menuCity"></div><div class="menuContent">
-<div class="kicker">SOLARA CITY &nbsp; / &nbsp; SHOWROOM</div><h1 class="movieLogo releaseMark" aria-label="MVT 6"><span class="letters">MVT</span><i class="slash" aria-hidden="true"></i><span class="digit">6</span></h1>
+<div class="kicker">SOLARA CITY &nbsp; / &nbsp; HORIZON</div><h1 class="movieLogo releaseMark" aria-label="MVT 6"><span class="letters">MVT</span><i class="slash" aria-hidden="true"></i><span class="digit">6</span></h1>
 <div class="movieSubtitle">MOTOR VEHICLE THEFT</div><h2>Every street has a story.</h2>
 <p>Explore Solara City. Meet local contacts, take on jobs, customise your car and build your own story.</p>
 <div class="menuActions"><button id="play">PLAY STORY</button><button id="resetSave" class="secondary">START OVER</button></div>
 <div class="movieControls">WASD · MOVE &nbsp;&nbsp; CLICK · MOUSE LOOK &nbsp;&nbsp; F · INTERACT</div></div>
-<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">SHOWROOM · V2.9</div></div></div>
+<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">HORIZON · V3.0</div></div></div>
 <div id="storyIntro" aria-live="polite" style="display:none"><div id="introShade"></div><div id="introContent"><div id="introChapter">SOLARA CITY · CHAPTER ONE</div><div id="introCue">AN ORIGINAL MVT 6 FILM</div><h2 id="introTitle">START WITH NOTHING.</h2><p id="introCopy">New city. Empty pockets. Every choice counts.</p></div><button id="introSkip">SKIP INTRO →</button></div>
 <div id="paused" class="overlay"><div class="panel"><div class="eyebrow">SOLARA CITY</div><h2>PAUSED</h2><p>Explore at your own pace. Your cash, upgrades and completed contracts are automatically saved.</p><button id="resume">RESUME</button><button id="pauseMap" class="secondary">MAP & MISSIONS</button>
 <div class="qualitySelector"><label for="graphicsQuality">GRAPHICS QUALITY</label><select id="graphicsQuality">
@@ -535,7 +536,7 @@ window.addEventListener('error',e=>fail(e.message||'Game asset could not load'))
 import {createPlayerModelSystem} from './model-assets.js';
 import {multiplayer} from './client.js';
 import {createCityLife} from './city-life.js';
-import {movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction,arcadeCarContact,secondaryLane,vehicleProfile,homeCatalog,purchaseHome,visualSpring,showroomCatalog,purchaseShowroom,furnishingCatalog,purchaseFurnishing,cityWeather} from './game-core.js';
+import {movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction,arcadeCarContact,secondaryLane,vehicleProfile,homeCatalog,purchaseHome,visualSpring,showroomCatalog,purchaseShowroom,furnishingCatalog,purchaseFurnishing,cityWeather,horizonTrail,trailPlacement,completeTrailStop} from './game-core.js';
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';
 // MVT 6: an original browser game and city, not GTA assets or source.
 const $=id=>document.getElementById(id), world=$('game');
@@ -560,7 +561,7 @@ const pmrem=new THREE.PMREMGenerator(renderer);const skyEnvironment=pmrem.fromEq
 const skySphere=new THREE.Mesh(new THREE.SphereGeometry(970,32,16),new THREE.MeshBasicMaterial({map:skyTexture,side:THREE.BackSide,depthWrite:false,fog:false}));
 scene.add(skySphere);
 const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,0.6,1150);camera.position.set(0,9,-17);
-const ambient=new THREE.HemisphereLight(0xcbe6ff,0x60605a,2.15);scene.add(ambient);const sun=new THREE.DirectionalLight(0xffe4b7,2.2);sun.position.set(-100,160,-65);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-85;sun.shadow.camera.right=85;sun.shadow.camera.top=85;sun.shadow.camera.bottom=-85;sun.shadow.camera.far=450;sun.shadow.bias=-.0003;sun.shadow.normalBias=.12;scene.add(sun,sun.target);
+const ambient=new THREE.HemisphereLight(0xcbe6ff,0x60605a,2.15);scene.add(ambient);const sun=new THREE.DirectionalLight(0xffe4b7,2.2);sun.position.set(-100,160,-65);sun.castShadow=true;sun.shadow.mapSize.set(1536,1536);sun.shadow.camera.left=-85;sun.shadow.camera.right=85;sun.shadow.camera.top=85;sun.shadow.camera.bottom=-85;sun.shadow.camera.far=450;sun.shadow.bias=-.0003;sun.shadow.normalBias=.12;scene.add(sun,sun.target);
 // Cinematic but readable daylight, golden-hour, and night presentation.
 const atmosphereModes=[
  {label:'DAYLIGHT',sky:'#9ccce2',fog:'#d1dbe0',sun:'#fff2df',intensity:2.8,ambient:1.85,exposure:1.04},
@@ -677,8 +678,13 @@ materialsTexture.pavement.wrapS=materialsTexture.pavement.wrapT=THREE.RepeatWrap
 materialsTexture.pavement.repeat.set(6,6);
 materialsTexture.grass.wrapS=materialsTexture.grass.wrapT=THREE.RepeatWrapping;
 materialsTexture.grass.repeat.set(36,36);
+const textureAnisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
+for(const texture of Object.values(materialsTexture))texture.anisotropy=textureAnisotropy;
+materials.asphalt.bumpMap=materialsTexture.asphalt;materials.asphalt.bumpScale=.035;
+materials.sidewalk.bumpMap=materialsTexture.pavement;materials.sidewalk.bumpScale=.045;
+materials.grass.bumpMap=materialsTexture.grass;materials.grass.bumpScale=.035;
 const windowMats=['tower','old','loft','modern'].map((type,i)=>new THREE.MeshStandardMaterial({
- map:patternTexture(type,i),side:THREE.FrontSide,transparent:false,opacity:1,depthWrite:true,roughness:i===1?.85:.37,metalness:i===1?0:.15
+ map:patternTexture(type,i),side:THREE.FrontSide,transparent:false,opacity:1,depthWrite:true,roughness:i===1?.85:.37,metalness:i===1?0:.15,emissive:0xffd4a1,emissiveIntensity:0
 }));
 // GPU instancing renders many static skyline elements in four draw calls.
 const alleys=[],footprint=[],buildingMatrices=[],buildingTints=[],roofMatrices=[],facadeMatrices=[[],[],[],[]],treeTrunks=[],treeCanopies=[],palmTrunks=[],palmFronds=[],buildingTypes=[],neighborhoods=[],houseRoofs=[],warehouseRoofs=[],lawnTiles=[],gardenPaths=[],plazaPavers=[],parkingTiles=[],parkingLines=[],parkMounds=[],fountainBases=[],fountainWater=[],houseWindows=[],garageDoors=[],towerSetbacks=[],parkBenches=[],parkBenchLegs=[],gardenBorders=[],coastDecks=[],reactiveTrees=[];
@@ -1397,7 +1403,7 @@ wheelRim.rotation.x=Math.PI/2+.3;wheelRim.position.set(-.62,2.05,.37);
  if(police){box(2,.22,.55,0,2.7,-.4,mat('#e8f0f9'),group);box(.75,.25,.55,-.54,2.86,-.4,mat('#ec394a'),group);box(.75,.25,.55,.54,2.86,-.4,mat('#418bff'),group)}
  const contact=mesh(carContactGeometry,contactMaterial,group);contact.rotation.x=-Math.PI/2;contact.position.y=.095;
  return group}
-let save;const defaultSave=()=>({money:45,completed:0,speed:0,handling:0,nitro:0,lifeTier:0,lead:'jawson',leadJobs:{jawson:0,luxie:0},venueVisits:[],homes:[],homeThemes:{},vehicles:['sedan'],selectedVehicle:'sedan'});try{save={...defaultSave(),...JSON.parse(localStorage.getItem('mvt6-save')||'{}')}}catch{save=defaultSave()}
+let save;const defaultSave=()=>({money:45,completed:0,speed:0,handling:0,nitro:0,lifeTier:0,lead:'jawson',leadJobs:{jawson:0,luxie:0},venueVisits:[],homes:[],homeThemes:{},vehicles:['sedan'],selectedVehicle:'sedan',trailVisited:[]});try{save={...defaultSave(),...JSON.parse(localStorage.getItem('mvt6-save')||'{}')}}catch{save=defaultSave()}
 function ownsPaidVehicle(){return Array.isArray(save.vehicles)&&save.vehicles.some(id=>showroomCatalog.some(v=>v.id===id&&v.price>0));}
 function activeLead(){return save.lead==='luxie'?'luxie':'jawson'}
 function leadName(){return activeLead()==='luxie'?'Luxie':'Jawson'}
@@ -1786,7 +1792,7 @@ function updateHUD(){ $('homeCount').textContent=(save.homes||[]).length+' / '+h
  escape:'Keep moving and lose the patrol.'
 }[mission.stage]||'Follow the next story objective.')+
  ' · '+Math.round(Math.hypot(p.x-missionObjective().x,p.z-missionObjective().z))+'m TO TARGET'+
- ' · '+Math.max(0,Math.ceil(missionTime))+'s'}else if(taxiJob){const o=taxiObjective();$('missionTitle').textContent='TAXI · '+(taxiJob.stage==='pickup'?'PICKUP':'DROP OFF');$('missionText').textContent='Stop at '+o.name+' · '+Math.round(Math.hypot(p.x-o.x,p.z-o.z))+'m · '+Math.ceil(taxiJob.time)+'s'}else{$('missionTitle').textContent='The city is yours';$('missionText').textContent='Talk to your partner for chapters, explore purple venue markers, or take a taxi fare.'}}
+ ' · '+Math.max(0,Math.ceil(missionTime))+'s'}else if(taxiJob){const o=taxiObjective();$('missionTitle').textContent='TAXI · '+(taxiJob.stage==='pickup'?'PICKUP':'DROP OFF');$('missionText').textContent='Stop at '+o.name+' · '+Math.round(Math.hypot(p.x-o.x,p.z-o.z))+'m · '+Math.ceil(taxiJob.time)+'s'}else{$('missionTitle').textContent='The city is yours';$('missionText').textContent=nextTrailSite()?'HORIZON · B to mark '+nextTrailSite().name+' · F at the landmark. Talk to your partner for chapters.':'Exhibition complete · Talk to your partner for chapters or explore venues.'}}
 // Original crime-fiction campaign: Lost Solara, a city of rival crews and secret debts.
 // Jawson is playable; Luxie is the story's second lead.
 const chapterBeats=[
@@ -2165,6 +2171,7 @@ function tagWall(){
 function interact(){
  if(gameMode!=='play')return;
  if(!inCar&&!mission&&!taxiJob&&Math.hypot(playerPos.x-196,playerPos.z+12.5)<5){openLifestyle('cars');return;}
+ if(interactTrail())return;
  if(collectEquipment())return;
  if(interactMission()){gestureTime=.65;return}
  if(inCar&&nearCustoms()){openGarage();return}
@@ -2454,9 +2461,9 @@ function keyState(e,on){
  if(e.code==='KeyW')k='w';if(e.code==='KeyA')k='a';if(e.code==='KeyS')k='s';if(e.code==='KeyD')k='d';
 if([' ','spacebar','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();if(on&&!e.repeat&&(k==='tab'||k==='h')){e.preventDefault();if(tutorialOpen)closeTutorial();else if(gameMode==='play')showTutorial();return}
 if(on&&!e.repeat&&k==='q'){e.preventDefault();if(wheelOpen)closeGadgetWheel();else if(gameMode==='play')openGadgetWheel();return}
-if(k==='escape'&&on){if(gameMode==='lifestyle'){closeLifestyle();return}if(gameMode==='briefing'){closeBriefing();return}if(tutorialOpen){closeTutorial();return}if(wheelOpen){closeGadgetWheel();return}if(phoneOpen){closePhone();return}}
+if(k==='escape'&&on){if(gameMode==='trail'){closeTrail();return}if(gameMode==='lifestyle'){closeLifestyle();return}if(gameMode==='briefing'){closeBriefing();return}if(tutorialOpen){closeTutorial();return}if(wheelOpen){closeGadgetWheel();return}if(phoneOpen){closePhone();return}}
 if(k==='p'&&on&&!e.repeat){if(phoneOpen)closePhone();else if(gameMode==='play')openPhone();return}
-if(gameMode!=='play'&&k!=='escape')return;keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(document.pointerLockElement)document.exitPointerLock();else if(gameMode==='play')pause();else if(gameMode==='pause')resume();}if((k===' '||k==='spacebar')&&!inCar)beginJump();if(k==='e')enterExit();if(k==='v')switchLead();if(k==='f')interact();if(k==='t')tagWall();if(k==='g')activateGadget();if(k==='j')drivingHorn();if(k==='l'&&inCar)setHeadlights(!headlightsOn);if(k==='n')setAtmosphere(atmosphereIndex+1);if(k==='c'){camMode=(camMode+1)%3;orbitOffset=0};if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;playerCar.position.copy(carPos);playerCar.rotation.y=angle;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
+if(gameMode!=='play'&&k!=='escape')return;keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(document.pointerLockElement)document.exitPointerLock();else if(gameMode==='play')pause();else if(gameMode==='pause')resume();}if((k===' '||k==='spacebar')&&!inCar)beginJump();if(k==='e')enterExit();if(k==='v')switchLead();if(k==='f')interact();if(k==='t')tagWall();if(k==='g')activateGadget();if(k==='j')drivingHorn();if(k==='l'&&inCar)setHeadlights(!headlightsOn);if(k==='n')setAtmosphere(atmosphereIndex+1);if(k==='b'&&!mission&&!taxiJob){const target=nextTrailSite();if(target)setWaypoint(target,target.name);else setNotice('HORIZON · Exhibition complete');}if(k==='c'){camMode=(camMode+1)%3;orbitOffset=0};if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;playerCar.position.copy(carPos);playerCar.rotation.y=angle;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
 addEventListener('keydown',e=>keyState(e,true));addEventListener('keyup',e=>keyState(e,false));addEventListener('blur',()=>{for(let k in keys)keys[k]=false});
 function switchLead(){
  if(!['play','pause'].includes(gameMode)||inCar||jumping||mission||taxiJob||phoneOpen||wheelOpen||tutorialOpen){setNotice('Switch characters on foot between jobs.');return false;}
@@ -2503,12 +2510,14 @@ function enableGameAudio(){
   const wind=ctx.createBufferSource(),windFilter=ctx.createBiquadFilter(),windGain=ctx.createGain();
   wind.buffer=noiseBuffer;wind.loop=true;windFilter.type='lowpass';windFilter.frequency.value=650;windGain.gain.value=0;
   wind.connect(windFilter);windFilter.connect(windGain);windGain.connect(master);wind.start();
-  gameAudio={ctx,master,engine,engineFilter,engineGain,windGain};ctx.resume().catch(()=>{});
+  const coastFilter=ctx.createBiquadFilter(),coastGain=ctx.createGain();coastFilter.type='lowpass';coastFilter.frequency.value=220;coastGain.gain.value=0;wind.connect(coastFilter);coastFilter.connect(coastGain);coastGain.connect(master);
+  const rainFilter=ctx.createBiquadFilter(),rainGain=ctx.createGain();rainFilter.type='highpass';rainFilter.frequency.value=1100;rainGain.gain.value=0;wind.connect(rainFilter);rainFilter.connect(rainGain);rainGain.connect(master);
+  gameAudio={ctx,master,engine,engineFilter,engineGain,windGain,coastGain,rainGain};ctx.resume().catch(()=>{});
  }catch{gameAudio=null}
 }
 function updateGameAudio(now){
  if(!gameAudio||now-lastAudioUpdate<70)return;lastAudioUpdate=now;
- const {ctx,master,engine,engineFilter,engineGain,windGain}=gameAudio,t=ctx.currentTime;
+ const {ctx,master,engine,engineFilter,engineGain,windGain,coastGain,rainGain}=gameAudio,t=ctx.currentTime;
  const titleActive=introAudioEnabled&&document.body.classList.contains('bootPlaying');
  const active=gameSoundEnabled&&(['play','intro','standing','takeover'].includes(gameMode)||titleActive)&&!document.hidden;
  const driving=active&&inCar&&gameMode==='play',speed=driving?Math.min(1,Math.abs(velocity)/40):0;
@@ -2517,6 +2526,9 @@ function updateGameAudio(now){
  engineFilter.frequency.setTargetAtTime(160+speed*280,t,.12);
  engineGain.gain.setTargetAtTime(driving?.09+speed*.16:0,t,.12);
  windGain.gain.setTargetAtTime(active?(driving?.035+speed*.12:.065):0,t,.2);
+ const nearCoast=gameMode==='play'&&((inCar?carPos.x:playerPos.x)<-270);
+ coastGain.gain.setTargetAtTime(active&&nearCoast?.20*(.65+.35*Math.sin(clockTime*.8)):0,t,.35);
+ rainGain.gain.setTargetAtTime(active&&gameMode==='play'&&cityWeather(clockTime)==='rain'?.16:0,t,.25);
  if(titleActive&&active&&ctx.state==='running'){
    const boot=$('boot'),cue=boot.classList.contains('bootIdentity')?'logo':boot.classList.contains('bootStudio')?'studio':'shot'+titleShotIndex;
    if(cue!==lastTitleCue){lastTitleCue=cue;playTitleCue(cue==='logo'?92:cue==='studio'?65:72,cue==='logo'?.85:.36)}
@@ -3044,6 +3056,7 @@ function drawMap(){
  dot(cityLife.fixer.root.position.x,cityLife.fixer.root.position.z,'#c3e0a4',5);
  dot(184,0,'#d9b378',5);
  dot(196,-12.5,'#91d5ee',6,true);
+ const trailTarget=nextTrailSite();for(const stop of trailSites)if(stop===trailTarget||Math.hypot(stop.x-p.x,stop.z-p.z)<140)dot(stop.x,stop.z,stop===trailTarget?'#f0a6d7':'#72868e',6,true);
  if(taxiJob){const target=taxiObjective();if(target)dot(target.x,target.z,'#76deed',9,true)}
  if(mission){const target=missionObjective();if(target){
    ctx.strokeStyle='#ffdf8c';ctx.lineWidth=2.9;ctx.setLineDash([5,8]);ctx.beginPath();
@@ -3171,6 +3184,36 @@ let network=multiplayer({THREE,scene,makeCar,box,mat,mesh,getState:()=>({x:(inCa
 // Optional high-detail character assets only replace the fallback after validation.
 const jawsonFallback=[...person.children];
 const luxieFallback=makeOccupant(2,false);luxieFallback.group.scale.setScalar(1.15);person.add(luxieFallback.group);luxieFallback.group.visible=false;
+// Compact original landmark sculptures on checked open plots. The quest follows built sites only.
+const trailSites=[];
+const sculptureMat=mat('#b0a18c',.48,.55),plinthMat=mat('#566b72',.84),trailGlow=new THREE.MeshBasicMaterial({color:0x9ddfe9});
+for(const [i,site] of horizonTrail.entries()){
+ const pos=trailPlacement(site,(x,z,m)=>collision(x,z,m)||reactiveTrees.some(t=>Math.hypot(t.x-x,t.z-z)<3));
+ if(!pos)continue;
+ const root=new THREE.Group();root.position.set(pos.x,0,pos.z);scene.add(root);shopBuildings.push({root,x:pos.x,z:pos.z});
+ box(1.7,.22,1.7,0,.24,0,plinthMat,root);
+ const stand=mesh(new THREE.CylinderGeometry(.24,.4,1.45,12),sculptureMat,root);stand.position.y=.98;
+ const ring=mesh(new THREE.TorusGeometry(.58,.10,8,24),sculptureMat,root);ring.position.y=1.94;ring.rotation.y=i*.43;
+ const orb=mesh(new THREE.IcosahedronGeometry(.26,1),trailGlow,root);orb.position.y=1.94;
+ const label=mesh(new THREE.PlaneGeometry(2.8,.56),new THREE.MeshBasicMaterial({map:textTexture(site.name.toUpperCase(),'#344a54','#f5dfbf'),side:THREE.DoubleSide}),root);label.position.set(0,2.85,0);
+ footprint.push({x:pos.x,z:pos.z,w:.85,d:.85});trailSites.push({...site,...pos,root,orb});
+}
+function nextTrailSite(){return trailSites.find(p=>!(save.trailVisited||[]).includes(p.id));}
+const trailPanel=document.createElement('div');trailPanel.id='trailPanel';trailPanel.className='overlay';trailPanel.style.display='none';
+trailPanel.innerHTML='<div class="panel"><div class="eyebrow">HORIZON · THE SOLARA EXHIBITION</div><h2 id="trailTitle"></h2><div class="storyTurn"><b>JAWSON</b><span id="trailJawson"></span></div><div class="storyTurn"><b>LUXIE</b><span id="trailLuxie"></span></div><p id="trailReward"></p><button id="trailContinue">CONTINUE</button></div>';document.body.append(trailPanel);
+function closeTrail(){trailPanel.style.display='none';if(gameMode==='trail')gameMode='play';}
+$('trailContinue').onclick=closeTrail;
+function interactTrail(){
+ if(inCar||mission||taxiJob)return false;
+ const next=nextTrailSite();if(!next||Math.hypot(playerPos.x-next.x,playerPos.z-next.z)>5)return false;
+ const result=completeTrailStop(save,next.id,trailSites.map(p=>p.id));if(!result.ok)return false;
+ save.money=result.money;save.trailVisited=result.trailVisited;persist();updateHUD();
+ if(document.pointerLockElement)document.exitPointerLock();for(const k in keys)keys[k]=false;
+ gameMode='trail';$('trailTitle').textContent=next.name;$('trailJawson').textContent=next.jawson;$('trailLuxie').textContent=next.luxie;
+ $('trailReward').textContent='+$'+next.reward+' · '+trailSites.filter(p=>save.trailVisited.includes(p.id)).length+'/'+trailSites.length+' memories collected';trailPanel.style.display='flex';
+ const following=nextTrailSite();if(following)setWaypoint(following,following.name);else if(mapWaypointName===next.name)setWaypoint(null);
+ return true;
+}
 const modelAssets=createPlayerModelSystem({THREE,root:person,fallbackChildren:[]});
 const luxieAssets=createPlayerModelSystem({THREE,root:person,fallbackChildren:[],manifestKey:'luxie'});
 modelAssets.load();luxieAssets.load();cityLife.setPartner(activeLead());
@@ -3190,6 +3233,9 @@ function updateWeather(dt){
   scene.fog.density=kind==='rain'?.0033:kind==='overcast'?.0025:.0019;
   sun.intensity=mode.intensity*(kind==='rain'?.53:kind==='overcast'?.76:1);
   materials.asphalt.roughness=kind==='rain'?.48:.91;
+  ambient.color.set(kind==='rain'?'#b5c6dd':atmosphereIndex===1?'#f2c9ab':'#cbe6ff');
+  ambient.groundColor.set(atmosphereIndex===2?'#4c555e':'#747165');
+  for(const material of windowMats){material.emissiveMap=material.map;material.emissiveIntensity=atmosphereIndex===2?.17:0;}
   $('weatherLabel').textContent=kind.toUpperCase();
  }
  rainMesh.visible=playing&&kind==='rain'&&!reducedWeather;
