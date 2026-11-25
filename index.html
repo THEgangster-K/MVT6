@@ -246,7 +246,7 @@ body:has(#hud[style*="block"]) #lockHint{display:block}
 
 /* MVT 6: AFTERGLOW | original release presentation */
 :root{--ink:#0b1015;--paper:#f6f4ec;--muted:#aab8bb;--accent:#ffbf81;--cool:#6ee1cc;--surface:rgba(12,19,24,.90);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--paper)}
-button{font:700 13px/1.3 inherit;letter-spacing:.035em;border-radius:7px;background:#ffd09d;color:#151d21;box-shadow:none;transition:background .16s,transform .16s}
+button{font-family:inherit;font-size:13px;font-weight:700;line-height:1.3;letter-spacing:.035em;border-radius:7px;background:#ffd09d;color:#151d21;box-shadow:none;transition:background .16s,transform .16s}
 button:hover{filter:none;background:#ffe0ba}button:focus-visible,select:focus-visible{outline:2px solid #76f4db;outline-offset:3px}button.secondary{background:#ffffff10;border:1px solid #ffffff24;color:#e3ebe9}
 /* A restrained title sequence: black, three gently cross-faded artworks, then identity. */
 #boot{background:#030406!important;display:flex!important;align-items:center;justify-content:center;isolation:isolate;transition:opacity .45s,visibility .45s}
@@ -586,7 +586,7 @@ const windowMats=['tower','old','loft','modern'].map((type,i)=>new THREE.MeshSta
  map:patternTexture(type,i),side:THREE.FrontSide,transparent:false,opacity:1,depthWrite:true,roughness:i===1?.85:.37,metalness:i===1?0:.15
 }));
 // GPU instancing renders many static skyline elements in four draw calls.
-const alleys=[],footprint=[],buildingMatrices=[],buildingTints=[],roofMatrices=[],facadeMatrices=[[],[],[],[]],treeTrunks=[],treeCanopies=[];
+const alleys=[],footprint=[],buildingMatrices=[],buildingTints=[],roofMatrices=[],facadeMatrices=[[],[],[],[]],treeTrunks=[],treeCanopies=[],palmTrunks=[],palmFronds=[];
 const facadeDummy=new THREE.Object3D();
 function facadeMatrix(x,y,z,w,h,rot){facadeDummy.position.set(x,y,z);facadeDummy.rotation.set(0,rot,0);facadeDummy.scale.set(w,h,1);facadeDummy.updateMatrix();return facadeDummy.matrix.clone()}
 for(let ix=-HALF;ix<HALF;ix++)for(let iz=-HALF;iz<HALF;iz++){
@@ -780,10 +780,11 @@ for(const [kind,list] of Object.entries(pavementProps)){
 // Real-world scale street furniture and neighborhood landmarks in batches.
 const streetscape={lampPost:[],lampHead:[],bollard:[],bench:[],busGlass:[],busRoof:[],kiosk:[],kioskRoof:[],trash:[]};
 const addStreet=(kind,x,y,z,w,h,d)=>{if(clearsStreet(x,z,w,d,BLOCK,ROAD))streetscape[kind].push([x,y,z,w,h,d])};
-const transitStops=[[-13,-108],[107,13],[-108,105],[200,-13],[-199,-13],[13,199],[107,-106],[-13,-199]];
+const transitStops=[[-46,-106],[138,14],[-138,106],[230,-14],[-230,-14],[46,198],[138,-106],[-46,-198]].filter(([x,z])=>clearsStreet(x,z,8,3.4,BLOCK,ROAD));
 for(const [idx,pos] of transitStops.entries()){
  const [x,z]=pos;
  addStreet('busGlass',x,2.15,z,5.8,3.6,.10);addStreet('busRoof',x,4.02,z,7.7,.22,3.0);
+ for(const side of [-1,1])addStreet('lampPost',x+side*2.9,2,z,.15,4,.15);
  if(clearsStreet(x,z+.47,4.4,.9,BLOCK,ROAD)){addStreet('bench',x,.78,z+.47,4.4,.18,.9);for(const side of [-1,1])addStreet('bollard',x+side*1.65,.34,z+.47,.23,.68,.36)}
  for(const side of [-1,1]){addStreet('lampPost',x+side*3.8,2.5,z,.18,5,.18);addStreet('lampHead',x+side*3.8,5,z,.8,.2,.8)}
  // Remove standalone kiosks: prior fixed offsets could place them across lanes.
@@ -795,7 +796,7 @@ for(let i=-HALF;i<=HALF;i++){
   const x=i*BLOCK+12.5,z=j*BLOCK+11.8;
   addStreet('lampPost',x,3.45,z,.15,6.9,.15);
   addStreet('lampHead',x,6.89,z,1.2,.23,.6);
-  if((i+j)%2===0){addStreet('trash',x+2,.55,z,1,1.1,.82);addStreet('bench',x-2,.64,z,3.4,.25,1.05)}
+  if((i+j)%2===0){addStreet('trash',x+2,.55,z,.75,1.1,.75)}
  }
 }
 const streetscapeMats={
@@ -836,10 +837,35 @@ function alleyInstances(arr,material){
  im.instanceMatrix.needsUpdate=true;im.frustumCulled=false;scene.add(im);
 }
 alleyInstances(canopyBars,alleySteel);alleyInstances(hangingLamps,alleyLamp);alleyInstances(alleyBins,mat('#667c78',.9));
+// Coastal vegetation: curved palm fronds use a purpose-built indexed mesh and GPU instances.
 function addTree(x,z,s){
-treeTrunks.push(new THREE.Matrix4().compose(new THREE.Vector3(x,s*.82,z),new THREE.Quaternion(),new THREE.Vector3(1,s*1.65,1)));
-treeCanopies.push(new THREE.Matrix4().compose(new THREE.Vector3(x,s*2.15,z),new THREE.Quaternion(),new THREE.Vector3(s*1.3,s*1.3,s*1.3)));
+ if(!clearsStreet(x,z,1.2,1.2,BLOCK,ROAD))return;
+ if(x < -80 || rnd(x*17+z*9)>.66){
+   const height=s*2.35;
+   palmTrunks.push(new THREE.Matrix4().compose(new THREE.Vector3(x,height*.5+.12,z),new THREE.Quaternion(),new THREE.Vector3(.64,height,.64)));
+   for(let j=0;j<7;j++){
+     const a=j*Math.PI*2/7+rnd(x+z)*.5;
+     const q=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),a);
+     palmFronds.push(new THREE.Matrix4().compose(new THREE.Vector3(x,height+.08,z),q,new THREE.Vector3(s*.96,s*.96,s*.96)));
+   }
+ }else{
+   treeTrunks.push(new THREE.Matrix4().compose(new THREE.Vector3(x,s*.82,z),new THREE.Quaternion(),new THREE.Vector3(1,s*1.65,1)));
+   treeCanopies.push(new THREE.Matrix4().compose(new THREE.Vector3(x,s*2.15,z),new THREE.Quaternion(),new THREE.Vector3(s*1.3,s*1.3,s*1.3)));
+ }
 }
+function palmGeometry(){
+ const v=[],indices=[];
+ for(let i=0;i<=12;i++){
+   const t=i/12,y=.48*Math.sin(t*Math.PI)-.50*t*t,z=t*1.72,w=.24*Math.sin(t*Math.PI);
+   v.push(-w,y-.065*Math.sin(t*Math.PI),z,0,y+.025,z,w,y-.065*Math.sin(t*Math.PI),z);
+   if(i<12){let k=i*3;indices.push(k,k+3,k+1,k+1,k+3,k+4,k+1,k+4,k+2,k+2,k+4,k+5)}
+ }
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute(v,3));
+ geometry.setIndex(indices);geometry.computeVertexNormals();return geometry;
+}
+detailBatch(palmTrunks,new THREE.CylinderGeometry(.30,.47,1,9),mat('#9b8064',.95));
+detailBatch(palmFronds,palmGeometry(),new THREE.MeshStandardMaterial({color:0x40805a,roughness:.93,side:THREE.DoubleSide}));
 const trunkBatch=new THREE.InstancedMesh(new THREE.CylinderGeometry(.35,.49,1,8),materials.trunk,treeTrunks.length);
 const canopyBatch=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,1),materials.leaf,treeCanopies.length);
 for(let i=0;i<treeTrunks.length;i++)trunkBatch.setMatrixAt(i,treeTrunks[i]);
