@@ -463,12 +463,12 @@ body.bootPlaying #menu{visibility:hidden!important}
 <div class="loadingTrack"><div id="loadingFill"></div></div><p id="bootError">Jawson &amp; Luxie • Eight story chapters</p><div class="artDots"><i></i><i></i><i></i></div><div class="bootFeatureStrip"><span>NO MONEY</span><span>NO CONNECTIONS</span><span>EVERYTHING TO BUILD</span></div>
 <button id="bootRetry" style="display:none" onclick="location.reload()">RETRY</button></div></div>
 <div id="menu" class="overlay movieMenu"><div class="menuCity"></div><div class="menuContent">
-<div class="kicker">SOLARA CITY &nbsp; / &nbsp; DUAL PATHS</div><h1 class="movieLogo releaseMark" aria-label="MVT 6"><span class="letters">MVT</span><i class="slash" aria-hidden="true"></i><span class="digit">6</span></h1>
+<div class="kicker">SOLARA CITY &nbsp; / &nbsp; AVENUES</div><h1 class="movieLogo releaseMark" aria-label="MVT 6"><span class="letters">MVT</span><i class="slash" aria-hidden="true"></i><span class="digit">6</span></h1>
 <div class="movieSubtitle">MOTOR VEHICLE THEFT</div><h2>Every street has a story.</h2>
 <p>Explore Solara City. Meet local contacts, take on jobs, customise your car and build your own story.</p>
 <div class="menuActions"><button id="play">PLAY STORY</button><button id="resetSave" class="secondary">START OVER</button></div>
 <div class="movieControls">WASD · MOVE &nbsp;&nbsp; CLICK · MOUSE LOOK &nbsp;&nbsp; F · INTERACT</div></div>
-<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">DUAL PATHS · V2.6</div></div></div>
+<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">AVENUES · V2.7</div></div></div>
 <div id="storyIntro" aria-live="polite" style="display:none"><div id="introShade"></div><div id="introContent"><div id="introChapter">SOLARA CITY · CHAPTER ONE</div><div id="introCue">AN ORIGINAL MVT 6 FILM</div><h2 id="introTitle">START WITH NOTHING.</h2><p id="introCopy">New city. Empty pockets. Every choice counts.</p></div><button id="introSkip">SKIP INTRO →</button></div>
 <div id="paused" class="overlay"><div class="panel"><div class="eyebrow">SOLARA CITY</div><h2>PAUSED</h2><p>Explore at your own pace. Your cash, upgrades and completed contracts are automatically saved.</p><button id="resume">RESUME</button><button id="pauseMap" class="secondary">MAP & MISSIONS</button>
 <div class="qualitySelector"><label for="graphicsQuality">GRAPHICS QUALITY</label><select id="graphicsQuality">
@@ -530,7 +530,7 @@ window.addEventListener('error',e=>fail(e.message||'Game asset could not load'))
 import {createPlayerModelSystem} from './model-assets.js';
 import {multiplayer} from './client.js';
 import {createCityLife} from './city-life.js';
-import {movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction,arcadeCarContact} from './game-core.js';
+import {movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction,arcadeCarContact,secondaryLane,vehicleProfile} from './game-core.js';
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';
 // MVT 6: an original browser game and city, not GTA assets or source.
 const $=id=>document.getElementById(id), world=$('game');
@@ -685,7 +685,8 @@ const palette={tower:['#a0b6c0','#b5c2c8','#6b8b99'],apartment:['#e4ccab','#ac89
 for(let ix=-HALF;ix<HALF;ix++)for(let iz=-HALF;iz<HALF;iz++){
  const cx=(ix+.5)*BLOCK,cz=(iz+.5)*BLOCK,n=(ix+HALF)*10+iz+HALF;
  const plan=cityBlockPlan(cx,cz,n);
- neighborhoods.push({cx,cz,kind:plan.kind,district:plan.district,alley:plan.alley||null});
+ const lane=secondaryLane(cx,cz,plan.alley,n);
+ neighborhoods.push({cx,cz,kind:plan.kind,district:plan.district,alley:plan.alley||null,lane});
  plane(BLOCK-ROAD-1,BLOCK-ROAD-1,cx,cz,materials.sidewalk,.10);
  if(plan.kind==='plaza'||plan.kind==='park'){
    const plaza=plan.kind==='plaza';
@@ -731,9 +732,16 @@ for(let ix=-HALF;ix<HALF;ix++)for(let iz=-HALF;iz<HALF;iz++){
    for(let z=-24;z<=24;z+=6)parkingLines.push(parcelMatrix(cx+29,.16,cz+z,5,.025,.12));
  }
  if(plan.alley){
-   const a=plan.alley;
-   const ax=cx+(a.axis==='x'?a.offset:0),az=cz+(a.axis==='z'?a.offset:0);
-   plane(a.axis==='x'?a.width:70,a.axis==='x'?70:a.width,ax,az,materials.asphalt,.205);
+   // Mesh strip connects the two existing streets through a shallow S-shaped alley.
+   const verts=[],indices=[],uvs=[];
+   for(let k=0;k<lane.points.length;k++){
+    const p=lane.points[k],a=plan.alley.axis==='x';
+    verts.push(p.x-(a?lane.width/2:0),.205,p.z-(a?0:lane.width/2),p.x+(a?lane.width/2:0),.205,p.z+(a?0:lane.width/2));
+    uvs.push(0,k/16,1,k/16);if(k>0){const j=k*2;indices.push(j-2,j-1,j,j-1,j+1,j);}
+   }
+   const geom=new THREE.BufferGeometry();geom.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));geom.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));geom.setIndex(indices);geom.computeVertexNormals();
+   if(geom.attributes.normal.getY(0)<0){for(let k=0;k<indices.length;k+=3){const v=indices[k+1];indices[k+1]=indices[k+2];indices[k+2]=v;}geom.setIndex(indices);geom.computeVertexNormals();}
+   const road=mesh(geom,materials.asphalt);road.receiveShadow=true;
  }
  for(const [bi,p] of plan.parcels.entries()){
   const {x:bx,z:bz,w:bw,d:depth,h:height,type}=p;
@@ -931,8 +939,14 @@ for(let i=0;i<buildingMatrices.length;i++){
 const openVenues=[];
 const venueWood=mat('#aa7951',.76),venueSteel=mat('#344e52',.58,.25),venueRoof=mat('#487a79',.69),venueTile=mat('#e4d6bd',.87),venueWall=mat('#ece1cc',.92),venueGlass=new THREE.MeshStandardMaterial({color:0x9cc6c9,roughness:.24,transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide}),venueLight=new THREE.MeshBasicMaterial({color:0xffe4b8});
 const venueSites=[{x:46,z:-69,name:'PLAZA COFFEE',message:'PLAZA COFFEE · Take a break by the fountain.'},{x:138,z:66,name:'SOLARA MARKET HALL',message:'MARKET HALL · A neighbourhood meeting place.'}];
-const parkSites=neighborhoods.filter(p=>p.kind==='park').slice(0,4);
-for(const [i,p] of parkSites.entries())venueSites.push({x:p.cx,z:p.cz-23,name:i%2?'GARDEN CAFÉ':'CITY INFORMATION',message:i%2?'GARDEN CAFÉ · Enjoy the neighbourhood.':'CITY INFORMATION · Explore the city districts.'});
+const parkSites=neighborhoods.filter(p=>p.kind==='park').slice(0,8);
+const venueKinds=[
+ {name:'GARDEN CAFÉ',message:'A café serving the neighbourhood.',roof:'#487a79',task:'Help set up the outdoor tables'},
+ {name:'HARBOUR ARCHIVE',message:'A local history and photograph collection.',roof:'#9d7159',task:'Catalogue an old harbour photograph'},
+ {name:'CITY INFORMATION',message:'Maps and stories from around Solara.',roof:'#576d90',task:'Update the visitor map'},
+ {name:'COMMUNITY GARDEN',message:'A neighbourhood plant exchange.',roof:'#718d5c',task:'Help label the seed collection'}
+];
+for(const [i,p] of parkSites.entries()){const v=venueKinds[i%venueKinds.length];venueSites.push({x:p.cx,z:p.cz-23,...v});}
 for(const site of venueSites){
  const {x,z,name,message}=site;
  if(!clearsStreet(x,z,11,8,BLOCK,ROAD)||footprint.some(p=>Math.abs(p.x-x)<p.w+6&&Math.abs(p.z-z)<p.d+4.5))continue;
@@ -942,7 +956,7 @@ for(const site of venueSites){
    const post=mesh(new THREE.CylinderGeometry(.15,.18,3.3,10),venueSteel,root);post.position.set(dx,1.8,dz);
    footprint.push({x:x+dx,z:z+dz,w:.19,d:.19});
  }
- box(11,.20,8,0,3.55,0,venueRoof,root);
+ box(11,.20,8,0,3.55,0,site.roof?mat(site.roof,.69):venueRoof,root);
  // Back and side walls make an actual room while the front remains walk-in.
  box(10.5,3.12,.19,0,1.74,-3.7,venueWall,root);
  footprint.push({x,z:z-3.7,w:5.25,d:.11});
@@ -967,10 +981,17 @@ for(const site of venueSites){
    for(const dz of [-.9,.9]){const chair=mesh(new THREE.CylinderGeometry(.32,.32,.12,12),venueWood,root);chair.position.set(dx,.58,1.5+dz);for(const lx of [-.19,.19])for(const lz of [-.19,.19])box(.055,.48,.055,dx+lx,.29,1.5+dz+lz,venueSteel,root);box(.60,.50,.085,dx,.86,1.5+dz+Math.sign(dz)*.26,venueWood,root);}
  }
  const sign=mesh(new THREE.PlaneGeometry(8,.8),new THREE.MeshBasicMaterial({map:textTexture(name,'#294c4b','#fff0d6'),side:THREE.DoubleSide}),root);sign.position.set(0,3.33,4.03);
- openVenues.push({x,z,name,message});
+ openVenues.push({x,z,name,message,task:site.task||'Help prepare the counter',id:'v'+x+'_'+z});
 }
 function interactShop(x,z){
- for(const place of openVenues){if(Math.hypot(x-place.x,z-place.z)<5.6){setNotice(place.message);gestureTime=.5;return true}}
+ for(const place of openVenues){if(Math.hypot(x-place.x,z-place.z)<5.6){
+  const id=activeLead()+':'+place.id,visited=Array.isArray(save.venueVisits)?save.venueVisits:[];
+  if(!visited.includes(id)){
+   save.venueVisits=[...visited,id];const reward=activeLead()==='luxie'?60:45;save.money+=reward;persist();updateHUD();
+   setNotice(leadName().toUpperCase()+' · '+place.task+' · +$'+reward+' · '+place.name);
+  }else setNotice(place.name+' · '+place.message+' · Activity complete for '+leadName());
+  gestureTime=.5;return true
+ }}
  let chosen=null,dist=5.2;
  for(const shop of shopFronts){const d=Math.hypot(shop.x-x,shop.z-z);if(d<dist){dist=d;chosen=shop}}
  if(!chosen)return false;
@@ -1071,6 +1092,7 @@ function alleyInstances(arr,material){
 alleyInstances(canopyBars,alleySteel);alleyInstances(hangingLamps,alleyLamp);alleyInstances(alleyBins,mat('#667c78',.9));
 // Coastal vegetation: curved palm fronds use a purpose-built indexed mesh and GPU instances.
 function addTree(x,z,s){
+ if(neighborhoods.some(n=>n.alley&&Math.abs(x-n.cx)<36&&Math.abs(z-n.cz)<36&&Math.abs((n.alley.axis==='x'?x-n.cx:z-n.cz)-n.alley.offset)<n.alley.width/2+1))return;
  if(!clearsStreet(x,z,1.2,1.2,BLOCK,ROAD)||footprint.some(p=>Math.abs(p.x-x)<p.w+.8&&Math.abs(p.z-z)<p.d+.8))return;
  if(x < -80 || rnd(x*17+z*9)>.66){
    const height=s*2.35;
@@ -1172,13 +1194,13 @@ contactCtx.fillStyle=contactGradient;contactCtx.fillRect(0,0,64,64);
 const contactMap=new THREE.CanvasTexture(contactCanvas);
 const contactMaterial=new THREE.MeshBasicMaterial({map:contactMap,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,side:THREE.DoubleSide});
 const carContactGeometry=new THREE.PlaneGeometry(5.3,9.4);
-function coachworkGeometry(tall=false){
- const key=tall?'saloon':'coupe';if(coachworkCache.has(key))return coachworkCache.get(key);
+function coachworkGeometry(tall=false,type='sedan'){
+ const key=(tall?'saloon:':'civilian:')+type,profile=vehicleProfile(type);if(coachworkCache.has(key))return coachworkCache.get(key);
  // [longitudinal position, half width, upper height, lower height]
  const sections=[[-3.79,1.38,1.04,.54],[-3.52,1.67,1.29,.48],[-2.54,1.85,1.48,.47],[-1.38,1.79,1.52,.49],[0,1.74,1.48,.49],[1.36,1.78,1.46,.49],[2.45,1.83,1.39,.49],[3.42,1.63,1.17,.48],[3.79,1.37,1.00,.54]];
  const vertices=[],tri=[];
  for(const [z,w,y,lo] of sections){
-   const high=y+(tall?.05:0);
+   const high=y+(tall?.05:0)+profile.body;
    vertices.push(-w*.82,lo,z,w*.82,lo,z,w,.76,z,w*.98,high-.13,z,w*.80,high,z,-w*.80,high,z,-w*.98,high-.13,z,-w,.76,z);
  }
  const r=8;
@@ -1241,21 +1263,23 @@ function occupantDetail(car,near,visible=true){
  const cabin=car.userData.cabin;if(cabin){const m=cabin.material;if(m.transparent!==near){m.transparent=near;m.depthWrite=!near;m.needsUpdate=true;}m.opacity=near?.25:1;}
 }
 
-function makeCar(color='#ed636a',police=false){const group=new THREE.Group();scene.add(group);
+function makeCar(color='#ed636a',police=false,type='sedan'){const group=new THREE.Group();scene.add(group);
  const paint=new THREE.MeshPhysicalMaterial({color,roughness:.24,metalness:.54,clearcoat:.9,clearcoatRoughness:.12});
  const dark=mat('#192735',.4,.2),lamp=mat('#fff6c5',.2),rear=mat('#e0454c',.25),wheel=mat('#101820',.92),trim=mat('#d7e5ea',.24,.65);
  // Sculpted nose, rear deck, shoulder line and wheel-side contours.
- const hull=mesh(coachworkGeometry(police),paint,group);hull.castShadow=true;hull.receiveShadow=true;
+ const profile=vehicleProfile(type);group.userData.vehicleType=type;
+ const hull=mesh(coachworkGeometry(police,type),paint,group);hull.castShadow=true;hull.receiveShadow=true;
  const cabinShade=new THREE.MeshStandardMaterial({color:0x91b8c2,roughness:.17,metalness:.10,transparent:true,opacity:.25,depthWrite:false,side:THREE.FrontSide});
  // Tapered glass cabin: a roof ridge, sloped front/rear glass and integrated pillars.
  const cv=[-1.47,1.47,-2.18,1.47,1.47,-2.18,-1.52,1.47,1.22,1.52,1.47,1.22,-1.10,2.48,-1.37,1.10,2.48,-1.37,-1.11,2.48,-.02,1.11,2.48,-.02];
+ for(let i=4;i<8;i++){cv[i*3+1]+=profile.roof;cv[i*3+2]+=i<6?profile.rear:profile.front;}
  const ci=[0,4,1,1,4,5,2,3,6,3,7,6,0,2,4,2,6,4,1,5,3,3,5,7,4,6,5,5,6,7];
  const cg=new THREE.BufferGeometry();cg.setAttribute('position',new THREE.Float32BufferAttribute(cv,3));cg.setIndex(ci);cg.computeVertexNormals();
  const cabin=mesh(cg,cabinShade,group);cabin.castShadow=false;cabin.renderOrder=3;group.userData.cabin=cabin;
- const roof=box(2.25,.10,1.48,0,2.51,-.70,paint,group);
+ const roof=box(2.25,.10,1.48+profile.front-profile.rear,0,2.51+profile.roof,-.70+(profile.front+profile.rear)/2,paint,group);
  for(const side of [-1,1]){
-   const pillar=box(.095,1.06,.10,side*1.30,1.99,.57,paint,group);pillar.rotation.x=-.48;pillar.rotation.z=-side*.20;
-   const rearPillar=box(.13,1.0,.13,side*1.29,1.98,-1.80,paint,group);rearPillar.rotation.x=.56;rearPillar.rotation.z=-side*.21;
+   const pillar=box(.095,1.06+profile.roof,.10,side*1.30,1.99+profile.roof/2,.57+profile.front/2,paint,group);pillar.rotation.x=-.48;pillar.rotation.z=-side*.20;
+   const rearPillar=box(.13,1.0+profile.roof,.13,side*1.29,1.98+profile.roof/2,-1.80+profile.rear/2,paint,group);rearPillar.rotation.x=.56;rearPillar.rotation.z=-side*.21;
  }
  // Real wheel assemblies spin and front wheels steer; wheel spokes are visible when moving.
  const wheelAssemblies=[];
@@ -1367,7 +1391,7 @@ wheelRim.rotation.x=Math.PI/2+.3;wheelRim.position.set(-.62,2.05,.37);
  if(police){box(2,.22,.55,0,2.7,-.4,mat('#e8f0f9'),group);box(.75,.25,.55,-.54,2.86,-.4,mat('#ec394a'),group);box(.75,.25,.55,.54,2.86,-.4,mat('#418bff'),group)}
  const contact=mesh(carContactGeometry,contactMaterial,group);contact.rotation.x=-Math.PI/2;contact.position.y=.095;
  return group}
-let save;const defaultSave=()=>({money:45,completed:0,speed:0,handling:0,nitro:0,lifeTier:0,lead:'jawson',leadJobs:{jawson:0,luxie:0}});try{save={...defaultSave(),...JSON.parse(localStorage.getItem('mvt6-save')||'{}')}}catch{save=defaultSave()}
+let save;const defaultSave=()=>({money:45,completed:0,speed:0,handling:0,nitro:0,lifeTier:0,lead:'jawson',leadJobs:{jawson:0,luxie:0},venueVisits:[]});try{save={...defaultSave(),...JSON.parse(localStorage.getItem('mvt6-save')||'{}')}}catch{save=defaultSave()}
 function activeLead(){return save.lead==='luxie'?'luxie':'jawson'}
 function leadName(){return activeLead()==='luxie'?'Luxie':'Jawson'}
 function persist(){try{localStorage.setItem('mvt6-save',JSON.stringify(save))}catch{};if(network)network.save(save)}
@@ -1487,15 +1511,16 @@ function updateSignals(dt){
  }
 }
 const traffic=[],police=[];for(let i=0;i<24;i++){
- const type=i%6===0?'taxi':i%6===1?'utility':i%6===2?'compact':'sedan';
+ const type=['taxi','utility','compact','sedan','wagon','coupe'][i%6];
  const color=type==='taxi'?'#e8bb47':type==='utility'?'#e4e1d7':['#5f9ac9','#eab76e','#94beb5','#e2e4e4','#657489'][i%5];
- const car=makeCar(color);
- // Different silhouettes without changing the underlying collision model.
- if(type==='utility'){car.scale.set(1.03,1.22,1.12);box(2.2,.42,1.6,0,2.55,-.6,mat('#657578',.6),car)}
- if(type==='compact')car.scale.set(.91,.96,.88);
+ const car=makeCar(color,false,type);
+ // Roof rails and trim distinguish family wagons and work vehicles without changing collision size.
+ if(type==='utility'||type==='wagon'){for(const side of [-1,1])box(.11,.09,1.40,side*.92,2.67+vehicleProfile(type).roof,-.70,mat('#657578',.6),car)}
+ if(type==='compact')car.scale.set(.96,1,.94);
+ if(type==='coupe')car.scale.set(1,.97,1);
  if(type==='taxi'){box(1.1,.28,.48,0,2.72,-.65,mat('#f9e6a8'),car);const sign=mesh(new THREE.PlaneGeometry(.87,.19),new THREE.MeshBasicMaterial({map:textTexture('TAXI','#e7c568','#263237'),side:THREE.DoubleSide}),car);sign.position.set(0,2.72,-.39)}
  const east=i%2===0,dir=i%4<2?1:-1;
- const q=roadPositions[Math.floor(i/4)%roadPositions.length];
+ const q=roadPositions[(Math.floor(i/4)*2+i%2)%roadPositions.length];
  const travel=-330+(i*127)%660;
  const pos=east?new THREE.Vector3(travel,0,q+dir*5):new THREE.Vector3(q-dir*5,0,travel);
  const baseSpeed=(type==='utility'?7:9)+rnd(i+94)*5;
@@ -1678,7 +1703,7 @@ function updateHUD(){ $('activeLeadName').textContent=leadName().toUpperCase();$
  escape:'Keep moving and lose the patrol.'
 }[mission.stage]||'Follow the next story objective.')+
  ' · '+Math.round(Math.hypot(p.x-missionObjective().x,p.z-missionObjective().z))+'m TO TARGET'+
- ' · '+Math.max(0,Math.ceil(missionTime))+'s'}else if(taxiJob){const o=taxiObjective();$('missionTitle').textContent='TAXI · '+(taxiJob.stage==='pickup'?'PICKUP':'DROP OFF');$('missionText').textContent='Stop at '+o.name+' · '+Math.round(Math.hypot(p.x-o.x,p.z-o.z))+'m · '+Math.ceil(taxiJob.time)+'s'}else{$('missionTitle').textContent='The city is yours';$('missionText').textContent='Talk to your partner for story chapters or take a taxi fare in your phone.'}}
+ ' · '+Math.max(0,Math.ceil(missionTime))+'s'}else if(taxiJob){const o=taxiObjective();$('missionTitle').textContent='TAXI · '+(taxiJob.stage==='pickup'?'PICKUP':'DROP OFF');$('missionText').textContent='Stop at '+o.name+' · '+Math.round(Math.hypot(p.x-o.x,p.z-o.z))+'m · '+Math.ceil(taxiJob.time)+'s'}else{$('missionTitle').textContent='The city is yours';$('missionText').textContent='Talk to your partner for chapters, explore purple venue markers, or take a taxi fare.'}}
 // Original crime-fiction campaign: Lost Solara, a city of rival crews and secret debts.
 // Jawson is playable; Luxie is the story's second lead.
 const chapterBeats=[
@@ -2901,7 +2926,7 @@ function drawMap(){
   const plan=neighborhoods[(i+HALF)*HALF*2+j+HALF];ctx.fillStyle=({park:'#526e4c',plaza:'#6d8062',parking:'#37454d',residential:'#6b7860',industrial:'#60686c',coast:'#777e76',commercial:'#6c6664',urban:'#465951'})[plan.kind]||'#465951';
   ctx.fillRect((cx-(BLOCK-ROAD)/2)*zoom,-(cz+(BLOCK-ROAD)/2)*zoom,(BLOCK-ROAD)*zoom,(BLOCK-ROAD)*zoom);
   ctx.strokeStyle='#d5ddbd66';ctx.lineWidth=.7;ctx.strokeRect((cx-34)*zoom,-(cz+34)*zoom,68*zoom,68*zoom);
-  if(plan.alley){const a=plan.alley;ctx.fillStyle='#24343b';const ax=cx+(a.axis==='x'?a.offset:0),az=cz+(a.axis==='z'?a.offset:0),aw=a.axis==='x'?a.width:70,ad=a.axis==='x'?70:a.width;ctx.fillRect((ax-aw/2)*zoom,-(az+ad/2)*zoom,aw*zoom,ad*zoom);}
+  if(plan.lane){ctx.strokeStyle='#24343b';ctx.lineWidth=plan.lane.width*zoom;ctx.beginPath();plan.lane.points.forEach((q,k)=>k?ctx.lineTo(q.x*zoom,-q.z*zoom):ctx.moveTo(q.x*zoom,-q.z*zoom));ctx.stroke();}
  }
  ctx.fillStyle='#111e25';
  for(let i=-HALF;i<=HALF;i++){ctx.fillRect((i*BLOCK-ROAD/2)*zoom,-390*zoom,ROAD*zoom,780*zoom);ctx.fillRect(-390*zoom,-(i*BLOCK+ROAD/2)*zoom,780*zoom,ROAD*zoom)}
@@ -2922,6 +2947,7 @@ function drawMap(){
  for(const item of equipmentDrops)if(!collectedGear.includes(item.id)&&Math.hypot(item.x-p.x,item.z-p.z)<140)dot(item.x,item.z,'#7fffe0',6,true);
  const nearShops=shopFronts.slice().sort((a,b)=>Math.hypot(a.x-p.x,a.z-p.z)-Math.hypot(b.x-p.x,b.z-p.z)).slice(0,3);
  for(const shop of nearShops)if(Math.hypot(shop.x-p.x,shop.z-p.z)<120)dot(shop.x,shop.z,'#95dce3',4,false);
+ for(const venue of openVenues)if(Math.hypot(venue.x-p.x,venue.z-p.z)<150)dot(venue.x,venue.z,(save.venueVisits||[]).includes(activeLead()+':'+venue.id)?'#82969a':'#c8b9f8',5,true);
  dot(cityLife.fixer.root.position.x,cityLife.fixer.root.position.z,'#c3e0a4',5);
  dot(184,0,'#d9b378',5);
  if(taxiJob){const target=taxiObjective();if(target)dot(target.x,target.z,'#76deed',9,true)}

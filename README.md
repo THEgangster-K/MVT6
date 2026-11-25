@@ -1,5 +1,16 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v2.7 — AVENUES
+
+- 52 curved secondary lanes replace straight alley strips within the existing reserved corridors. The minimap follows their new curves and tree placement avoids the reserved envelopes.
+- Six original traffic body/cabin profiles: sedan, taxi, utility, compact, wagon and coupe. Traffic is distributed across more of the main street network.
+- More varied park venues, including garden cafés, harbour archives, information kiosks and community gardens, with distinct roof colours and local activities. Purple minimap markers identify nearby venue activities.
+- Jawson and Luxie can independently complete venue assistance interactions once per location, with $45 and $60 rewards respectively. Completion records persist locally and in account progress.
+- Existing main road grid, mission locations, character switching, progression and vehicle mechanics retained.
+
+**Verification:** 2,861 assertions passed in the strict adapted regression environment, including lane-envelope checks and vehicle profile validation. Browser graphics, navigability of individual alleys, account persistence and FPS remain unverified. The secondary lanes do not reroute NPC traffic; no full road-network overhaul or new professional vehicle assets are included.
+
+
 ## v2.6 — DUAL PATHS
 
 - Play as Jawson or Luxie, switch with V on foot between jobs, or use the pause-menu character switch.
