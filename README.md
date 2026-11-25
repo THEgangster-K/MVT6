@@ -1,5 +1,17 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v2.3 — PREMIERE
+
+- Kang Dynasty Studios Presents fades in from black, holds, then fades back to black over 3.5 seconds.
+- Replaces the flat illustrated title cards with six live in-engine shots, including coastal, downtown, street, plaza, night and skyline views. Camera motion, restrained cuts, location captions, changing lighting and a stronger original logo reveal replace the old artwork.
+- Skip Intro and reduced-motion mode retained. Intro audio is optional and user-activated, using original synthesized tones.
+- Title waits for the first successfully rendered frame. Errors during startup or the title cancel pending transitions and display retry.
+- Added close-range vehicle plate and running light details; corrected rear exhaust orientation.
+- Prior city, character, driving, progression, audio and multiplayer systems retained. Main road network unchanged.
+
+**Verification:** 1,501 strict adapted regression assertions passed, including simulated title lifecycle, six camera shots, startup error handling and previous geometry crash. Browser rendering, audio and frame rates remain unverified.
+
+
 ## v2.2 — DYNASTY
 
 - New Kang Dynasty Studios title branding.
