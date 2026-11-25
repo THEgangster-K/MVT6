@@ -57,7 +57,7 @@ for(const match of matches[1][1].matchAll(/\$\('([^']+)'\)/g)){
  assert.ok(ids.includes(match[1])||builtAtRuntime.has(match[1]),'Missing UI element: '+match[1]);
 }
 const coreSource=read('game-core.js').replace(/^export /gm,'')+
- '\n;globalThis.core={movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction};';
+ '\n;globalThis.core={movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction,arcadeCarContact};';
 const context={Math};
 vm.runInNewContext(coreSource,context,{filename:'game-core.js'});
 const core=context.core;
@@ -91,7 +91,21 @@ assert.ok(html.includes('const nx=carPos.x+slide.dx,nz=carPos.z+slide.dz'),'New 
 assert.ok(html.includes('clearsStreet(x,z,w,h,d')===false,'Street guard uses the horizontal dimensions only');
 assert.ok(html.includes('clearsStreet(x,z,w,d,BLOCK,ROAD)'),'Street prop footprint guard is connected');
 assert.ok(html.includes('detailBatch(palmFronds,palmGeometry()'),'Original curved foliage is GPU-instanced');
-assert.ok(html.includes('BOULEVARDS · V2.0'),'Visible release marker');
+assert.ok(html.includes('CROSSROADS · V2.1'),'Visible release marker');
+assert.ok(!html.includes('<div class="bootArtwork"'),'Old illustration montage removed');
+assert.ok(html.includes('function liveTitleCamera(now,dt)'),'Title shots use live game camera');
+assert.ok(html.includes("renderer.shadowMap.enabled=graphicsPreset==='cinematic'"),'Real shadows are opt-in');
+assert.ok(html.includes('scene.environment=skyEnvironment.texture'),'Sky reflections integrated');
+assert.ok(html.includes('const openVenues=[]'),'Walk-in public venues exist');
+assert.ok(html.includes('resolveTrafficContact()'),'Vehicle movement uses contact resolution');
+const testCar={x:0,z:0,yaw:0};
+assert.equal(core.arcadeCarContact(testCar,{x:30,z:0,yaw:0}),null,'Distant cars do not collide');
+const sideContact=core.arcadeCarContact(testCar,{x:2.8,z:0,yaw:0});
+assert.ok(sideContact&&sideContact.x<-.99&&sideContact.overlap>0,'Side overlap yields outward separation');
+const noseContact=core.arcadeCarContact(testCar,{x:0,z:6,yaw:Math.PI});
+assert.ok(noseContact&&noseContact.z<-.99,'Front overlap yields outward separation');
+assert.ok(core.arcadeCarContact(testCar,{x:0,z:0,yaw:0}),'Coincident vehicles remain finite');
+
 for(let i=-2;i<=2;i++)for(let j=-2;j<=2;j++){
  const phases=new Set(Array.from({length:20},(_,t)=>core.junctionPhase(t,i,j)));
  assert.ok(phases.has('east')&&phases.has('north')&&phases.has('all-red'),'Each signal cycles through both axes');
@@ -113,12 +127,15 @@ assert.ok(!html.includes('const shopBrick='),'Old decorative wall material remov
 assert.equal(core.cityBlockPlan(46,-46,0).kind,'plaza','Spawn block is a plaza');
 assert.equal(core.cityBlockPlan(46,-46,0).parcels.length,0,'Spawn block has no building footprint');
 assert.equal(core.cityBlockPlan(138,46,0).kind,'parking','Customs approach remains open');
-const kinds=new Set(),types=new Set();let count=0;
+const kinds=new Set(),types=new Set(),districtTypes={},alleyAxes=new Set(),parcelCounts=new Set();let count=0;
 for(let i=-4;i<4;i++)for(let j=-4;j<4;j++){
  const cx=(i+.5)*92,cz=(j+.5)*92,seed=(i+4)*10+j+4;
  const plan=core.cityBlockPlan(cx,cz,seed);
- kinds.add(plan.kind);
+ kinds.add(plan.kind);parcelCounts.add(plan.parcels.length);
+ if(plan.alley)alleyAxes.add(plan.alley.axis);
  for(const p of plan.parcels){
+  (districtTypes[plan.district]??=new Set()).add(p.type);
+  if(plan.alley){const a=plan.alley,center=a.axis==='x'?cx:cz,loc=a.axis==='x'?p.x:p.z,half=(a.axis==='x'?p.w:p.d)/2;assert.ok(Math.abs(loc-center-a.offset)>=a.width/2+half,'Reserved through alley remains clear');}
   count++;types.add(p.type);
   assert.ok(core.clearsStreet(p.x,p.z,p.w,p.d),'Building stays off road');
   assert.ok(p.h>0&&Number.isFinite(p.h),'Positive finite building height');
@@ -129,6 +146,9 @@ for(let i=-4;i<4;i++)for(let j=-4;j<4;j++){
  }
 }
 assert.ok(kinds.size>=7&&types.size>=6&&count>80,'Distinct city districts and building archetypes');
+assert.ok(Object.values(districtTypes).every(t=>t.size>=4),'Every district has mixed building uses');
+assert.equal(alleyAxes.size,2,'Alleys alternate orientation');
+assert.ok(parcelCounts.size>=4,'Blocks have irregular parcel counts');
 assert.ok(html.includes('detailBatch(houseRoofs,gabledRoof()'),'Pitched residential roofs');
 assert.ok(html.includes('detailBatch(warehouseRoofs,gabledRoof()'),'Industrial roof geometry');
 assert.ok(html.includes('detailBatch(parkMounds'),'Landscaped relief');
@@ -148,10 +168,23 @@ assert.ok(read('server.js').includes("'game-core.js'"),'Server serves game core'
 assert.ok(read('server.js').includes("'model-assets.js'"),'Server serves model loader');
 assert.ok(read('server.js').includes("'.glb'"),'Server can serve local model format');
 const modelManifest=JSON.parse(read('models/manifest.json'));
-assert.equal(modelManifest.player,null,'Default game uses fallback hero while no licensed asset is installed');
+assert.equal(modelManifest.player,'models/solara-hero.gltf','Original hero is installed');
+const hero=JSON.parse(read(modelManifest.player));
+assert.equal(hero.asset.version,'2.0','Valid glTF version');
+assert.ok(hero.nodes.length>40&&hero.meshes.length>30,'Articulated hero contains detailed mesh parts');
+const animNames=hero.animations.map(a=>a.name);
+assert.ok(['Idle','Walk','Run','Jump'].every(n=>animNames.includes(n)),'All four animation clips exist');
+const binaryUri=hero.buffers[0].uri;
+assert.ok(binaryUri.startsWith('data:application/octet-stream;base64,'),'Asset has embedded buffer');
+const base64=binaryUri.split(',')[1],padding=base64.endsWith('==')?2:base64.endsWith('=')?1:0;
+assert.equal(base64.length*3/4-padding,hero.buffers[0].byteLength,'Asset buffer length matches');
+for(const view of hero.bufferViews){assert.ok(view.byteOffset+view.byteLength<=hero.buffers[0].byteLength,'Buffer view inside embedded data');}
+for(const a of hero.accessors){assert.ok(a.bufferView>=0&&a.bufferView<hero.bufferViews.length&&a.count>0,'Valid accessor reference');}
+for(const anim of hero.animations)for(const ch of anim.channels){assert.ok(ch.target.node<hero.nodes.length&&ch.sampler<anim.samplers.length,'Animation targets real joints');}
+
 assert.ok(html.includes("import {createPlayerModelSystem} from './model-assets.js';"),'Character pipeline is imported');
 assert.ok(html.includes('modelAssets.load()'),'Optional character loading begins');
-assert.ok(html.includes('modelAssets.update(dt,{walking:walkBlend,running:runBlend,jumping})'),'Animation mixer updates on frames');
+assert.ok(html.includes("modelAssets.update(dt,{walking:walkBlend,running:runBlend,jumping,enabled:gameMode==='play'&&!inCar})"),'Animation mixer preserves special story poses');
 assert.ok(html.includes('new THREE.CapsuleGeometry(.185,.68'),'New rounded fallback arms are present');
 assert.ok(html.includes('new THREE.CapsuleGeometry(.206,.79'),'New rounded fallback legs are present');
 
