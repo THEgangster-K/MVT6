@@ -33,6 +33,9 @@ vm.runInNewContext(html.slice(helperStart,helperEnd)+'\n'+pierLine,pierSandbox,{
 assert.equal(pierChildren.length,6,'All six pier supports attach to scene');
 assert.ok(pierChildren.every(m=>m.geometry.args[3]===8),'Pier support detail argument reaches cylinder geometry');
 const cityLifeSource=read('city-life.js');
+assert.ok(cityLifeSource.includes('knees=[],elbows=[]'),'Articulated pedestrian rigs');
+assert.ok(cityLifeSource.includes('n.gaitPhase+travelled'),'Pedestrian cadence follows displacement');
+assert.ok(read('model-assets.js').includes('const runThreshold=')&&read('model-assets.js').includes('const phase=locomotion'),'Hero transitions use hysteresis and phase continuity');
 assert.ok(cityLifeSource.includes('const fineDetail=new THREE.Group()'),'Pedestrians have close-up detail groups');
 assert.ok(cityLifeSource.includes('n.fineDetail.visible=distanceSq<35*35'),'Close-up detail is distance culled');
 assert.ok(cityLifeSource.includes('const animateDetail=distanceSq<65*65'),'Distant limb animation is limited');
@@ -105,11 +108,11 @@ assert.ok(html.includes('const nx=carPos.x+slide.dx,nz=carPos.z+slide.dz'),'New 
 assert.ok(html.includes('clearsStreet(x,z,w,h,d')===false,'Street guard uses the horizontal dimensions only');
 assert.ok(html.includes('clearsStreet(x,z,w,d,BLOCK,ROAD)'),'Street prop footprint guard is connected');
 assert.ok(html.includes('detailBatch(palmFronds,palmGeometry()'),'Original curved foliage is GPU-instanced');
-assert.ok(html.includes('POSTCARDS · V3.1'),'Visible release marker');
+assert.ok(html.includes('CINEMATIC OVERHAUL · v0.4.0 PREVIEW'),'Visible release marker');
 const cover=read('models/solara-cover.svg');
 assert.ok(cover.startsWith('<svg xmlns="http://www.w3.org/2000/svg"'),'Original cover asset');
-assert.equal((cover.match(/<clipPath id="clip\d+"/g)||[]).length,8,'Eight cover panels');
-for(const label of ['JAWSON','LUXIE','WEST HAVEN','SUNSET COUPE','SOLARA NIGHTS','THE WATERFRONT','SOLARA CUSTOMS','A NEW HORIZON'])assert.ok(cover.includes('>'+label+'</text>'),'Original cover caption '+label);
+assert.equal((cover.match(/<clipPath id="new\d+" clipPathUnits="userSpaceOnUse"><polygon/g)||[]).length,7,'Seven asymmetric cover panels');
+assert.ok(!/<text x="24" y="301"/.test(cover),'No individual artwork captions');
 assert.ok(!/<script|<image|https?:\/\/(?!www.w3.org)/i.test(cover),'Cover is self-contained artwork');
 assert.ok(html.includes('coverArt bootCover')&&html.includes('coverArt menuCover'),'Cover in title and menu');
 assert.ok(read('server.js').includes("relative!==path.join('models','solara-cover.svg')"),'Explicit safe cover route');
