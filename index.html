@@ -733,13 +733,13 @@ for(let ix=-HALF;ix<HALF;ix++)for(let iz=-HALF;iz<HALF;iz++){
  }
  if(plan.alley){
    // Mesh strip connects the two existing streets through a shallow S-shaped alley.
-   const verts=[],indices=[];
+   const verts=[],indices=[],uvs=[];
    for(let k=0;k<lane.points.length;k++){
     const p=lane.points[k],a=plan.alley.axis==='x';
     verts.push(p.x-(a?lane.width/2:0),.205,p.z-(a?0:lane.width/2),p.x+(a?lane.width/2:0),.205,p.z+(a?0:lane.width/2));
-    if(k>0){const j=k*2;indices.push(j-2,j-1,j,j-1,j+1,j);}
+    uvs.push(0,k/16,1,k/16);if(k>0){const j=k*2;indices.push(j-2,j-1,j,j-1,j+1,j);}
    }
-   const geom=new THREE.BufferGeometry();geom.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));geom.setIndex(indices);geom.computeVertexNormals();
+   const geom=new THREE.BufferGeometry();geom.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));geom.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));geom.setIndex(indices);geom.computeVertexNormals();
    if(geom.attributes.normal.getY(0)<0){for(let k=0;k<indices.length;k+=3){const v=indices[k+1];indices[k+1]=indices[k+2];indices[k+2]=v;}geom.setIndex(indices);geom.computeVertexNormals();}
    const road=mesh(geom,materials.asphalt);road.receiveShadow=true;
  }
@@ -939,8 +939,14 @@ for(let i=0;i<buildingMatrices.length;i++){
 const openVenues=[];
 const venueWood=mat('#aa7951',.76),venueSteel=mat('#344e52',.58,.25),venueRoof=mat('#487a79',.69),venueTile=mat('#e4d6bd',.87),venueWall=mat('#ece1cc',.92),venueGlass=new THREE.MeshStandardMaterial({color:0x9cc6c9,roughness:.24,transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide}),venueLight=new THREE.MeshBasicMaterial({color:0xffe4b8});
 const venueSites=[{x:46,z:-69,name:'PLAZA COFFEE',message:'PLAZA COFFEE · Take a break by the fountain.'},{x:138,z:66,name:'SOLARA MARKET HALL',message:'MARKET HALL · A neighbourhood meeting place.'}];
-const parkSites=neighborhoods.filter(p=>p.kind==='park').slice(0,4);
-for(const [i,p] of parkSites.entries())venueSites.push({x:p.cx,z:p.cz-23,name:i%2?'GARDEN CAFÉ':'CITY INFORMATION',message:i%2?'GARDEN CAFÉ · Enjoy the neighbourhood.':'CITY INFORMATION · Explore the city districts.'});
+const parkSites=neighborhoods.filter(p=>p.kind==='park').slice(0,8);
+const venueKinds=[
+ {name:'GARDEN CAFÉ',message:'A café serving the neighbourhood.',roof:'#487a79',task:'Help set up the outdoor tables'},
+ {name:'HARBOUR ARCHIVE',message:'A local history and photograph collection.',roof:'#9d7159',task:'Catalogue an old harbour photograph'},
+ {name:'CITY INFORMATION',message:'Maps and stories from around Solara.',roof:'#576d90',task:'Update the visitor map'},
+ {name:'COMMUNITY GARDEN',message:'A neighbourhood plant exchange.',roof:'#718d5c',task:'Help label the seed collection'}
+];
+for(const [i,p] of parkSites.entries()){const v=venueKinds[i%venueKinds.length];venueSites.push({x:p.cx,z:p.cz-23,...v});}
 for(const site of venueSites){
  const {x,z,name,message}=site;
  if(!clearsStreet(x,z,11,8,BLOCK,ROAD)||footprint.some(p=>Math.abs(p.x-x)<p.w+6&&Math.abs(p.z-z)<p.d+4.5))continue;
@@ -950,7 +956,7 @@ for(const site of venueSites){
    const post=mesh(new THREE.CylinderGeometry(.15,.18,3.3,10),venueSteel,root);post.position.set(dx,1.8,dz);
    footprint.push({x:x+dx,z:z+dz,w:.19,d:.19});
  }
- box(11,.20,8,0,3.55,0,venueRoof,root);
+ box(11,.20,8,0,3.55,0,site.roof?mat(site.roof,.69):venueRoof,root);
  // Back and side walls make an actual room while the front remains walk-in.
  box(10.5,3.12,.19,0,1.74,-3.7,venueWall,root);
  footprint.push({x,z:z-3.7,w:5.25,d:.11});
@@ -975,10 +981,17 @@ for(const site of venueSites){
    for(const dz of [-.9,.9]){const chair=mesh(new THREE.CylinderGeometry(.32,.32,.12,12),venueWood,root);chair.position.set(dx,.58,1.5+dz);for(const lx of [-.19,.19])for(const lz of [-.19,.19])box(.055,.48,.055,dx+lx,.29,1.5+dz+lz,venueSteel,root);box(.60,.50,.085,dx,.86,1.5+dz+Math.sign(dz)*.26,venueWood,root);}
  }
  const sign=mesh(new THREE.PlaneGeometry(8,.8),new THREE.MeshBasicMaterial({map:textTexture(name,'#294c4b','#fff0d6'),side:THREE.DoubleSide}),root);sign.position.set(0,3.33,4.03);
- openVenues.push({x,z,name,message});
+ openVenues.push({x,z,name,message,task:site.task||'Help prepare the counter',id:'v'+x+'_'+z});
 }
 function interactShop(x,z){
- for(const place of openVenues){if(Math.hypot(x-place.x,z-place.z)<5.6){setNotice(place.message);gestureTime=.5;return true}}
+ for(const place of openVenues){if(Math.hypot(x-place.x,z-place.z)<5.6){
+  const id=activeLead()+':'+place.id,visited=Array.isArray(save.venueVisits)?save.venueVisits:[];
+  if(!visited.includes(id)){
+   save.venueVisits=[...visited,id];const reward=activeLead()==='luxie'?60:45;save.money+=reward;persist();updateHUD();
+   setNotice(leadName().toUpperCase()+' · '+place.task+' · +$'+reward+' · '+place.name);
+  }else setNotice(place.name+' · '+place.message+' · Activity complete for '+leadName());
+  gestureTime=.5;return true
+ }}
  let chosen=null,dist=5.2;
  for(const shop of shopFronts){const d=Math.hypot(shop.x-x,shop.z-z);if(d<dist){dist=d;chosen=shop}}
  if(!chosen)return false;
@@ -1079,6 +1092,7 @@ function alleyInstances(arr,material){
 alleyInstances(canopyBars,alleySteel);alleyInstances(hangingLamps,alleyLamp);alleyInstances(alleyBins,mat('#667c78',.9));
 // Coastal vegetation: curved palm fronds use a purpose-built indexed mesh and GPU instances.
 function addTree(x,z,s){
+ if(neighborhoods.some(n=>n.alley&&Math.abs(x-n.cx)<36&&Math.abs(z-n.cz)<36&&Math.abs((n.alley.axis==='x'?x-n.cx:z-n.cz)-n.alley.offset)<n.alley.width/2+1))return;
  if(!clearsStreet(x,z,1.2,1.2,BLOCK,ROAD)||footprint.some(p=>Math.abs(p.x-x)<p.w+.8&&Math.abs(p.z-z)<p.d+.8))return;
  if(x < -80 || rnd(x*17+z*9)>.66){
    const height=s*2.35;
@@ -1377,7 +1391,7 @@ wheelRim.rotation.x=Math.PI/2+.3;wheelRim.position.set(-.62,2.05,.37);
  if(police){box(2,.22,.55,0,2.7,-.4,mat('#e8f0f9'),group);box(.75,.25,.55,-.54,2.86,-.4,mat('#ec394a'),group);box(.75,.25,.55,.54,2.86,-.4,mat('#418bff'),group)}
  const contact=mesh(carContactGeometry,contactMaterial,group);contact.rotation.x=-Math.PI/2;contact.position.y=.095;
  return group}
-let save;const defaultSave=()=>({money:45,completed:0,speed:0,handling:0,nitro:0,lifeTier:0,lead:'jawson',leadJobs:{jawson:0,luxie:0}});try{save={...defaultSave(),...JSON.parse(localStorage.getItem('mvt6-save')||'{}')}}catch{save=defaultSave()}
+let save;const defaultSave=()=>({money:45,completed:0,speed:0,handling:0,nitro:0,lifeTier:0,lead:'jawson',leadJobs:{jawson:0,luxie:0},venueVisits:[]});try{save={...defaultSave(),...JSON.parse(localStorage.getItem('mvt6-save')||'{}')}}catch{save=defaultSave()}
 function activeLead(){return save.lead==='luxie'?'luxie':'jawson'}
 function leadName(){return activeLead()==='luxie'?'Luxie':'Jawson'}
 function persist(){try{localStorage.setItem('mvt6-save',JSON.stringify(save))}catch{};if(network)network.save(save)}
@@ -1689,7 +1703,7 @@ function updateHUD(){ $('activeLeadName').textContent=leadName().toUpperCase();$
  escape:'Keep moving and lose the patrol.'
 }[mission.stage]||'Follow the next story objective.')+
  ' · '+Math.round(Math.hypot(p.x-missionObjective().x,p.z-missionObjective().z))+'m TO TARGET'+
- ' · '+Math.max(0,Math.ceil(missionTime))+'s'}else if(taxiJob){const o=taxiObjective();$('missionTitle').textContent='TAXI · '+(taxiJob.stage==='pickup'?'PICKUP':'DROP OFF');$('missionText').textContent='Stop at '+o.name+' · '+Math.round(Math.hypot(p.x-o.x,p.z-o.z))+'m · '+Math.ceil(taxiJob.time)+'s'}else{$('missionTitle').textContent='The city is yours';$('missionText').textContent='Talk to your partner for story chapters or take a taxi fare in your phone.'}}
+ ' · '+Math.max(0,Math.ceil(missionTime))+'s'}else if(taxiJob){const o=taxiObjective();$('missionTitle').textContent='TAXI · '+(taxiJob.stage==='pickup'?'PICKUP':'DROP OFF');$('missionText').textContent='Stop at '+o.name+' · '+Math.round(Math.hypot(p.x-o.x,p.z-o.z))+'m · '+Math.ceil(taxiJob.time)+'s'}else{$('missionTitle').textContent='The city is yours';$('missionText').textContent='Talk to your partner for chapters, explore purple venue markers, or take a taxi fare.'}}
 // Original crime-fiction campaign: Lost Solara, a city of rival crews and secret debts.
 // Jawson is playable; Luxie is the story's second lead.
 const chapterBeats=[
@@ -2933,6 +2947,7 @@ function drawMap(){
  for(const item of equipmentDrops)if(!collectedGear.includes(item.id)&&Math.hypot(item.x-p.x,item.z-p.z)<140)dot(item.x,item.z,'#7fffe0',6,true);
  const nearShops=shopFronts.slice().sort((a,b)=>Math.hypot(a.x-p.x,a.z-p.z)-Math.hypot(b.x-p.x,b.z-p.z)).slice(0,3);
  for(const shop of nearShops)if(Math.hypot(shop.x-p.x,shop.z-p.z)<120)dot(shop.x,shop.z,'#95dce3',4,false);
+ for(const venue of openVenues)if(Math.hypot(venue.x-p.x,venue.z-p.z)<150)dot(venue.x,venue.z,(save.venueVisits||[]).includes(activeLead()+':'+venue.id)?'#82969a':'#c8b9f8',5,true);
  dot(cityLife.fixer.root.position.x,cityLife.fixer.root.position.z,'#c3e0a4',5);
  dot(184,0,'#d9b378',5);
  if(taxiJob){const target=taxiObjective();if(target)dot(target.x,target.z,'#76deed',9,true)}
