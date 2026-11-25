@@ -29,11 +29,18 @@ export function createPlayerModelSystem({THREE, root, fallbackChildren, manifest
       lastState='seated';return;
     }
     if(posing){posing=false;model.position.y=baseY;poseJoints.pelvis.position.y=1.25;poseJoints.spine.rotation.set(0,0,0);for(const j of [...poseJoints.legs,...poseJoints.knees,...poseJoints.arms,...poseJoints.elbows])j.rotation.set(0,0,0);activeAction=null}
-    const next=jumping&&actions.jump?'jump':running>.55&&actions.run?'run':walking>.12&&actions.walk?'walk':'idle';
+    // Hysteresis prevents clip thrashing when movement is near a transition threshold.
+    const runThreshold=lastState==='run'?.43:.60;
+    const walkThreshold=(lastState==='walk'||lastState==='run')?.07:.17;
+    const next=jumping&&actions.jump?'jump':running>runThreshold&&actions.run?'run':walking>walkThreshold&&actions.walk?'walk':'idle';
     const clip=actions[next]||actions.idle;
     if(clip && clip!==activeAction){
-      clip.reset().play();
-      if(activeAction)activeAction.crossFadeTo(clip,.23,false);
+      const previous=activeAction;
+      const locomotion=(lastState==='walk'||lastState==='run')&&(next==='walk'||next==='run');
+      const phase=locomotion&&previous?previous.time/Math.max(.001,previous.getClip().duration):0;
+      clip.reset().setEffectiveWeight(1).setEffectiveTimeScale(1).play();
+      if(locomotion)clip.time=(phase%1)*clip.getClip().duration;
+      if(previous)previous.crossFadeTo(clip,jumping?.13:.23,false);
       activeAction=clip;
     }
     lastState=next;
