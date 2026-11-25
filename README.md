@@ -1,5 +1,27 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v1.8 — AFTERGLOW | Presentation & Driving
+
+### Release presentation
+- Original MVT 6 wordmark, restrained black-to-artwork-to-title introduction with a reduced-motion alternative, and a new main menu over the live 3D city.
+- Restyled HUD, pause menu, minimap, phone and key controls; a visible AFTERGLOW V1.8 release marker.
+- Retains existing gameplay and saves. The artwork is the game's original illustrated material, re-edited into a different sequence.
+
+### Environment and cars
+- Brighter coastal daylight, revised surface palette, clearer distance visibility, custom curved palm frond geometry rendered with instancing.
+- Tapered original car body mesh with shared geometry, sloping integrated cabin glazing and refreshed roof silhouette. Existing lights, wheel animation and customisation hooks retained.
+- Street furniture checks the horizontal footprint against both road axes; old floating barriers, arbitrary kiosk blocks and loose alley-bin clutter removed. Transit stops repositioned; legacy secondary street furniture is also checked.
+- Wheel rim customisation now finds nested wheel meshes. The exit interaction selects open nearby space, and the camera retracts when its target overlaps a building footprint.
+
+### Arcade handling
+- The previous sideways position offset is replaced with a persistent game-only slide state. Heading and travel direction differ during the slide and converge smoothly when it ends.
+- The movement vector uses the existing collision checks. Camera response and smoke indication follow the actual sliding state.
+- Keep existing keyboard controls and adaptive graphics quality.
+
+### Quality gate
+New regression coverage includes sustained slide and recovery, ordinary forward/reverse movement, road footprint clearance, integration and startup compatibility. No native browser playtest or measured Surface Pro FPS is claimed. The release remains a stylised procedural browser game, with original custom meshes; it does not ship professionally authored rigged GLB characters or licensed vehicle models.
+
+
 ## v1.7 — Character Model Pipeline and Updated Hero Silhouette
 
 - Added a **local GLB/glTF animation pipeline** for an optional original, licensed player character. A rigged model with Idle and Walk animations can replace the built-in player by editing `models/manifest.json`.
