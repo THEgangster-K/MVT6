@@ -343,6 +343,25 @@ body.bootPlaying #menu{visibility:hidden!important}
 #storyIntro #introContent{background:linear-gradient(90deg,#06090db8,transparent);padding:20px 30px;border-left:2px solid #ffd09d;max-width:440px}
 #storyIntro #introTitle{font-size:clamp(25px,4vw,55px);line-height:1.06;letter-spacing:-.035em}
 @media(prefers-reduced-motion:reduce){#boot.bootIdentity .liveTitleShade,#boot.bootIdentity .bootInside{transition:none}}
+
+/* DYNASTY: blend the City Life illustrations with the current live world. */
+#boot .bootArtwork{display:none;z-index:0!important;pointer-events:none;opacity:1}
+#boot.bootArt .bootArtwork{display:block;background:#050609}
+#boot.bootArt .artCard{animation:none!important;opacity:0!important;transform:scale(1.025)!important;transition:opacity .55s,transform 2.0s}
+#boot.bootArt.artPhase0 .artCoast,#boot.bootArt.artPhase1 .artNight,#boot.bootArt.artPhase2 .artDawn{opacity:1!important;transform:scale(1)!important}
+#boot.bootArt .liveTitleCaption{display:none!important}
+#boot.bootArt .liveTitleShade{z-index:1;background:linear-gradient(0deg,#060a10b0,transparent 24%,transparent 72%,#060a1050)}
+#boot .studioSplash{display:none;position:absolute;inset:0;align-items:center;justify-content:center;flex-direction:column;gap:14px;letter-spacing:.29em;font:700 clamp(16px,3.1vw,39px) system-ui;color:#f4eadc;z-index:2}
+#boot .studioSplash small{font:600 10px system-ui;letter-spacing:.5em;color:#9db2b2}
+#boot.bootStudio{background:#030406!important}
+#boot.bootStudio .studioSplash{display:flex}
+#boot.bootStudio .bootInside{opacity:0!important}
+#boot.bootStudio .liveTitleCaption{display:none!important}
+#boot.bootIdentity .bootArtwork{display:none}
+#boot .bootSkip{position:absolute;right:25px;bottom:24px;z-index:6;font-size:11px;padding:8px 13px;background:#131a22c9;color:#f0eee6;border:1px solid #ffffff35;display:none}
+#boot.bootLive .bootSkip{display:block}
+#boot.bootDone .bootSkip{display:none}
+@media(prefers-reduced-motion:reduce){#boot .bootArtwork,#boot .studioSplash{display:none!important}}
 </style>
 </head>
 <body>
@@ -402,18 +421,20 @@ body.bootPlaying #menu{visibility:hidden!important}
 </div>
 <div id="networkPanel"><span id="onlineStatus">CONNECTING</span> · <span id="playerCount">1 ONLINE</span><button id="authToggle">ACCOUNT</button></div>
 <div id="authPanel"><h2>Online account</h2><p id="authInfo">You can drive as a guest.</p><div id="authActions"><input id="username" maxlength="20" autocomplete="username" placeholder="Username"><input id="password" type="password" maxlength="128" autocomplete="current-password" placeholder="Password (10+ characters)"><button id="authLogin">SIGN IN</button><button id="authRegister" class="secondary">REGISTER</button></div><button id="logout" class="secondary" style="display:none">SIGN OUT</button><button class="secondary" onclick="document.getElementById('authPanel').style.display='none'">CLOSE</button></div>
-<div id="boot" role="status" aria-live="polite"><div class="bootSky"></div><div class="liveTitleShade"></div><div class="liveTitleCaption" id="liveTitleCaption" aria-hidden="true">SOLARA CITY / LIVE WORLD</div><div class="bootInside"><div class="bootEdition">SOLARA CITY · STORY MODE · ONLINE WORLD</div><div class="bootIssue">VOL. 01 / THE LOST CITY</div>
-<div class="kicker">SOLARA CITY STUDIOS PRESENTS</div><div class="bootLogo releaseMark" aria-label="MVT 6"><span class="letters">MVT</span><i class="slash" aria-hidden="true"></i><span class="digit">6</span></div><div class="bootSubtitle">MOTOR VEHICLE THEFT</div>
+<div id="boot" role="status" aria-live="polite"><div class="bootSky"></div><div class="bootArtwork" aria-hidden="true"><div class="artCard artCoast"><svg viewBox="0 0 800 900" preserveAspectRatio="xMidYMid slice" role="presentation"><defs><linearGradient id="sunset" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#efa175"/><stop offset=".48" stop-color="#fbc5a5"/><stop offset="1" stop-color="#485f87"/></linearGradient><linearGradient id="water" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#608db0"/><stop offset="1" stop-color="#102c49"/></linearGradient></defs><rect width="800" height="900" fill="url(#sunset)"/><circle cx="550" cy="280" r="138" fill="#ffe9ae" opacity=".87"/><path d="M0 480 70 440 95 370 150 370 150 455 210 455 210 300 275 300 275 460 330 460 330 395 395 395 395 465 460 465 460 328 520 328 520 470 584 470 584 370 645 370 645 455 700 455 700 340 750 340 750 478 800 478 800 900 0 900Z" fill="#354968"/><path d="M0 550 Q180 520 350 557 T800 537V900H0Z" fill="url(#water)"/><path d="M0 625 Q170 611 390 628 T800 620" stroke="#fff4cc" stroke-width="5" fill="none" opacity=".45"/><path d="M0 680 Q220 660 430 688 T800 690" stroke="#fff4cc" stroke-width="3" fill="none" opacity=".3"/><path d="M0 752 800 682 800 900 0 900Z" fill="#273243"/><path d="M0 786 800 708" stroke="#ffd5a7" stroke-width="5" stroke-dasharray="45 50" opacity=".75"/><g fill="none" stroke="#1d3440" stroke-linecap="round"><path d="M100 850Q146 650 120 432" stroke-width="19"/><path d="M120 432Q27 344 5 332M120 432Q207 325 273 350M120 432Q133 309 92 277M120 432Q29 430 0 451" stroke-width="17"/><path d="M684 900Q659 705 676 430" stroke-width="21"/><path d="M676 430Q600 320 531 338M676 430Q737 350 800 363M676 430Q674 335 640 299" stroke-width="16"/></g><g fill="#254b43"><path d="M5 332Q110 311 120 432Q50 420 5 332M273 350Q168 316 120 432Q200 408 273 350M92 277Q154 320 120 432Q91 372 92 277M531 338Q648 331 676 430Q599 422 531 338M800 363Q703 336 676 430Q748 428 800 363M640 299Q690 334 676 430Q641 373 640 299"/></g><g transform="translate(295 690)"><ellipse cx="130" cy="135" rx="187" ry="25" fill="#061726" opacity=".55"/><path d="M0 95 Q13 45 62 39 L170 35Q218 39 248 83 L277 90V118H-10V96Z" fill="#e6a96d"/><path d="M69 43 100 2 176 0 211 46Z" fill="#1d3445"/><path d="M91 40 106 12 167 12 188 41Z" fill="#75a4b9"/><rect x="2" y="90" width="38" height="13" rx="4" fill="#ffe6ae"/><rect x="232" y="90" width="37" height="13" rx="4" fill="#ffba7a"/><circle cx="49" cy="115" r="30" fill="#182531"/><circle cx="214" cy="115" r="30" fill="#182531"/><circle cx="49" cy="115" r="15" fill="#a7b5b6"/><circle cx="214" cy="115" r="15" fill="#a7b5b6"/></g></svg></div>
+<div class="artCard artNight"><svg viewBox="0 0 800 900" preserveAspectRatio="xMidYMid slice" role="presentation"><defs><linearGradient id="night" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#193d68"/><stop offset="1" stop-color="#6d345c"/></linearGradient></defs><rect width="800" height="900" fill="url(#night)"/><circle cx="577" cy="190" r="95" fill="#eb8bb5" opacity=".55"/><path d="M0 490H58V160H130V495H169V252H240V490H290V60H378V490H421V240H495V490H532V130H610V490H650V313H733V490H800V900H0Z" fill="#101d36"/><g fill="#4be2dc" opacity=".77"><path d="M77 205h16v33H77zm0 70h16v33H77zm0 70h16v33H77zm230-220h12v25h-12zm0 56h12v25h-12zm0 56h12v25h-12zm58-110h11v25h-11zm0 56h11v25h-11zm0 56h11v25h-11zm188-46h13v31h-13zm0 67h13v31h-13zm0 67h13v31h-13z"/></g><path d="M0 590 800 500V900H0Z" fill="#20273d"/><path d="M0 820 800 680" stroke="#f9ceaf" stroke-width="7" stroke-dasharray="55 55" opacity=".65"/><path d="M0 650 800 568" stroke="#fc6aa1" stroke-width="7" opacity=".5"/><path d="M625 700q30-140 10-314" stroke="#16182d" stroke-width="17" fill="none"/><path d="M635 390q-100-73-160-42m160 42q93-94 165-66m-165 66q-1-102-50-138" stroke="#183f43" stroke-width="27" fill="none" stroke-linecap="round"/><g transform="translate(90 620)"><ellipse cx="190" cy="210" rx="215" ry="25" fill="#080c19" opacity=".6"/><path d="M0 155 50 76 150 60 280 80 351 140V184H-15v-29Z" fill="#6ed6d5"/><path d="M90 75 120 22 215 22 260 83Z" fill="#142e45"/><path d="M116 67 132 36 205 35 238 72Z" fill="#a7dcda"/><circle cx="65" cy="183" r="36" fill="#0f1725"/><circle cx="285" cy="183" r="36" fill="#0f1725"/><circle cx="65" cy="183" r="17" fill="#d6dedb"/><circle cx="285" cy="183" r="17" fill="#d6dedb"/><rect x="-10" y="150" width="32" height="16" fill="#fef5bf"/><rect x="318" y="150" width="32" height="16" fill="#ec7296"/></g></svg></div>
+<div class="artCard artDawn"><svg viewBox="0 0 800 900" preserveAspectRatio="xMidYMid slice" role="presentation"><defs><linearGradient id="dawn" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#b8dbde"/><stop offset="1" stop-color="#e9c28d"/></linearGradient></defs><rect width="800" height="900" fill="url(#dawn)"/><circle cx="580" cy="260" r="138" fill="#fdf0cc" opacity=".9"/><path d="M0 380 100 380 100 230 210 230 210 393 300 393 300 140 395 140 395 382 455 382 455 210 555 210 555 380 620 380 620 285 710 285 710 375 800 375V900H0Z" fill="#648e93"/><path d="M0 510 800 450V900H0Z" fill="#284b57"/><path d="M0 720 800 550V900H0Z" fill="#e7ba88"/><path d="M0 760 800 590" stroke="#fff2c3" stroke-width="8" stroke-dasharray="50 55"/><g transform="translate(450 415)" fill="#1a3043"><path d="M46 94q25-95 22-172" stroke="#1c3a42" stroke-width="14" fill="none"/><circle cx="67" cy="-118" r="32" fill="#563d3e"/><path d="M17-76q-17 48-13 102l35 8 10-54 10 54 34-10q3-55-11-99Z"/><path d="M8 26-7 139h37L55 40l21 100h37L93 25Z"/></g><g transform="translate(100 690)"><rect width="270" height="48" rx="20" fill="#312a39"/><rect x="25" y="-28" width="190" height="45" rx="12" fill="#c55e51"/><rect x="74" y="-63" width="118" height="47" rx="12" fill="#385768"/><circle cx="45" cy="42" r="25" fill="#182e33"/><circle cx="235" cy="42" r="25" fill="#182e33"/></g></svg></div></div><div class="liveTitleShade"></div><div class="liveTitleCaption" id="liveTitleCaption" aria-hidden="true">SOLARA CITY / LIVE WORLD</div><div class="studioSplash">KANG DYNASTY<small>STUDIOS</small></div><button class="bootSkip secondary" id="bootSkip" type="button">SKIP INTRO</button><div class="bootInside"><div class="bootEdition">SOLARA CITY · STORY MODE · ONLINE WORLD</div><div class="bootIssue">VOL. 01 / THE LOST CITY</div>
+<div class="kicker">KANG DYNASTY STUDIOS PRESENTS</div><div class="bootLogo releaseMark" aria-label="MVT 6"><span class="letters">MVT</span><i class="slash" aria-hidden="true"></i><span class="digit">6</span></div><div class="bootSubtitle">MOTOR VEHICLE THEFT</div>
 <div class="loadingInfo"><span id="bootStatus">Preparing Solara City...</span><span id="bootPct">0%</span></div>
 <div class="loadingTrack"><div id="loadingFill"></div></div><p id="bootError">Three original Solara City chapters • A world to make your own</p><div class="artDots"><i></i><i></i><i></i></div><div class="bootFeatureStrip"><span>NO MONEY</span><span>NO CONNECTIONS</span><span>EVERYTHING TO BUILD</span></div>
 <button id="bootRetry" style="display:none" onclick="location.reload()">RETRY</button></div></div>
 <div id="menu" class="overlay movieMenu"><div class="menuCity"></div><div class="menuContent">
-<div class="kicker">SOLARA CITY &nbsp; / &nbsp; CROSSROADS</div><h1 class="movieLogo releaseMark" aria-label="MVT 6"><span class="letters">MVT</span><i class="slash" aria-hidden="true"></i><span class="digit">6</span></h1>
+<div class="kicker">SOLARA CITY &nbsp; / &nbsp; DYNASTY</div><h1 class="movieLogo releaseMark" aria-label="MVT 6"><span class="letters">MVT</span><i class="slash" aria-hidden="true"></i><span class="digit">6</span></h1>
 <div class="movieSubtitle">MOTOR VEHICLE THEFT</div><h2>Every street has a story.</h2>
 <p>Explore Solara City. Meet local contacts, take on jobs, customise your car and build your own story.</p>
 <div class="menuActions"><button id="play">PLAY STORY</button><button id="resetSave" class="secondary">START OVER</button></div>
 <div class="movieControls">WASD · MOVE &nbsp;&nbsp; CLICK · MOUSE LOOK &nbsp;&nbsp; F · INTERACT</div></div>
-<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">CROSSROADS · V2.1</div></div></div>
+<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">DYNASTY · V2.2</div></div></div>
 <div id="storyIntro" aria-live="polite" style="display:none"><div id="introShade"></div><div id="introContent"><div id="introChapter">SOLARA CITY · CHAPTER ONE</div><div id="introCue">AN ORIGINAL MVT 6 FILM</div><h2 id="introTitle">START WITH NOTHING.</h2><p id="introCopy">New city. Empty pockets. Every choice counts.</p></div><button id="introSkip">SKIP INTRO →</button></div>
 <div id="paused" class="overlay"><div class="panel"><div class="eyebrow">SOLARA CITY</div><h2>PAUSED</h2><p>Explore at your own pace. Your cash, upgrades and completed contracts are automatically saved.</p><button id="resume">RESUME</button><button id="pauseMap" class="secondary">MAP & MISSIONS</button>
 <div class="qualitySelector"><label for="graphicsQuality">GRAPHICS QUALITY</label><select id="graphicsQuality">
@@ -421,7 +442,7 @@ body.bootPlaying #menu{visibility:hidden!important}
 <option value="performance">PERFORMANCE · BEST FPS</option>
 <option value="balanced">BALANCED · DEFAULT</option>
 <option value="cinematic">CINEMATIC · SHARPER TEXTURES</option>
-</select></div><button id="toMenu" class="secondary">MAIN MENU</button></div></div>
+</select></div><button id="soundToggle" class="secondary" type="button">SOUND · ON</button><button id="toMenu" class="secondary">MAIN MENU</button></div></div>
 <div id="arrestScene">
  <div id="arrestFlash"></div>
  <div class="arrestCinematic"><span>POLICE DEPARTMENT · SOLARA CITY</span><h2>YOU ARE UNDER ARREST</h2><p>Patrol officers have detained you. You will be processed at Solara Central.</p></div>
@@ -447,12 +468,26 @@ body.bootPlaying #menu{visibility:hidden!important}
 <script>
 (function(){const startedAt=performance.now(),root=document.getElementById('boot'),fill=document.getElementById('loadingFill'),pct=document.getElementById('bootPct'),label=document.getElementById('bootStatus'),error=document.getElementById('bootError'),retry=document.getElementById('bootRetry');let value=3,complete=false;
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
-const titleDuration=reducedMotion?500:7100;
+const titleDuration=reducedMotion?500:10400;
 const timer=setInterval(()=>{if(complete)return;value=Math.min(92,value+(value<50?5:2));pct.textContent=value+'%';fill.style.width=value+'%';label.textContent=value<50?'Loading city geometry...':value<80?'Preparing traffic and residents...':'Starting multiplayer world...'},350);
-window.__mvtLoaded=()=>{complete=true;clearInterval(timer);fill.style.width='100%';pct.textContent='100%';label.textContent='Welcome to Solara City';root.classList.add('bootLive');document.body.classList.add('bootPlaying');window.__mvtTitleStart=performance.now();
- if(reducedMotion)root.classList.add('bootIdentity');
- else setTimeout(()=>root.classList.add('bootIdentity'),5500);
- setTimeout(()=>{root.classList.add('bootDone');document.body.classList.remove('bootPlaying');window.__mvtTitleStart=null},titleDuration);
+let titleTimers=[];
+function finishTitle(){
+ for(const t of titleTimers)clearTimeout(t);titleTimers=[];
+ root.classList.add('bootDone');document.body.classList.remove('bootPlaying');window.__mvtTitleStart=null;
+}
+document.getElementById('bootSkip').onclick=finishTitle;
+window.__mvtLoaded=()=>{
+ if(complete)return;complete=true;clearInterval(timer);fill.style.width='100%';pct.textContent='100%';label.textContent='Welcome to Solara City';
+ root.classList.add('bootLive');document.body.classList.add('bootPlaying');
+ const later=(fn,ms)=>titleTimers.push(setTimeout(fn,ms));
+ if(reducedMotion){root.classList.add('bootIdentity');later(finishTitle,titleDuration);return}
+ root.classList.add('bootStudio');
+ later(()=>{root.classList.remove('bootStudio');root.classList.add('bootArt','artPhase0')},1100);
+ later(()=>{root.classList.remove('artPhase0');root.classList.add('artPhase1')},2450);
+ later(()=>{root.classList.remove('artPhase1');root.classList.add('artPhase2')},3800);
+ later(()=>{root.classList.remove('bootArt','artPhase2');window.__mvtTitleStart=performance.now()},5150);
+ later(()=>{root.classList.add('bootIdentity');window.__mvtTitleStart=null},9250);
+ later(finishTitle,titleDuration);
 };
 function fail(msg){if(complete)return;complete=true;clearInterval(timer);root.classList.add('bootFailed');label.textContent='Unable to start MVT 6';pct.textContent='ERROR';error.textContent=String(msg).slice(0,160);retry.style.display='inline-block'}
 window.addEventListener('error',e=>fail(e.message||'Game asset could not load'));window.addEventListener('unhandledrejection',e=>fail(e.reason?.message||'Game module could not load'));setTimeout(()=>fail('Game startup timed out. Check your connection, then retry.'),30000);
@@ -1026,6 +1061,12 @@ trunkBatch.frustumCulled=false;canopyBatch.frustumCulled=false;scene.add(trunkBa
 // Coastal visual: water beyond city's western edge, elevated promenade.
 // West Haven's waterfront is now a continuous, readable shore instead of water intersecting roads.
 plane(420,900,-620,0,materials.water,-.10);
+// Repeating original wave texture, offset slowly without extra meshes.
+const waveCanvas=document.createElement('canvas');waveCanvas.width=128;waveCanvas.height=128;
+const waveCtx=waveCanvas.getContext('2d');waveCtx.fillStyle='#8aa8b5';waveCtx.fillRect(0,0,128,128);
+for(let i=0;i<12;i++){waveCtx.strokeStyle=i%2?'#b8ced1':'#6c8e9f';waveCtx.lineWidth=1+i%3;waveCtx.beginPath();for(let x=0;x<=128;x+=4){const y=i*11+Math.sin(x*.13+i*1.7)*2.5;if(x===0)waveCtx.moveTo(x,y);else waveCtx.lineTo(x,y)}waveCtx.stroke()}
+const waveMap=new THREE.CanvasTexture(waveCanvas);waveMap.wrapS=waveMap.wrapT=THREE.RepeatWrapping;waveMap.repeat.set(22,45);
+materials.water.bumpMap=waveMap;materials.water.bumpScale=.15;materials.water.needsUpdate=true;
 const sand=mat('#d9c6a0',.94),deck=mat('#b9a58a',.88),rail=mat('#53656a',.62,.2),seaFoam=mat('#a1cbd0',.65);
 plane(20,820,-400,0,sand,.025);
 const waterfrontRails=[],waterfrontPosts=[],shoreStreaks=[];
@@ -1038,7 +1079,7 @@ for(let i=-4;i<4;i++){
 }
 detailBatch(waterfrontRails,new THREE.BoxGeometry(1,1,1),rail);
 detailBatch(waterfrontPosts,new THREE.BoxGeometry(1,1,1),rail);
-detailBatch(shoreStreaks,new THREE.BoxGeometry(1,1,1),seaFoam);
+const animatedShore=detailBatch(shoreStreaks,new THREE.BoxGeometry(1,1,1),seaFoam);
 // A small pier sits offshore, outside the drivable map, as a visible coastal landmark.
 box(52,.48,8,-436,.2,46,deck);
 for(const z of [42.4,49.6])for(let x=-460;x<=-411;x+=8)box(.3,1.35,.3,x,.78,z,rail);
@@ -1958,7 +1999,7 @@ const titleShots=[
  {a:[-110,135,155],b:[-82,118,137],look:[20,24,-5],label:'03 / SOLARA CITY'}
 ];
 function liveTitleCamera(now,dt){
- const time=Math.max(0,(now-window.__mvtTitleStart)/1000),index=Math.min(2,Math.floor(time/1.85)),shot=titleShots[index],p=cubicEase(Math.min(1,(time-index*1.85)/1.85));
+ const time=Math.max(0,(now-window.__mvtTitleStart)/1000),index=Math.min(2,Math.floor(time/1.36)),shot=titleShots[index],p=cubicEase(Math.min(1,(time-index*1.36)/1.36));
  camera.position.set(...shot.a.map((v,i)=>v+(shot.b[i]-v)*p));
  camera.fov=54;camera.updateProjectionMatrix();camera.lookAt(...shot.look);
  $('liveTitleCaption').textContent=shot.label;
@@ -2152,7 +2193,7 @@ if(k==='p'&&on&&!e.repeat){if(phoneOpen)closePhone();else if(gameMode==='play')o
 if(gameMode!=='play'&&k!=='escape')return;keys[k]=on;if(on&&!e.repeat){if(k==='escape'){if(document.pointerLockElement)document.exitPointerLock();else if(gameMode==='play')pause();else if(gameMode==='pause')resume();}if((k===' '||k==='spacebar')&&!inCar)beginJump();if(k==='e')enterExit();if(k==='f')interact();if(k==='t')tagWall();if(k==='g')activateGadget();if(k==='j')drivingHorn();if(k==='l'&&inCar)setHeadlights(!headlightsOn);if(k==='n')setAtmosphere(atmosphereIndex+1);if(k==='c'){camMode=(camMode+1)%3;orbitOffset=0};if(k==='r'&&gameMode==='play'){velocity=0;carPos.set(0,0,0);angle=0;playerCar.position.copy(carPos);playerCar.rotation.y=angle;heat=Math.max(0,heat-1);setNotice('Vehicle recovered')}}}
 addEventListener('keydown',e=>keyState(e,true));addEventListener('keyup',e=>keyState(e,false));addEventListener('blur',()=>{for(let k in keys)keys[k]=false});
 function pause(){if(document.pointerLockElement)document.exitPointerLock();gameMode='pause';$('paused').style.display='flex'}function resume(){gameMode='play';$('paused').style.display='none';$('garage').style.display='none'}function closeGarage(){gameMode='play';$('garage').style.display='none';camera.fov=65;camera.updateProjectionMatrix();setNotice('Thanks for visiting Solara Customs!')}
-$('play').onclick=()=>{startIntro()};$('resetSave').onclick=()=>{if(confirm('Reset all MVT 6 money, chapters, gear and upgrades?')){save=defaultSave();vehicleCondition=100;saveVehicleCondition();cosmetics={paint:'#e96e5d',spoiler:false,lightKit:false,rims:false};try{localStorage.removeItem('mvt6-customs')}catch{}applyCustoms();collectedGear=[];selectedGadget=0;try{localStorage.removeItem('mvt6-gear-v2')}catch{};updateGadgetWheel();persist();setNotice('New campaign started · Equipment wheel cleared')}};$('resume').onclick=resume;$('pauseMap').onclick=()=>{ $('paused').style.display='none';gameMode='play';openPhone() };$('closeGarage').onclick=closeGarage;$('toMenu').onclick=()=>{gameMode='menu';$('paused').style.display='none';$('hud').style.display='none';$('menu').style.display='flex'};
+$('play').onclick=()=>{enableGameAudio();startIntro()};$('resetSave').onclick=()=>{if(confirm('Reset all MVT 6 money, chapters, gear and upgrades?')){save=defaultSave();vehicleCondition=100;saveVehicleCondition();cosmetics={paint:'#e96e5d',spoiler:false,lightKit:false,rims:false};try{localStorage.removeItem('mvt6-customs')}catch{}applyCustoms();collectedGear=[];selectedGadget=0;try{localStorage.removeItem('mvt6-gear-v2')}catch{};updateGadgetWheel();persist();setNotice('New campaign started · Equipment wheel cleared')}};$('resume').onclick=resume;$('pauseMap').onclick=()=>{ $('paused').style.display='none';gameMode='play';openPhone() };$('closeGarage').onclick=closeGarage;$('toMenu').onclick=()=>{gameMode='menu';$('paused').style.display='none';$('hud').style.display='none';$('menu').style.display='flex'};
 const touchJump=document.createElement('button');touchJump.id='touchJump';touchJump.textContent='JUMP';touchJump.setAttribute('aria-label','Jump');
 touchJump.style.cssText='position:fixed;right:18px;bottom:445px;z-index:14;background:#3d7e84;color:white;border:1px solid #ade0cf;border-radius:12px;padding:12px;font:900 12px system-ui;display:none';
 document.body.append(touchJump);
@@ -2173,9 +2214,44 @@ for(const side of [-1,1]){
 function setHeadlights(on){headlightsOn=on;for(const beam of beamPairs)beam.visible=on;setNotice('HEADLIGHTS '+(on?'ON':'OFF'))}
 for(const beam of beamPairs)beam.visible=false;
 function saveVehicleCondition(){try{localStorage.setItem('mvt6-condition',String(Math.round(vehicleCondition)))}catch{}}
+// Original synthesized ambient audio. Start only after a user gesture.
+let gameAudio=null,gameSoundEnabled=true,lastAudioUpdate=0;
+try{gameSoundEnabled=localStorage.getItem('mvt6-sound')!=='off'}catch{}
+function enableGameAudio(){
+ if(!gameSoundEnabled)return;
+ try{
+  if(gameAudio){gameAudio.ctx.resume().catch(()=>{});return}
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+  const ctx=new AC(),master=ctx.createGain();master.gain.value=0;master.connect(ctx.destination);
+  const engine=ctx.createOscillator(),engineFilter=ctx.createBiquadFilter(),engineGain=ctx.createGain();
+  engine.type='triangle';engine.frequency.value=45;engineFilter.type='lowpass';engineFilter.frequency.value=160;
+  engineGain.gain.value=0;engine.connect(engineFilter);engineFilter.connect(engineGain);engineGain.connect(master);engine.start();
+  const len=ctx.sampleRate*2,noiseBuffer=ctx.createBuffer(1,len,ctx.sampleRate),data=noiseBuffer.getChannelData(0);
+  let smooth=0;for(let i=0;i<len;i++){smooth=.90*smooth+.10*(Math.random()*2-1);data[i]=smooth}
+  const wind=ctx.createBufferSource(),windFilter=ctx.createBiquadFilter(),windGain=ctx.createGain();
+  wind.buffer=noiseBuffer;wind.loop=true;windFilter.type='lowpass';windFilter.frequency.value=650;windGain.gain.value=0;
+  wind.connect(windFilter);windFilter.connect(windGain);windGain.connect(master);wind.start();
+  gameAudio={ctx,master,engine,engineFilter,engineGain,windGain};ctx.resume().catch(()=>{});
+ }catch{gameAudio=null}
+}
+function updateGameAudio(now){
+ if(!gameAudio||now-lastAudioUpdate<70)return;lastAudioUpdate=now;
+ const {ctx,master,engine,engineFilter,engineGain,windGain}=gameAudio,t=ctx.currentTime;
+ const active=gameSoundEnabled&&['play','intro','standing','takeover'].includes(gameMode)&&!document.hidden;
+ const driving=active&&inCar&&gameMode==='play',speed=driving?Math.min(1,Math.abs(velocity)/40):0;
+ master.gain.setTargetAtTime(active?.25:0,t,.12);
+ engine.frequency.setTargetAtTime(38+speed*78,t,.10);
+ engineFilter.frequency.setTargetAtTime(160+speed*280,t,.12);
+ engineGain.gain.setTargetAtTime(driving?.09+speed*.16:0,t,.12);
+ windGain.gain.setTargetAtTime(active?(driving?.035+speed*.12:.065):0,t,.2);
+}
+function syncSoundButton(){$('soundToggle').textContent='SOUND · '+(gameSoundEnabled?'ON':'OFF')}
+$('soundToggle').onclick=()=>{gameSoundEnabled=!gameSoundEnabled;try{localStorage.setItem('mvt6-sound',gameSoundEnabled?'on':'off')}catch{}if(gameSoundEnabled)enableGameAudio();syncSoundButton();};
+syncSoundButton();
 function drivingHorn(){
  if(gameMode!=='play'||!inCar)return;
  setNotice('BEEP BEEP · Road users react');
+ if(!gameSoundEnabled)return;
  try{
   const AC=window.AudioContext||window.webkitAudioContext;
   if(AC){const audio=drivingHorn.audio||(drivingHorn.audio=new AC());
@@ -2797,7 +2873,7 @@ let network=multiplayer({THREE,scene,makeCar,box,mat,mesh,getState:()=>({x:(inCa
 // Optional high-detail character assets only replace the fallback after validation.
 const modelAssets=createPlayerModelSystem({THREE,root:person,fallbackChildren:[...person.children]});
 modelAssets.load();
-let last=performance.now(),fpsCounter=0,fpsWindowStart=last,lastShopUpdate=0,lastHudUpdate=0,lastMapUpdate=0;function frame(now){requestAnimationFrame(frame);if(now-lastShopUpdate>800){lastShopUpdate=now;touchJump.style.display=gameMode==='play'&&!inCar&&matchMedia('(pointer:coarse)').matches?'block':'none';const gearNear=gameMode==='play'&&!inCar?nearestEquipment():null;$('pickupPrompt').style.display=gearNear?'block':'none';if(gearNear)$('pickupPrompt').textContent='F · COLLECT '+gadgetNames[gearNear.id];carHint.style.display=(gameMode==='play'&&!inCar&&nearestTrafficCar())?'block':'none';const px=inCar?carPos.x:playerPos.x,pz=inCar?carPos.z:playerPos.z;
+let lastWaveUpdate=0;let last=performance.now(),fpsCounter=0,fpsWindowStart=last,lastShopUpdate=0,lastHudUpdate=0,lastMapUpdate=0;function frame(now){requestAnimationFrame(frame);if(now-lastShopUpdate>800){lastShopUpdate=now;touchJump.style.display=gameMode==='play'&&!inCar&&matchMedia('(pointer:coarse)').matches?'block':'none';const gearNear=gameMode==='play'&&!inCar?nearestEquipment():null;$('pickupPrompt').style.display=gearNear?'block':'none';if(gearNear)$('pickupPrompt').textContent='F · COLLECT '+gadgetNames[gearNear.id];carHint.style.display=(gameMode==='play'&&!inCar&&nearestTrafficCar())?'block':'none';const px=inCar?carPos.x:playerPos.x,pz=inCar?carPos.z:playerPos.z;
  // Keep the hero car richly detailed; use squared-distance checks for nearby traffic/police.
  if(playerCar.userData.detail)playerCar.userData.detail.visible=true;
  if(renderer.shadowMap.enabled){sun.target.position.set(px,0,pz);sun.position.set(px-100,160,pz-65);sun.target.updateMatrixWorld();}
@@ -2812,8 +2888,9 @@ let last=performance.now(),fpsCounter=0,fpsWindowStart=last,lastShopUpdate=0,las
  }
  for(const p of parkedVehicles){p.car.visible=(p.x-px)**2+(p.z-pz)**2<115*115||gameMode==='intro'||gameMode==='menu'}
  for(const sh of shopBuildings){sh.root.visible=gameMode==='intro'||gameMode==='menu'||Math.hypot(px-sh.x,pz-sh.z)<155}}const dt=Math.max(.001,Math.min(.04,(now-last)/1000));last=now;animateCustoms(dt);if(gameMode==='play'){clockTime+=dt;if(atmosphereTime>0){atmosphereTime=Math.max(0,atmosphereTime-dt);if(atmosphereTime===0)atmosphereToast.classList.remove('show')}if(detailingShine>0)detailingShine=Math.max(0,detailingShine-dt);if(chapterBannerTime>0){chapterBannerTime-=dt;if(chapterBannerTime<=0)chapterScreen.classList.remove('show')}updateEquipmentWorld(dt);if(inCar)moveCar(dt);else movePerson(dt);updateVfx(dt);advanceTraffic(dt);advancePolice(dt);updatePatrolAgents(dt);if(mission){missionTime-=dt;updateMissionActivity(dt);if(missionTime<=0)failMission()}if(taxiJob)updateTaxiJob(dt);cityLife.update(dt,now);if(now-lastHudUpdate>100){lastHudUpdate=now;updateHUD()}updateCamera(dt);if(now-lastMapUpdate>95){lastMapUpdate=now;drawMap()}}else if(gameMode==='arrest'){animateArrest(dt);cityLife.update(dt,now)}else if(gameMode==='jail'){cityLife.update(dt,now)}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='takeover'){clockTime+=dt;updateVfx(dt);updateTakeover(dt);advanceTraffic(dt);cityLife.update(dt,now);updateCamera(dt);if(now-lastMapUpdate>95){lastMapUpdate=now;drawMap()}}else if(gameMode==='menu'){cityLife.update(dt,now);if(window.__mvtTitleStart!=null&&!matchMedia('(prefers-reduced-motion: reduce)').matches)liveTitleCamera(now,dt);else{const a=now*.00007;camera.fov=65;camera.updateProjectionMatrix();camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}}modelAssets.update(dt,{walking:walkBlend,running:runBlend,jumping,enabled:gameMode==='play'&&!inCar});
+if(now-lastWaveUpdate>80){lastWaveUpdate=now;waveMap.offset.x=(now*.000007)%1;waveMap.offset.y=(now*.000004)%1;if(animatedShore)animatedShore.position.x=Math.sin(now*.0006)*.7;}
 walkingShadow.visible=person.visible&&!inCar;walkingShadow.position.x=person.position.x;walkingShadow.position.z=person.position.z;
-network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;
+updateGameAudio(now);network.frame(now,camera);renderer.render(scene,camera);fpsCounter++;
 // Measure wall-clock frame throughput, not the clamped physics timestep.
 // AUTO uses hysteresis, a cooldown, and small resolution steps to avoid oscillation.
 if(now-fpsWindowStart>=1500){

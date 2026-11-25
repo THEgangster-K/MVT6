@@ -1,5 +1,17 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v2.2 — DYNASTY
+
+- New Kang Dynasty Studios title branding.
+- Hybrid opening: studio splash, the three original City Life illustrations restored directly from v1.9, three live rendered Solara City camera shots, and the MVT 6 logo reveal. Includes a skip button and reduced-motion alternative.
+- Optional synthesized ambient sound and speed-responsive engine audio start after a user gesture, with a persistent Sound toggle in the pause menu.
+- Waterfront uses a slowly moving original wave texture and animated shoreline accents.
+- Retains the v2.1 city, original articulated character, collision mechanics, saves and prior startup fixes.
+- Regression suite exercises the title sequence with simulated timers, skip and reduced-motion behavior, and the previous pier construction crash. 1,474 assertions passed in the strict adapted test environment.
+
+**Scope:** Interactive browser rendering, audio and FPS have not been measured; no new professionally authored vehicle asset or road-network redesign is included.
+
+
 ## v2.1 — CROSSROADS
 
 - Replace uniform district building rows with irregular, mixed-use parcels. Each of the five districts has a weighted mixture of building categories; 158 planned structures, variable gaps, offset through-alleys and varied lot counts are generated across the 64 blocks.
