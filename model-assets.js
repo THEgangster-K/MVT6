@@ -2,12 +2,15 @@
 // A missing, malformed or incompatible model never prevents the game from booting.
 // Add files under /models and opt in via /models/manifest.json.
 export function createPlayerModelSystem({THREE, root, fallbackChildren, onStatus=()=>{}}) {
-  let mixer=null, model=null, actions={}, activeAction=null, loaded=false;
+  let mixer=null, model=null, actions={}, activeAction=null, loaded=false,showing=false;
   const original=fallbackChildren.slice();
   let lastState='idle';
   function status(message) { onStatus(message); }
-  function update(dt,{walking=0,running=0,jumping=false}={}) {
+  function update(dt,{walking=0,running=0,jumping=false,enabled=true}={}) {
     if(!loaded || !mixer)return;
+    // Keep the original character for story seating, standing, and other special poses.
+    if(enabled!==showing){showing=enabled;model.visible=enabled;for(const child of original)child.visible=!enabled;}
+    if(!enabled)return;
     const next=jumping&&actions.jump?'jump':running>.55&&actions.run?'run':walking>.12&&actions.walk?'walk':'idle';
     const clip=actions[next]||actions.idle;
     if(clip && clip!==activeAction){
@@ -44,20 +47,20 @@ export function createPlayerModelSystem({THREE, root, fallbackChildren, onStatus
       // Keep local player origin at the feet; the existing collision system stays unchanged.
       asset.scale.multiplyScalar(scale);
       asset.position.set(-center.x*scale,-bounds.min.y*scale,-center.z*scale);
-      asset.traverse(node=>{if(node.isMesh){node.frustumCulled=false;node.castShadow=false}});
+      asset.traverse(node=>{if(node.isMesh){node.frustumCulled=false;node.castShadow=true}});
       const nextMixer=new THREE.AnimationMixer(asset);
       const nextActions={};
       for(const [key,clip] of Object.entries(clips))nextActions[key]=nextMixer.clipAction(clip);
       root.add(asset);
-      for(const child of original)child.visible=false;
-      model=asset;mixer=nextMixer;actions=nextActions;loaded=true;
+      asset.visible=false;
+      model=asset;mixer=nextMixer;actions=nextActions;loaded=true;showing=false;
       activeAction=(actions.idle||actions.walk).reset().play();
       status('Custom character model loaded');
     }catch(err){
       // Restore the original procedural model if loading or validation fails.
       if(model){root.remove(model);model=null}
       for(const child of original)child.visible=true;
-      mixer=null;loaded=false;actions={};activeAction=null;
+      mixer=null;loaded=false;showing=false;actions={};activeAction=null;
       console.warn('MVT6 character model fallback:',String(err?.message||err));
       status('Using built-in character');
     }
