@@ -497,7 +497,7 @@ const BLOCK=92,ROAD=20,HALF=4, CITY=HALF*BLOCK, roadPositions=[];for(let i=-HALF
 plane(1600,1600,0,0,materials.grass,-.15);
 // Grid, clear sidewalks, parking stripes and boulevard center markings
 for(let i=-HALF;i<=HALF;i++){
- const p=i*BLOCK;plane(ROAD,1100,p,0,materials.asphalt,.015);plane(1100,ROAD,0,p,materials.asphalt,.052);
+ const p=i*BLOCK;plane(ROAD,780,p,0,materials.asphalt,.015);plane(780,ROAD,0,p,materials.asphalt,.052);
  for(let j=-HALF;j<HALF;j++){const a=j*BLOCK+BLOCK/2;
   box(.24,.035,6,p,.08,a,materials.line);box(6,.035,.24,a,.08,p,materials.line);
   for(const off of [-7,7]){box(.22,.035,3,p+off,.082,a,materials.white);box(3,.035,.22,a,.082,p+off,materials.white)}
@@ -519,11 +519,11 @@ for(let i=-HALF;i<=HALF;i++){
      const q=j*BLOCK;
      if((i+j)%2===0){
        for(let k=-3;k<=3;k++){
-         roadPiece(stripePieces,p-8+k*2.6,.34,q+side*15.1,1,.035,2.1);
-         roadPiece(stripePieces,p+side*15.1,.34,q-8+k*2.6,2.1,.035,1);
+         roadPiece(stripePieces,p+k*2.5,.085,q+side*15.1,1.15,.025,3.2);
+         roadPiece(stripePieces,p+side*15.1,.085,q+k*2.5,3.2,.025,1.15);
        }
-       roadPiece(rampPieces,p+side*11.8,.333,q,3.5,.045,1.3);
-       roadPiece(rampPieces,p,.333,q+side*11.8,1.3,.045,3.5);
+       roadPiece(rampPieces,p+side*11.8,.13,q+side*15.1,1.6,.035,3.2);
+       roadPiece(rampPieces,p+side*15.1,.13,q+side*11.8,3.2,.035,1.6);
      }
      if((i+j)%3===0)roadPiece(redCurbPieces,p+side*9.82,.345,q+21,.42,.035,13);
    }
@@ -2540,6 +2540,8 @@ function drawMap(){
  bg.addColorStop(0,'#263b3e');bg.addColorStop(1,'#14232a');
  ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
  ctx.translate(w/2,h/2);ctx.rotate(-heading);ctx.translate(-p.x*zoom,p.z*zoom);
+ ctx.fillStyle='#315e6b';ctx.fillRect(-800*zoom,-450*zoom,390*zoom,900*zoom);
+ ctx.fillStyle='#b1a58b';ctx.fillRect(-410*zoom,-410*zoom,20*zoom,820*zoom);
  for(let i=-HALF;i<HALF;i++)for(let j=-HALF;j<HALF;j++){
   const cx=(i+.5)*BLOCK,cz=(j+.5)*BLOCK;
   const plan=neighborhoods[(i+HALF)*HALF*2+j+HALF];ctx.fillStyle=({park:'#526e4c',plaza:'#6d8062',parking:'#37454d',residential:'#6b7860',industrial:'#60686c',coast:'#777e76',commercial:'#6c6664',urban:'#465951'})[plan.kind]||'#465951';
