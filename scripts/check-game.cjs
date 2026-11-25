@@ -71,7 +71,7 @@ for(const match of matches[1][1].matchAll(/\$\('([^']+)'\)/g)){
  assert.ok(ids.includes(match[1])||builtAtRuntime.has(match[1]),'Missing UI element: '+match[1]);
 }
 const coreSource=read('game-core.js').replace(/^export /gm,'')+
- '\n;globalThis.core={movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction,arcadeCarContact,secondaryLane,vehicleProfile};';
+ '\n;globalThis.core={movementVector,slideMove,approachAngle,policeRoadWaypoint,bailAmount,nextMissionPhase,arcadeSlideStep,clearsStreet,cityDistrict,cityBlockPlan,junctionPhase,trafficQueueSpeed,nextJunction,arcadeCarContact,secondaryLane,vehicleProfile,homeCatalog,purchaseHome,residentRoutine,visualSpring};';
 const context={Math};
 vm.runInNewContext(coreSource,context,{filename:'game-core.js'});
 const core=context.core;
@@ -105,7 +105,33 @@ assert.ok(html.includes('const nx=carPos.x+slide.dx,nz=carPos.z+slide.dz'),'New 
 assert.ok(html.includes('clearsStreet(x,z,w,h,d')===false,'Street guard uses the horizontal dimensions only');
 assert.ok(html.includes('clearsStreet(x,z,w,d,BLOCK,ROAD)'),'Street prop footprint guard is connected');
 assert.ok(html.includes('detailBatch(palmFronds,palmGeometry()'),'Original curved foliage is GPU-instanced');
-assert.ok(html.includes('AVENUES · V2.7'),'Visible release marker');
+assert.ok(html.includes('HOMESTEAD · V2.8'),'Visible release marker');
+assert.equal(core.homeCatalog.length,3,'Three purchasable properties');
+const originalProgress={money:4000,homes:[]};
+let owned=originalProgress;
+for(const home of core.homeCatalog){
+ assert.ok(core.clearsStreet(home.x,home.z,14,12),'Home plot clears primary road');
+ const result=core.purchaseHome(owned,home.id);
+ if(owned.money>=home.price){assert.ok(result.ok,'Affordable property purchase');assert.equal(result.money,owned.money-home.price,'Exact property cost');owned={money:result.money,homes:result.homes}}
+ else assert.ok(!result.ok,'Unaffordable purchase rejected');
+}
+assert.equal(originalProgress.money,4000,'Transaction does not mutate original');
+assert.equal(originalProgress.homes.length,0,'Original ownership intact');
+assert.ok(!core.purchaseHome(owned,'starter').ok,'Duplicate purchase blocked');
+assert.ok(!core.purchaseHome({money:0,homes:[]},'loft').ok,'Insufficient funds blocked');
+assert.ok(!core.purchaseHome({money:9000,homes:[]},'unknown').ok,'Unknown home blocked');
+const routineStates=new Set();for(let i=0;i<12;i++)routineStates.add(core.residentRoutine(i*18,0));
+assert.equal(routineStates.size,3,'Residents have three routine states');
+assert.ok(core.residentRoutine(0,0)!==core.residentRoutine(0,1),'Routines stagger by resident');
+let spring={position:0,velocity:0};
+for(let i=0;i<120;i++){spring=core.visualSpring(spring.position,spring.velocity,i<40?.06:0,.016);assert.ok(Number.isFinite(spring.position)&&Math.abs(spring.position)<=.12,'Bounded cosmetic spring');}
+assert.ok(Math.abs(spring.position)<.01,'Spring settles back');
+assert.ok(html.includes('save.homes=result.homes'),'Ownership saved after purchase');
+assert.ok(html.includes('if(!confirm(\'Buy \'+home.name'),'Purchase requires confirmation');
+assert.ok(read('server.js').includes("homes:Array.isArray(v?.homes)"),'Account save retains properties');
+assert.ok(cityLifeSource.includes('residentRoutine(now/1000,n.id)'),'NPC routine applied');
+assert.ok(html.includes("turn.className='storyTurn'"),'Individual speaker cards rendered');
+
 assert.ok(html.includes('heroOccupant.group.visible=inCar&&playerCar.visible'),'Hero seated character visible when driving');
 assert.ok(html.includes('const driverRig=attachOccupant(car,i)'),'Traffic uses detailed occupant');
 assert.ok(html.includes('attachOccupant(c,i+8)'),'Police vehicles use detailed occupant');
