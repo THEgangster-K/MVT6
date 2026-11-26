@@ -39,7 +39,7 @@ assert.ok(html.includes("if(speedMarkup!==lastSpeedMarkup)"),'Unchanged speed ma
 assert.ok(html.includes("if(mission&&missionTime<=0)failMission()"),'Mission completion is not followed by a timeout failure');
 assert.ok(read('client.js').includes("blend=1-Math.exp(-14.9*dt)")&&read('client.js').includes("r.wasInCar!==inCar"),'Remote interpolation is time-based and resets on actor changes');
 assert.ok(read('client.js').includes("labelVector.copy(actor.position)"),'Remote labels reuse a projection vector');
-assert.equal(JSON.parse(read('package.json')).version,'0.4.0','Package release series matches cinematic overhaul');
+assert.equal(JSON.parse(read('package.json')).version,'0.5.0','Package release series matches Beyond Solara');
 assert.ok(cityLifeSource.includes('heading=chatting?Math.atan2(player.x-px,player.z-pz)'),'Residents face the player during conversation');
 assert.ok(html.includes("renderLifestyle();renderTaxiPhone();renderVenueGuide();"),'Local guide is connected to phone');
 assert.ok(html.includes("visited.has(lead+':'+v.id)"),'Guide shows character-specific visit progress');
@@ -67,6 +67,10 @@ assert.ok(html.includes('detail.visible=p.active&&(p.pos.x-px)**2+(p.pos.z-pz)**
 assert.ok(html.includes('group.userData.wheels=wheelAssemblies'),'Vehicle wheel physics interface is retained');
 assert.ok(html.includes('detailBatch(solarModules'),'Instanced rooftop solar arrays exist');
 assert.ok(html.includes('detailBatch(parapetModules'),'Instanced rooftop parapets exist');
+assert.ok(html.includes('tint.lerp(new THREE.Color(districtTints[plan.district]'),'District-specific building palette');
+for(const batch of ['architecturalTrim','architecturalMetal','architecturalWarm'])assert.ok(html.includes('detailBatch('+batch+',architectureGeo'),'Shared instanced facade detail: '+batch);
+assert.ok(html.includes('if(kind===\'house\'){\n  band(architecturalWarm')&&html.includes("if(kind==='warehouse'){\n  band(architecturalMetal"),'House and warehouse facade detail differs');
+assert.ok(html.includes('bw,h,over')&&html.includes('over,h,depth'),'Facade band geometry stays shallow');
 
 assert.ok(html.includes('group.userData.brakeLights=brakeTailLights'),'Brake light interface is retained');
 assert.ok(html.includes('walkBlend=THREE.MathUtils.lerp(walkBlend,walkMotion,transition)'),'Walking blend is damped');
@@ -120,7 +124,7 @@ assert.ok(html.includes('const nx=carPos.x+slide.dx,nz=carPos.z+slide.dz'),'New 
 assert.ok(html.includes('clearsStreet(x,z,w,h,d')===false,'Street guard uses the horizontal dimensions only');
 assert.ok(html.includes('clearsStreet(x,z,w,d,BLOCK,ROAD)'),'Street prop footprint guard is connected');
 assert.ok(html.includes('detailBatch(palmFronds,palmGeometry()'),'Original curved foliage is GPU-instanced');
-assert.ok(html.includes('CINEMATIC OVERHAUL · v0.4.0 PREVIEW'),'Visible release marker');
+assert.ok(html.includes('BEYOND SOLARA · v0.5.0 PREVIEW'),'Visible release marker');
 assert.ok(html.includes('src="./models/solara-cover.svg?rev=8"')&&html.includes("classList.add('artworkReady')")&&html.includes("classList.remove('artworkReady')"),'Local vector key art has loading and missing-image fallback');
 assert.ok(html.includes('#menu.artworkReady .menuActions{pointer-events:auto'),'Menu controls remain interactive over key art');
 assert.ok(html.includes('emissiveMap:windowGlowTexture(type,i)'),'Night glow uses a dedicated window mask');

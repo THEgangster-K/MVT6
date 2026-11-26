@@ -1,5 +1,13 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v0.5.0 — BEYOND SOLARA (Preview 1: District Architecture)
+
+- District-specific building colour grading for West Haven, South Pier, East Solara, North Quarter and Downtown.
+- Separate architectural trim for homes, hotels, apartments, warehouses, towers and markets.
+- Shared geometry and three instanced facade batches limit the extra draw calls.
+- Existing building footprints, road layout, campaign and save schema retained.
+- Adapted regression checks completed; browser visuals, actual FPS and deployment are not yet verified.
+
 ## v0.4.0 — CINEMATIC OVERHAUL (Preview 10)
 
 - Self-contained widescreen illustrated cover, irregular panels, no scene captions, and working menu controls.

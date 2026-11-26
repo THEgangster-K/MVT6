@@ -580,7 +580,7 @@ body.bootPlaying #menu{visibility:hidden!important}
 <p>Explore Solara City as Jawson and Luxie. Meet local contacts, take on jobs, customise your car and build your own story.</p>
 <div class="menuActions"><button id="play">PLAY STORY</button><button id="resetSave" class="secondary">START OVER</button></div>
 <div class="movieControls">WASD · MOVE &nbsp;&nbsp; CLICK · MOUSE LOOK &nbsp;&nbsp; F · INTERACT</div></div>
-<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">CINEMATIC OVERHAUL · v0.4.0 PREVIEW 10</div></div></div>
+<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">BEYOND SOLARA · v0.5.0 PREVIEW 1</div></div></div>
 <div id="storyIntro" aria-live="polite" style="display:none"><div id="introShade"></div><div id="introFade" aria-hidden="true"></div><div id="introContent"><div id="introChapter">SOLARA CITY · CHAPTER ONE</div><div id="introCue">AN ORIGINAL MVT 6 FILM</div><h2 id="introTitle">START WITH NOTHING.</h2><p id="introCopy">New city. Empty pockets. Every choice counts.</p><div id="introProgress" aria-hidden="true"><i></i></div></div><button id="introSkip">SKIP INTRO →</button></div>
 <div id="paused" class="overlay"><div class="panel"><div class="eyebrow">SOLARA CITY</div><h2>PAUSED</h2><p>Explore at your own pace. Your cash, upgrades and completed contracts are automatically saved.</p><button id="resume">RESUME</button><button id="pauseMap" class="secondary">MAP & MISSIONS</button>
 <div class="qualitySelector"><label for="graphicsQuality">GRAPHICS QUALITY</label><select id="graphicsQuality">
@@ -812,6 +812,9 @@ const facadeDummy=new THREE.Object3D();
 function facadeMatrix(x,y,z,w,h,rot){facadeDummy.position.set(x,y,z);facadeDummy.rotation.set(0,rot,0);facadeDummy.scale.set(w,h,1);facadeDummy.updateMatrix();return facadeDummy.matrix.clone()}
 // The new city plans reserve roads and preserve existing story coordinates.
 function parcelMatrix(x,y,z,w,h,d){return new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion(),new THREE.Vector3(w,h,d))}
+const districtTints={
+ 'WEST HAVEN':'#9ec9cf','SOUTH PIER':'#e1b397','EAST SOLARA':'#a4afb2','NORTH QUARTER':'#b5c7a8','DOWNTOWN':'#bbc2d4'
+};
 const palette={tower:['#a0b6c0','#b5c2c8','#6b8b99'],apartment:['#e4ccab','#ac8979','#d8d7cc'],house:['#e6dcc7','#adc2b3','#c9a99a','#b7bdcf'],warehouse:['#8f999c','#b6a690','#a4b3ad'],hotel:['#ecd4b8','#e9e7df','#a5bdc7'],market:['#dcb58d','#b7c4b4','#c7a9a6']};
 for(let ix=-HALF;ix<HALF;ix++)for(let iz=-HALF;iz<HALF;iz++){
  const cx=(ix+.5)*BLOCK,cz=(iz+.5)*BLOCK,n=(ix+HALF)*10+iz+HALF;
@@ -879,7 +882,9 @@ for(let ix=-HALF;ix<HALF;ix++)for(let iz=-HALF;iz<HALF;iz++){
   if(!clearsStreet(bx,bz,bw,depth,BLOCK,ROAD))continue;
   buildingMatrices.push(parcelMatrix(bx,height/2+.17,bz,bw,height,depth));
   buildingTypes.push(type);
-  const colors=palette[type];buildingTints.push(new THREE.Color(colors[Math.floor(rnd(n*19+bi)*colors.length)]));
+  const colors=palette[type],tint=new THREE.Color(colors[Math.floor(rnd(n*19+bi)*colors.length)]);
+  tint.lerp(new THREE.Color(districtTints[plan.district]||'#c4c2bf'),type==='tower'?.18:.27);
+  buildingTints.push(tint);
   footprint.push({x:bx,z:bz,w:bw/2+.6,d:depth/2+.6});
   if(type==='house'){
     houseRoofs.push(parcelMatrix(bx,height+.16,bz,bw+1.1,2.6,depth+1.2));
@@ -917,6 +922,8 @@ for(let i=0;i<roofMatrices.length;i++)roofBatch.setMatrixAt(i,roofMatrices[i]);
 roofBatch.instanceMatrix.needsUpdate=true;roofBatch.frustumCulled=false;scene.add(roofBatch);
 // Varied buildings: rooftop machinery, water towers, stepped crowns and shop awnings.
 const roofModules=[],ventStacks=[],awningModules=[],balconyModules=[],signModules=[],solarModules=[],parapetModules=[];
+const architecturalTrim=[],architecturalMetal=[],architecturalWarm=[];
+
 const d=new THREE.Object3D(),dq=new THREE.Quaternion();
 function matrixBox(out,x,y,z,w,h,depth){d.position.set(x,y,z);d.rotation.set(0,0,0);d.scale.set(w,h,depth);d.updateMatrix();out.push(d.matrix.clone())}
 for(let k=0;k<buildingMatrices.length;k++){
@@ -924,7 +931,41 @@ for(let k=0;k<buildingMatrices.length;k++){
  buildingMatrices[k].decompose(pos,rot,scale);
  const bx=pos.x,bz=pos.z,height=scale.y,depth=scale.z,bw=scale.x,y=height+.4;
  const kind=buildingTypes[k],type=k%7;
- if(kind==='house'||kind==='warehouse')continue;
+ // Architectural details remain inside the existing .6m collision margin.
+ // Shared instancing keeps the additional facade work to three draw batches.
+ const band=(out,y,h,over=.25)=>{
+  for(const side of [-1,1]){
+   matrixBox(out,bx,y,bz+side*(depth/2+over/2),bw,h,over);
+   matrixBox(out,bx+side*(bw/2+over/2),y,bz,over,h,depth);
+  }
+ };
+ const district=cityDistrict(bx,bz);
+ if(kind==='house'){
+  band(architecturalWarm,height-.14,.26);
+  for(const side of [-1,1])for(const dx of [-bw*.26,bw*.26]){
+   matrixBox(architecturalTrim,bx+dx,1.79,bz+side*(depth/2+.16),2.65,.16,.28);
+   matrixBox(architecturalTrim,bx+dx,3.61,bz+side*(depth/2+.16),2.65,.15,.28);
+  }
+  continue;
+ }
+ if(kind==='warehouse'){
+  band(architecturalMetal,height-.48,.48);
+  for(const side of [-1,1])for(const dx of [-bw*.39,bw*.39])matrixBox(architecturalMetal,bx+dx,height*.5,bz+side*(depth/2+.14),.34,height*.88,.26);
+  continue;
+ }
+ if(kind==='hotel'||kind==='apartment'){
+  band(district==='WEST HAVEN'?architecturalWarm:architecturalTrim,height-.36,.38);
+  band(architecturalTrim,Math.min(4.3,height*.24),.23);
+  for(const side of [-1,1])for(const dx of [-bw*.445,bw*.445])matrixBox(architecturalTrim,bx+dx,height*.5,bz+side*(depth/2+.14),.38,height*.94,.26);
+ }else if(kind==='tower'){
+  band(architecturalMetal,height-.55,.62);
+  band(architecturalMetal,height*.35,.35);
+  band(architecturalMetal,height*.70,.35);
+  for(const side of [-1,1])for(const dx of [-bw*.32,0,bw*.32])matrixBox(architecturalMetal,bx+dx,height*.52,bz+side*(depth/2+.14),.22,height*.90,.26);
+ }else if(kind==='market'){
+  band(architecturalWarm,Math.min(5.1,height*.62),.36);
+  band(architecturalTrim,height-.27,.35);
+ }
  // Distinct silhouettes from street-level and in the cinematic city flyover.
  if(k%9===2 && height>24){
    for(const side of [-1,1]){
@@ -956,6 +997,11 @@ detailBatch(balconyModules,new THREE.BoxGeometry(1,1,1),mat('#adbdc1',.55,.1));
 detailBatch(signModules,new THREE.BoxGeometry(1,1,1),mat('#295970',.4,.16));
 detailBatch(solarModules,new THREE.BoxGeometry(1,1,1),mat('#254a5c',.2,.55));
 detailBatch(parapetModules,new THREE.BoxGeometry(1,1,1),mat('#9a9b98',.88));
+const architectureGeo=new THREE.BoxGeometry(1,1,1);
+detailBatch(architecturalTrim,architectureGeo,mat('#e3ded1',.84));
+detailBatch(architecturalMetal,architectureGeo,mat('#647b88',.51,.23));
+detailBatch(architecturalWarm,architectureGeo,mat('#d2a27f',.78));
+
  // Shared gabled roof mesh, not a rectangular cap.
 function gabledRoof(){
  const g=new THREE.BufferGeometry();
