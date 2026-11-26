@@ -33,6 +33,13 @@ vm.runInNewContext(html.slice(helperStart,helperEnd)+'\n'+pierLine,pierSandbox,{
 assert.equal(pierChildren.length,6,'All six pier supports attach to scene');
 assert.ok(pierChildren.every(m=>m.geometry.args[3]===8),'Pier support detail argument reaches cylinder geometry');
 const cityLifeSource=read('city-life.js');
+assert.ok(html.includes("document.hidden||staticMenu")&&html.includes("classList.contains('bootDone')"),'Fully loaded static menu and hidden tabs avoid continuous 3D rendering');
+assert.ok(html.includes("resetFrameTiming(now)")&&html.includes("autoQualityGoodWindows=0"),'Resume resets timing and quality samples');
+assert.ok(html.includes("if(speedMarkup!==lastSpeedMarkup)"),'Unchanged speed markup is not rebuilt');
+assert.ok(html.includes("if(mission&&missionTime<=0)failMission()"),'Mission completion is not followed by a timeout failure');
+assert.ok(read('client.js').includes("blend=1-Math.exp(-14.9*dt)")&&read('client.js').includes("r.wasInCar!==inCar"),'Remote interpolation is time-based and resets on actor changes');
+assert.ok(read('client.js').includes("labelVector.copy(actor.position)"),'Remote labels reuse a projection vector');
+assert.equal(JSON.parse(read('package.json')).version,'0.4.0','Package release series matches cinematic overhaul');
 assert.ok(cityLifeSource.includes('heading=chatting?Math.atan2(player.x-px,player.z-pz)'),'Residents face the player during conversation');
 assert.ok(html.includes("renderLifestyle();renderTaxiPhone();renderVenueGuide();"),'Local guide is connected to phone');
 assert.ok(html.includes("visited.has(lead+':'+v.id)"),'Guide shows character-specific visit progress');

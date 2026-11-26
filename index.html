@@ -502,6 +502,14 @@ body.bootPlaying #menu{visibility:hidden!important}
 .venueGuideCard{border-left:2px solid #d2a57e!important}
 .venueGuideCard small{display:block;line-height:1.5;letter-spacing:.025em}
 .venueGuideCard button{background:#243f4d;border-color:#7b9da2}
+
+/* Preview 10: stable layout at small viewport sizes. */
+#menu.artworkReady .menuHeroArt{display:block;object-fit:contain}
+#menu.artworkReady .menuActions{max-width:100%;width:auto}
+#menu.artworkReady .menuActions button{white-space:nowrap}
+#menu.artworkReady .menuDecor .releaseVersion{letter-spacing:.08em}
+@media(max-width:400px){#menu.artworkReady .menuActions button{padding:10px 12px;min-width:0;font-size:11px}}
+@media(prefers-reduced-motion:reduce){#menu .menuActions button{transition:none!important}}
 </style>
 </head>
 <body>
@@ -572,7 +580,7 @@ body.bootPlaying #menu{visibility:hidden!important}
 <p>Explore Solara City as Jawson and Luxie. Meet local contacts, take on jobs, customise your car and build your own story.</p>
 <div class="menuActions"><button id="play">PLAY STORY</button><button id="resetSave" class="secondary">START OVER</button></div>
 <div class="movieControls">WASD · MOVE &nbsp;&nbsp; CLICK · MOUSE LOOK &nbsp;&nbsp; F · INTERACT</div></div>
-<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">CINEMATIC OVERHAUL · v0.4.0 PREVIEW 9</div></div></div>
+<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">CINEMATIC OVERHAUL · v0.4.0 PREVIEW 10</div></div></div>
 <div id="storyIntro" aria-live="polite" style="display:none"><div id="introShade"></div><div id="introFade" aria-hidden="true"></div><div id="introContent"><div id="introChapter">SOLARA CITY · CHAPTER ONE</div><div id="introCue">AN ORIGINAL MVT 6 FILM</div><h2 id="introTitle">START WITH NOTHING.</h2><p id="introCopy">New city. Empty pockets. Every choice counts.</p><div id="introProgress" aria-hidden="true"><i></i></div></div><button id="introSkip">SKIP INTRO →</button></div>
 <div id="paused" class="overlay"><div class="panel"><div class="eyebrow">SOLARA CITY</div><h2>PAUSED</h2><p>Explore at your own pace. Your cash, upgrades and completed contracts are automatically saved.</p><button id="resume">RESUME</button><button id="pauseMap" class="secondary">MAP & MISSIONS</button>
 <div class="qualitySelector"><label for="graphicsQuality">GRAPHICS QUALITY</label><select id="graphicsQuality">
@@ -1952,7 +1960,8 @@ function safeWalkingPosition(){
 
 function setNotice(t){$('notice').textContent=t;$('notice').style.opacity='1';clearTimeout(setNotice.timer);setNotice.timer=setTimeout(()=>$('notice').style.opacity='0',2800)}
 function getRank(){if(save.lifeTier>=4)return 'CITY LEGEND';if(save.lifeTier>=3)return 'HIGH SOCIETY';if(save.lifeTier>=2)return 'CREW LEADER';if(save.lifeTier>=1||save.completed>=2)return 'STREET RUNNER';return 'NEW TO THE STREETS'}
-function updateHUD(){ $('homeCount').textContent=(save.homes||[]).length+' / '+homes.length;$('activeLeadName').textContent=leadName().toUpperCase();$('streetRank').textContent=getRank();$('money').textContent='$'+Math.floor(save.money).toLocaleString();$('heat').textContent='★'.repeat(Math.ceil(heat))+'☆'.repeat(5-Math.ceil(heat));$('speed').style.visibility=inCar?'visible':'hidden';$('speed').innerHTML=(inCar?Math.round(Math.abs(velocity)*3.6):0)+' <small>KM/H</small>'+(inCar?'<div class="vehicleConditionMini">'+Math.round(vehicleCondition)+'% CONDITION · '+(slideActive?'SLIDING · ':'')+'J HORN · L LIGHTS</div>':'');const p=inCar?carPos:playerPos;$('district').textContent=cityDistrict(p.x,p.z);if(mission){$('missionTitle').textContent=mission.title;$('missionText').textContent=({
+let lastSpeedMarkup=null;
+function updateHUD(){ $('homeCount').textContent=(save.homes||[]).length+' / '+homes.length;$('activeLeadName').textContent=leadName().toUpperCase();$('streetRank').textContent=getRank();$('money').textContent='$'+Math.floor(save.money).toLocaleString();$('heat').textContent='★'.repeat(Math.ceil(heat))+'☆'.repeat(5-Math.ceil(heat));$('speed').style.visibility=inCar?'visible':'hidden';const speedMarkup=(inCar?Math.round(Math.abs(velocity)*3.6):0)+' <small>KM/H</small>'+(inCar?'<div class="vehicleConditionMini">'+Math.round(vehicleCondition)+'% CONDITION · '+(slideActive?'SLIDING · ':'')+'J HORN · L LIGHTS</div>':'');if(speedMarkup!==lastSpeedMarkup){$('speed').innerHTML=speedMarkup;lastSpeedMarkup=speedMarkup;}const p=inCar?carPos:playerPos;$('district').textContent=cityDistrict(p.x,p.z);if(mission){$('missionTitle').textContent=mission.title;$('missionText').textContent=({
  pickup:'Find the package and press F to collect.',
  deliver:'Meet your contact and press F.',
  terminal:'Find the terminal and press F for the decoder puzzle.',
@@ -3295,6 +3304,7 @@ function renderVenueGuide(){
 }
 function renderPhone(){
  renderLifestyle();renderTaxiPhone();renderVenueGuide();
+ $('phoneWaypointRae').textContent=storyContactName(activeLead()).toUpperCase()+' · CONTACT';
  $('phoneClock').textContent=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
  const current=$('phoneCurrent');current.innerHTML='';
  const active=document.createElement('div');active.className='phoneCard';
@@ -3324,7 +3334,7 @@ function openPhone(){
 function closePhone(){if(!phoneOpen)return;phoneOpen=false;phoneRoot.classList.remove('visible');if(gameMode==='phone')gameMode='play'}
 $('phoneToggle').onclick=()=>phoneOpen?closePhone():openPhone();
 $('phoneClose').onclick=closePhone;
-$('phoneWaypointRae').onclick=()=>{setWaypoint({x:cityLife.fixer.root.position.x,z:cityLife.fixer.root.position.z},'LUXIE · STORY CONTACT');closePhone()};
+$('phoneWaypointRae').onclick=()=>{setWaypoint({x:cityLife.fixer.root.position.x,z:cityLife.fixer.root.position.z},storyContactName(activeLead()).toUpperCase()+' · STORY CONTACT');closePhone()};
 $('phoneWaypointGarage').onclick=()=>{setWaypoint({x:184,z:0},'SOLARA CUSTOMS');closePhone()};
 $('phoneWaypointLoot').onclick=()=>{const pos=inCar?carPos:playerPos;let nearest=null,best=Infinity;for(const stash of streetStashes){const d=Math.hypot(stash.x-pos.x,stash.z-pos.z);if(d<best){nearest=stash;best=d}}if(nearest)setWaypoint(nearest,'NEAREST LOOT');closePhone()};
 $('phoneWaypointClear').onclick=()=>{setWaypoint(null);closePhone()};
@@ -3470,7 +3480,19 @@ function updateWeather(dt){
  for(let i=0;i<count;i++){const p=rainDrops[i];p.y-=dt*19;if(p.y<0)p.y+=23;const a=i*6;rainPositions[a]=p.x;rainPositions[a+1]=p.y;rainPositions[a+2]=p.z;rainPositions[a+3]=p.x+.16;rainPositions[a+4]=p.y+.72;rainPositions[a+5]=p.z+.05;}
  rainGeo.attributes.position.needsUpdate=true;
 }
-let firstFrameReady=false,lastWaveUpdate=0;let last=performance.now(),fpsCounter=0,fpsWindowStart=last,lastShopUpdate=0,lastHudUpdate=0,lastMapUpdate=0;function frame(now){requestAnimationFrame(frame);if(now-lastShopUpdate>800){lastShopUpdate=now;touchJump.style.display=gameMode==='play'&&!inCar&&matchMedia('(pointer:coarse)').matches?'block':'none';const gearNear=gameMode==='play'&&!inCar?nearestEquipment():null;$('pickupPrompt').style.display=gearNear?'block':'none';if(gearNear)$('pickupPrompt').textContent='F · COLLECT '+gadgetNames[gearNear.id];carHint.style.display=(gameMode==='play'&&!inCar&&nearestTrafficCar())?'block':'none';const px=inCar?carPos.x:playerPos.x,pz=inCar?carPos.z:playerPos.z;
+let firstFrameReady=false,lastWaveUpdate=0;let last=performance.now(),fpsCounter=0,fpsWindowStart=last,lastShopUpdate=0,lastHudUpdate=0,lastMapUpdate=0;
+let inactiveFrame=false;
+function resetFrameTiming(now){last=now;fpsWindowStart=now;fpsCounter=0;autoQualityGoodWindows=0;}
+document.addEventListener('visibilitychange',()=>{for(const k in keys)keys[k]=false;resetFrameTiming(performance.now());});
+function frame(now){requestAnimationFrame(frame);
+ // No continuous GPU rendering behind an opaque, fully loaded static menu.
+ const staticMenu=firstFrameReady&&gameMode==='menu'&&$('boot').classList.contains('bootDone')&&$('menu').classList.contains('artworkReady');
+ if(document.hidden||staticMenu){
+  if(!inactiveFrame){inactiveFrame=true;resetFrameTiming(now);if(staticMenu)restoreTitleAtmosphere();}
+  return;
+ }
+ if(inactiveFrame){inactiveFrame=false;resetFrameTiming(now);lastShopUpdate=0;lastHudUpdate=0;lastMapUpdate=0;lastWaveUpdate=now;}
+if(now-lastShopUpdate>800){lastShopUpdate=now;touchJump.style.display=gameMode==='play'&&!inCar&&matchMedia('(pointer:coarse)').matches?'block':'none';const gearNear=gameMode==='play'&&!inCar?nearestEquipment():null;$('pickupPrompt').style.display=gearNear?'block':'none';if(gearNear)$('pickupPrompt').textContent='F · COLLECT '+gadgetNames[gearNear.id];carHint.style.display=(gameMode==='play'&&!inCar&&nearestTrafficCar())?'block':'none';const px=inCar?carPos.x:playerPos.x,pz=inCar?carPos.z:playerPos.z;
  // Keep the hero car richly detailed; use squared-distance checks for nearby traffic/police.
  if(playerCar.userData.detail)playerCar.userData.detail.visible=true;
  if(renderer.shadowMap.enabled){sun.target.position.set(px,0,pz);sun.position.set(px-100,160,pz-65);sun.target.updateMatrixWorld();}
@@ -3487,7 +3509,7 @@ let firstFrameReady=false,lastWaveUpdate=0;let last=performance.now(),fpsCounter
  }
  for(const p of parkedVehicles){p.car.visible=(p.x-px)**2+(p.z-pz)**2<115*115||gameMode==='intro'||gameMode==='menu'}
  for(const sh of shopBuildings){sh.root.visible=gameMode==='intro'||gameMode==='menu'||Math.hypot(px-sh.x,pz-sh.z)<155}
- for(const venue of openVenues)venue.interiorDetail.visible=(venue.x-px)**2+(venue.z-pz)**2<38*38;}const dt=Math.max(.001,Math.min(.04,(now-last)/1000));last=now;animateCustoms(dt);if(gameMode==='play'){clockTime+=dt;if(atmosphereTime>0){atmosphereTime=Math.max(0,atmosphereTime-dt);if(atmosphereTime===0)atmosphereToast.classList.remove('show')}if(detailingShine>0)detailingShine=Math.max(0,detailingShine-dt);if(chapterBannerTime>0){chapterBannerTime-=dt;if(chapterBannerTime<=0)chapterScreen.classList.remove('show')}updateEquipmentWorld(dt);if(inCar)moveCar(dt);else movePerson(dt);updateVfx(dt);advanceTraffic(dt);advancePolice(dt);updatePatrolAgents(dt);if(mission){missionTime-=dt;updateMissionActivity(dt);if(missionTime<=0)failMission()}if(taxiJob)updateTaxiJob(dt);cityLife.update(dt,now);if(now-lastHudUpdate>100){lastHudUpdate=now;updateHUD()}updateCamera(dt);if(now-lastMapUpdate>95){lastMapUpdate=now;drawMap()}}else if(gameMode==='arrest'){animateArrest(dt);cityLife.update(dt,now)}else if(gameMode==='jail'){cityLife.update(dt,now)}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='takeover'){clockTime+=dt;updateVfx(dt);updateTakeover(dt);advanceTraffic(dt);cityLife.update(dt,now);updateCamera(dt);if(now-lastMapUpdate>95){lastMapUpdate=now;drawMap()}}else if(gameMode==='menu'){for(const home of homes)home.roof.visible=true;cityLife.update(dt,now);if(window.__mvtTitleStart!=null&&!matchMedia('(prefers-reduced-motion: reduce)').matches)liveTitleCamera(now,dt);else{restoreTitleAtmosphere();const a=now*.00007;camera.fov=65;camera.updateProjectionMatrix();camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}}const storyPose=gameMode==='intro'||gameMode==='standing',showLuxie=activeLead()==='luxie'&&!storyPose,showPerson=person.visible&&!inCar;
+ for(const venue of openVenues)venue.interiorDetail.visible=(venue.x-px)**2+(venue.z-pz)**2<38*38;}const dt=Math.max(.001,Math.min(.04,(now-last)/1000));last=now;animateCustoms(dt);if(gameMode==='play'){clockTime+=dt;if(atmosphereTime>0){atmosphereTime=Math.max(0,atmosphereTime-dt);if(atmosphereTime===0)atmosphereToast.classList.remove('show')}if(detailingShine>0)detailingShine=Math.max(0,detailingShine-dt);if(chapterBannerTime>0){chapterBannerTime-=dt;if(chapterBannerTime<=0)chapterScreen.classList.remove('show')}updateEquipmentWorld(dt);if(inCar)moveCar(dt);else movePerson(dt);updateVfx(dt);advanceTraffic(dt);advancePolice(dt);updatePatrolAgents(dt);if(mission){missionTime-=dt;updateMissionActivity(dt);if(mission&&missionTime<=0)failMission()}if(taxiJob)updateTaxiJob(dt);cityLife.update(dt,now);if(now-lastHudUpdate>100){lastHudUpdate=now;updateHUD()}updateCamera(dt);if(now-lastMapUpdate>95){lastMapUpdate=now;drawMap()}}else if(gameMode==='arrest'){animateArrest(dt);cityLife.update(dt,now)}else if(gameMode==='jail'){cityLife.update(dt,now)}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='takeover'){clockTime+=dt;updateVfx(dt);updateTakeover(dt);advanceTraffic(dt);cityLife.update(dt,now);updateCamera(dt);if(now-lastMapUpdate>95){lastMapUpdate=now;drawMap()}}else if(gameMode==='menu'){for(const home of homes)home.roof.visible=true;cityLife.update(dt,now);if(window.__mvtTitleStart!=null&&!matchMedia('(prefers-reduced-motion: reduce)').matches)liveTitleCamera(now,dt);else{restoreTitleAtmosphere();const a=now*.00007;camera.fov=65;camera.updateProjectionMatrix();camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}}const storyPose=gameMode==='intro'||gameMode==='standing',showLuxie=activeLead()==='luxie'&&!storyPose,showPerson=person.visible&&!inCar;
 const motion={walking:walkBlend,running:runBlend,jumping,seatAmount:storyPose?storySeatAmount:null,gesture:gameMode==='play'?gestureTime:0};
 modelAssets.update(dt,{...motion,enabled:showPerson&&!showLuxie});
 luxieAssets.update(dt,{...motion,enabled:showPerson&&showLuxie});

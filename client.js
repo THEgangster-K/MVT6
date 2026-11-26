@@ -6,7 +6,8 @@ const status=document.getElementById('onlineStatus');
 const count=document.getElementById('playerCount');
 const auth=document.getElementById('authPanel');
 const info=document.getElementById('authInfo');
-let ws=null,reconnect=0,latest=[],lastSend=0,alive=true;
+let ws=null,reconnect=0,latest=[],lastSend=0,alive=true,lastFrameTime=0;
+const labelVector=new THREE.Vector3();
 const worldUrl=location.protocol==='https:'?'wss://':'ws://';
 function connect(){
  if(!alive)return;
@@ -25,17 +26,20 @@ function createActor(p){
  box(.8,1.5,.5,0,1.5,0,mat('#bcdda9'),person);
  const head=mesh(new THREE.SphereGeometry(.46,10,8),mat('#f0bb94'),person);head.position.y=2.6;
  const label=document.createElement('div');label.className='remoteLabel';label.textContent=p.name;document.body.append(label);
- return {car,person,label,target:{x:p.x,z:p.z,angle:p.angle,inCar:p.inCar}};
+ for(const actor of [car,person]){actor.position.set(p.x,0,p.z);actor.rotation.y=p.angle;}
+ return {car,person,label,target:{x:p.x,z:p.z,angle:p.angle,inCar:p.inCar},wasInCar:p.inCar};
 }
 function sync(){const seen=new Set();for(const p of latest){seen.add(p.id);if(!remotes.has(p.id))remotes.set(p.id,createActor(p));const r=remotes.get(p.id);r.target={x:p.x,z:p.z,angle:p.angle,inCar:p.inCar}}
  for(const [id,r] of remotes)if(!seen.has(id)){scene.remove(r.car,r.person);r.label.remove();remotes.delete(id)}}
-function frame(now,camera){if(ws?.readyState===WebSocket.OPEN&&now-lastSend>85){const p=getState();ws.send(JSON.stringify({type:'move',...p}));lastSend=now}
+function frame(now,camera){const dt=lastFrameTime?Math.max(0,Math.min(.10,(now-lastFrameTime)/1000)):1/60;lastFrameTime=now;const blend=1-Math.exp(-14.9*dt);if(ws?.readyState===WebSocket.OPEN&&now-lastSend>85){const p=getState();ws.send(JSON.stringify({type:'move',...p}));lastSend=now}
  for(const r of remotes.values()){
  const {x,z,angle,inCar}=r.target;const actor=inCar?r.car:r.person;
  r.car.visible=inCar;r.person.visible=!inCar;
- actor.position.x+=(x-actor.position.x)*.22;actor.position.z+=(z-actor.position.z)*.22;actor.rotation.y=angle;
- const screen=actor.position.clone().add(new THREE.Vector3(0,4,0)).project(camera);
- r.label.style.display=screen.z<1&&screen.z>-1?'block':'none';
+ if(r.wasInCar!==inCar){actor.position.set(x,0,z);actor.rotation.y=angle;r.wasInCar=inCar;}
+ actor.position.x+=(x-actor.position.x)*blend;actor.position.z+=(z-actor.position.z)*blend;
+ actor.rotation.y+=Math.atan2(Math.sin(angle-actor.rotation.y),Math.cos(angle-actor.rotation.y))*blend;
+ const screen=labelVector.copy(actor.position);screen.y+=4;screen.project(camera);
+ r.label.style.display=screen.z<1&&screen.z>-1&&Math.abs(screen.x)<1.15&&Math.abs(screen.y)<1.15?'block':'none';
  r.label.style.left=((screen.x+1)/2*innerWidth)+'px';r.label.style.top=((-screen.y+1)/2*innerHeight)+'px';
  }}
 async function request(endpoint,body){const r=await fetch('/api/'+endpoint,{method:body?'POST':'GET',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:body?JSON.stringify(body):undefined});const d=await r.json();if(!r.ok)throw Error(d.error||'Request failed');return d}

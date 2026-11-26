@@ -1,5 +1,14 @@
 # MVT 6 — Motor Vehicle Theft
 
+## v0.4.0 — CINEMATIC OVERHAUL (Preview 10)
+
+- Self-contained widescreen illustrated cover, irregular panels, no scene captions, and working menu controls.
+- Refined vehicle materials, lighting, character joints and locomotion, chapter recaps, opening fades and local venue guide.
+- Static menu and hidden-tab render suspension, stable FPS timing on resume, fewer repeated HUD DOM changes, and time-based remote actor interpolation.
+- Existing save schema and campaign retained. Package metadata now matches the 0.4.0 release series.
+
+**Validation:** Automated regression assertions in an adapted JavaScript harness. Actual browser rendering, multiplayer sessions, performance measurements and deployment verification remain outstanding; this is a release candidate, not a fully verified production release.
+
 ## v3.1 — POSTCARDS
 
 - Original eight-panel Solara City illustrated SVG cover with Jawson, Luxie, city scenes, waterfront and Sunset Coupe. Vibrant coastal palette and comic-panel layout, with MVT 6's own logo and typography. Used in the final intro reveal and main menu.
