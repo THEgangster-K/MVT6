@@ -33,6 +33,11 @@ vm.runInNewContext(html.slice(helperStart,helperEnd)+'\n'+pierLine,pierSandbox,{
 assert.equal(pierChildren.length,6,'All six pier supports attach to scene');
 assert.ok(pierChildren.every(m=>m.geometry.args[3]===8),'Pier support detail argument reaches cylinder geometry');
 const cityLifeSource=read('city-life.js');
+assert.ok(cityLifeSource.includes('heading=chatting?Math.atan2(player.x-px,player.z-pz)'),'Residents face the player during conversation');
+assert.ok(html.includes("renderLifestyle();renderTaxiPhone();renderVenueGuide();"),'Local guide is connected to phone');
+assert.ok(html.includes("visited.has(lead+':'+v.id)"),'Guide shows character-specific visit progress');
+assert.ok(html.includes("pin.onclick=()=>{setWaypoint(place,place.name);closePhone()}"),'Guide routes to actual venue');
+assert.ok(html.includes("venue.interiorDetail.visible=(venue.x-px)**2+(venue.z-pz)**2<38*38"),'Venue interior detail uses distance culling');
 assert.ok(cityLifeSource.includes('knees=[],elbows=[]'),'Articulated pedestrian rigs');
 assert.ok(cityLifeSource.includes('n.gaitPhase+travelled'),'Pedestrian cadence follows displacement');
 assert.ok(read('model-assets.js').includes('const runThreshold=')&&read('model-assets.js').includes('const phase=locomotion'),'Hero transitions use hysteresis and phase continuity');

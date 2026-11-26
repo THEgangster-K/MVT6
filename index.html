@@ -496,6 +496,12 @@ body.bootPlaying #menu{visibility:hidden!important}
 @media(max-width:650px){#menu.artworkReady .menuHeroArt{inset:0 0 100px;height:calc(100% - 100px)}#menu.artworkReady .menuContent{padding-bottom:36px!important}#storyIntro #introContent{bottom:17%;padding:13px 15px}#storyIntro #introSkip{bottom:7%}}
 @media(max-height:420px){#menu.artworkReady .menuHeroArt{height:calc(100% - 62px);bottom:62px}#menu.artworkReady .menuContent{padding-bottom:15px!important}}
 @media(prefers-reduced-motion:reduce){#storyIntro.introTransition #introContent{animation:none!important}#introShade{animation:none!important}}
+
+/* Living Solara: compact district guide and readable discovery cards. */
+.venueGuideSummary{font:600 11px/1.5 system-ui;color:#eac9a9;margin:8px 2px 12px}
+.venueGuideCard{border-left:2px solid #d2a57e!important}
+.venueGuideCard small{display:block;line-height:1.5;letter-spacing:.025em}
+.venueGuideCard button{background:#243f4d;border-color:#7b9da2}
 </style>
 </head>
 <body>
@@ -545,7 +551,7 @@ body.bootPlaying #menu{visibility:hidden!important}
   <div class="phoneHero"><span>STORY NETWORK</span><h2>My Missions</h2><p>Your next move starts here.</p></div>
   <div id="phoneCurrent"></div>
   <div class="phoneSection">CITY JOB · TAXI DISPATCH</div><div id="phoneTaxiJob"></div><div class="phoneSection">CHAPTERS & CONTACTS</div>
-  <div id="phoneMissions"></div>
+  <div id="phoneMissions"></div><div class="phoneSection">EXPLORE · SOLARA LOCAL GUIDE</div><div id="phoneVenueGuide"></div>
   <div class="phoneSection">CITY STATUS & PROPERTY</div><div id="lifestyleList"></div>
   <div class="phoneSection">MAP / DESTINATIONS</div>
   <div class="phoneLocations"><button id="phoneWaypointRae">LUXIE · CONTACT</button><button id="phoneWaypointGarage">GARAGE</button><button id="phoneWaypointLoot">NEAREST LOOT</button><button id="phoneWaypointClear">CLEAR PIN</button></div>
@@ -566,7 +572,7 @@ body.bootPlaying #menu{visibility:hidden!important}
 <p>Explore Solara City as Jawson and Luxie. Meet local contacts, take on jobs, customise your car and build your own story.</p>
 <div class="menuActions"><button id="play">PLAY STORY</button><button id="resetSave" class="secondary">START OVER</button></div>
 <div class="movieControls">WASD · MOVE &nbsp;&nbsp; CLICK · MOUSE LOOK &nbsp;&nbsp; F · INTERACT</div></div>
-<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">CINEMATIC OVERHAUL · v0.4.0 PREVIEW 8</div></div></div>
+<div class="menuDecor"><div class="menuChapter">SEASON ONE: THE LOST CITY</div><div>01 / NOTHING TO LOSE</div><div>02 / THE WRONG ENVELOPE</div><div>03 / A CITY OF SECRETS</div><div>04 / THE FINAL SCORE</div><div class="releaseVersion">CINEMATIC OVERHAUL · v0.4.0 PREVIEW 9</div></div></div>
 <div id="storyIntro" aria-live="polite" style="display:none"><div id="introShade"></div><div id="introFade" aria-hidden="true"></div><div id="introContent"><div id="introChapter">SOLARA CITY · CHAPTER ONE</div><div id="introCue">AN ORIGINAL MVT 6 FILM</div><h2 id="introTitle">START WITH NOTHING.</h2><p id="introCopy">New city. Empty pockets. Every choice counts.</p><div id="introProgress" aria-hidden="true"><i></i></div></div><button id="introSkip">SKIP INTRO →</button></div>
 <div id="paused" class="overlay"><div class="panel"><div class="eyebrow">SOLARA CITY</div><h2>PAUSED</h2><p>Explore at your own pace. Your cash, upgrades and completed contracts are automatically saved.</p><button id="resume">RESUME</button><button id="pauseMap" class="secondary">MAP & MISSIONS</button>
 <div class="qualitySelector"><label for="graphicsQuality">GRAPHICS QUALITY</label><select id="graphicsQuality">
@@ -1054,6 +1060,21 @@ for(let i=0;i<buildingMatrices.length;i++){
 }
 // Walk-in open-air venues, not fake storefronts embedded in solid buildings.
 const openVenues=[];
+const venueProfiles={
+ cafe:{accent:'#b76c53',title:'TODAY / HOUSE BLEND',items:['ESPRESSO','BAKED DAILY','LOCAL TEA'],detail:'Coffee, pastries and a place to unwind.'},
+ market:{accent:'#ae8653',title:'GROWN IN SOLARA',items:['CITRUS','FRESH PRODUCE','LOCAL GOODS'],detail:'Discover produce from the surrounding neighbourhoods.'},
+ archive:{accent:'#776994',title:'THE CITY REMEMBERS',items:['OLD MAPS','PHOTOGRAPHS','HARBOUR FILES'],detail:'Browse the history of the harbour and its people.'},
+ guide:{accent:'#527e9c',title:'EXPLORE SOLARA',items:['WATERFRONT','PARKS','CITY MAPS'],detail:'Discover local landmarks and public spaces.'},
+ garden:{accent:'#66865b',title:'GROW TOGETHER',items:['HERBS','SEEDS','LOCAL PLANTS'],detail:'A quiet community space for exchanging plants.'}
+};
+function venueProfile(name){return name.includes('CAF')||name.includes('COFFEE')?'cafe':name.includes('ARCHIVE')?'archive':name.includes('INFORMATION')?'guide':name.includes('GARDEN')?'garden':'market';}
+const venueDisplayMaterials={};
+for(const [key,p] of Object.entries(venueProfiles)){
+ const map=textTexture(p.title,'#26343a','#f1dfbf');venueDisplayMaterials[key]={accent:mat(p.accent,.74),sign:new THREE.MeshBasicMaterial({map,side:THREE.DoubleSide})};
+}
+const venueItemGeo=new THREE.CylinderGeometry(.17,.20,.37,10),venueBookGeo=new THREE.BoxGeometry(.13,.36,.24),venueProduceGeo=new THREE.SphereGeometry(.16,10,8);
+const venuePaperMat=mat('#e0d4b6',.93),venueLeafMat=mat('#62855d',.9),venueFruitMat=mat('#dca45c',.82);
+
 const venueWood=mat('#aa7951',.76),venueSteel=mat('#344e52',.58,.25),venueRoof=mat('#487a79',.69),venueTile=mat('#e4d6bd',.87),venueWall=mat('#ece1cc',.92),venueGlass=new THREE.MeshStandardMaterial({color:0x9cc6c9,roughness:.24,transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide}),venueLight=new THREE.MeshBasicMaterial({color:0xffe4b8});
 const venueSites=[{x:46,z:-69,name:'PLAZA COFFEE',message:'PLAZA COFFEE · Take a break by the fountain.'},{x:138,z:66,name:'SOLARA MARKET HALL',message:'MARKET HALL · A neighbourhood meeting place.'}];
 const parkSites=neighborhoods.filter(p=>p.kind==='park').slice(0,8);
@@ -1065,7 +1086,7 @@ const venueKinds=[
 ];
 for(const [i,p] of parkSites.entries()){const v=venueKinds[i%venueKinds.length];venueSites.push({x:p.cx,z:p.cz-23,...v});}
 for(const site of venueSites){
- const {x,z,name,message}=site;
+ const {x,z,name,message}=site,profileKey=venueProfile(name),profile=venueProfiles[profileKey],display=venueDisplayMaterials[profileKey];
  if(!clearsStreet(x,z,11,8,BLOCK,ROAD)||footprint.some(p=>Math.abs(p.x-x)<p.w+6&&Math.abs(p.z-z)<p.d+4.5))continue;
  const root=new THREE.Group();root.position.set(x,0,z);scene.add(root);shopBuildings.push({root,x,z});
  box(10.5,.09,7.8,0,.18,0,venueTile,root);
@@ -1098,7 +1119,24 @@ for(const site of venueSites){
    for(const dz of [-.9,.9]){const chair=mesh(new THREE.CylinderGeometry(.32,.32,.12,12),venueWood,root);chair.position.set(dx,.58,1.5+dz);for(const lx of [-.19,.19])for(const lz of [-.19,.19])box(.055,.48,.055,dx+lx,.29,1.5+dz+lz,venueSteel,root);box(.60,.50,.085,dx,.86,1.5+dz+Math.sign(dz)*.26,venueWood,root);}
  }
  const sign=mesh(new THREE.PlaneGeometry(8,.8),new THREE.MeshBasicMaterial({map:textTexture(name,'#294c4b','#fff0d6'),side:THREE.DoubleSide}),root);sign.position.set(0,3.33,4.03);
- openVenues.push({x,z,name,message,task:site.task||'Help prepare the counter',id:'v'+x+'_'+z});
+ // Distinct interiors share a small set of meshes; props stay on existing shelves and counters.
+ const interiorDetail=new THREE.Group();root.add(interiorDetail);
+ const board=mesh(new THREE.PlaneGeometry(2.8,.44),display.sign,interiorDetail);board.position.set(0,2.78,-3.04);
+ for(let j=0;j<3;j++){
+  const shelfX=-2.1+j*2.1;
+  for(let k=0;k<4;k++){
+   const pos=shelfX+(k-1.5)*.28;
+   const object=mesh(profileKey==='archive'||profileKey==='guide'?venueBookGeo:profileKey==='market'?venueProduceGeo:venueItemGeo,k%2?display.accent:venuePaperMat,interiorDetail);
+   object.position.set(pos,2.38,-3.24);
+   if(profileKey==='archive'||profileKey==='guide')object.rotation.z=(k%3-1)*.08;
+  }
+ }
+ for(const dx of [-2.7,2.7]){
+  const base=mesh(venueItemGeo,display.accent,interiorDetail);base.scale.set(.8,.65,.8);base.position.set(dx,1.49,-2.7);
+  if(profileKey==='garden'){for(let j=0;j<3;j++){const leaf=mesh(venueProduceGeo,venueLeafMat,interiorDetail);leaf.position.set(dx+(j-1)*.10,1.72,-2.7);leaf.scale.set(.36,1,.55);leaf.rotation.z=(j-1)*.5;}}
+  else if(profileKey==='market'){for(let j=0;j<3;j++){const fruit=mesh(venueProduceGeo,venueFruitMat,interiorDetail);fruit.position.set(dx+(j-1)*.18,1.64,-2.7);}}
+ }
+ openVenues.push({x,z,name,message,profileKey,detail:profile.detail,interiorDetail,task:site.task||'Help prepare the counter',id:'v'+x+'_'+z});
 }
 function interactShop(x,z){
  for(const place of openVenues){if(Math.hypot(x-place.x,z-place.z)<5.6){
@@ -3238,8 +3276,25 @@ function drawMap(){
 let phoneOpen=false;
 const phoneRoot=$('gamePhone');
 const phoneMissionStatus=()=>mission?({pickup:'Collect item',deliver:'Meet contact',terminal:'Decode signal',vehicle:'Find a ride',race:'Drive the route',scout:'Gather clues',escape:'Lose pursuit'}[mission.stage]||'Follow objective'):'Talk to '+storyContactName(activeLead())+' to begin';
+function renderVenueGuide(){
+ const root=$('phoneVenueGuide');root.replaceChildren();
+ const p=inCar?carPos:playerPos,visited=new Set(save.venueVisits||[]),lead=activeLead();
+ const venues=openVenues.slice().sort((a,b)=>Math.hypot(a.x-p.x,a.z-p.z)-Math.hypot(b.x-p.x,b.z-p.z));
+ const completed=venues.filter(v=>visited.has(lead+':'+v.id)).length;
+ const summary=document.createElement('p');summary.className='venueGuideSummary';summary.textContent=leadName()+' · '+completed+'/'+venues.length+' local activities completed';root.append(summary);
+ if(!venues.length){const message=document.createElement('p');message.textContent='No local venues are available in this city layout.';root.append(message);return;}
+ for(const place of venues){
+  const card=document.createElement('div');card.className='phoneCard venueGuideCard';
+  const title=document.createElement('b');title.textContent=place.name;
+  const desc=document.createElement('p');desc.textContent=place.detail;
+  const meta=document.createElement('small'),done=visited.has(lead+':'+place.id);
+  meta.textContent=cityDistrict(place.x,place.z)+' · '+Math.round(Math.hypot(place.x-p.x,place.z-p.z))+' m · '+(done?'VISITED':'ACTIVITY AVAILABLE');
+  const pin=document.createElement('button');pin.textContent='SET WAYPOINT';pin.onclick=()=>{setWaypoint(place,place.name);closePhone()};
+  card.append(title,desc,meta,document.createElement('br'),pin);root.append(card);
+ }
+}
 function renderPhone(){
- renderLifestyle();renderTaxiPhone();
+ renderLifestyle();renderTaxiPhone();renderVenueGuide();
  $('phoneClock').textContent=new Date().toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
  const current=$('phoneCurrent');current.innerHTML='';
  const active=document.createElement('div');active.className='phoneCard';
@@ -3431,7 +3486,8 @@ let firstFrameReady=false,lastWaveUpdate=0;let last=performance.now(),fpsCounter
    occupantDetail(p.car,p.active&&(p.pos.x-px)**2+(p.pos.z-pz)**2<36*36);
  }
  for(const p of parkedVehicles){p.car.visible=(p.x-px)**2+(p.z-pz)**2<115*115||gameMode==='intro'||gameMode==='menu'}
- for(const sh of shopBuildings){sh.root.visible=gameMode==='intro'||gameMode==='menu'||Math.hypot(px-sh.x,pz-sh.z)<155}}const dt=Math.max(.001,Math.min(.04,(now-last)/1000));last=now;animateCustoms(dt);if(gameMode==='play'){clockTime+=dt;if(atmosphereTime>0){atmosphereTime=Math.max(0,atmosphereTime-dt);if(atmosphereTime===0)atmosphereToast.classList.remove('show')}if(detailingShine>0)detailingShine=Math.max(0,detailingShine-dt);if(chapterBannerTime>0){chapterBannerTime-=dt;if(chapterBannerTime<=0)chapterScreen.classList.remove('show')}updateEquipmentWorld(dt);if(inCar)moveCar(dt);else movePerson(dt);updateVfx(dt);advanceTraffic(dt);advancePolice(dt);updatePatrolAgents(dt);if(mission){missionTime-=dt;updateMissionActivity(dt);if(missionTime<=0)failMission()}if(taxiJob)updateTaxiJob(dt);cityLife.update(dt,now);if(now-lastHudUpdate>100){lastHudUpdate=now;updateHUD()}updateCamera(dt);if(now-lastMapUpdate>95){lastMapUpdate=now;drawMap()}}else if(gameMode==='arrest'){animateArrest(dt);cityLife.update(dt,now)}else if(gameMode==='jail'){cityLife.update(dt,now)}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='takeover'){clockTime+=dt;updateVfx(dt);updateTakeover(dt);advanceTraffic(dt);cityLife.update(dt,now);updateCamera(dt);if(now-lastMapUpdate>95){lastMapUpdate=now;drawMap()}}else if(gameMode==='menu'){for(const home of homes)home.roof.visible=true;cityLife.update(dt,now);if(window.__mvtTitleStart!=null&&!matchMedia('(prefers-reduced-motion: reduce)').matches)liveTitleCamera(now,dt);else{restoreTitleAtmosphere();const a=now*.00007;camera.fov=65;camera.updateProjectionMatrix();camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}}const storyPose=gameMode==='intro'||gameMode==='standing',showLuxie=activeLead()==='luxie'&&!storyPose,showPerson=person.visible&&!inCar;
+ for(const sh of shopBuildings){sh.root.visible=gameMode==='intro'||gameMode==='menu'||Math.hypot(px-sh.x,pz-sh.z)<155}
+ for(const venue of openVenues)venue.interiorDetail.visible=(venue.x-px)**2+(venue.z-pz)**2<38*38;}const dt=Math.max(.001,Math.min(.04,(now-last)/1000));last=now;animateCustoms(dt);if(gameMode==='play'){clockTime+=dt;if(atmosphereTime>0){atmosphereTime=Math.max(0,atmosphereTime-dt);if(atmosphereTime===0)atmosphereToast.classList.remove('show')}if(detailingShine>0)detailingShine=Math.max(0,detailingShine-dt);if(chapterBannerTime>0){chapterBannerTime-=dt;if(chapterBannerTime<=0)chapterScreen.classList.remove('show')}updateEquipmentWorld(dt);if(inCar)moveCar(dt);else movePerson(dt);updateVfx(dt);advanceTraffic(dt);advancePolice(dt);updatePatrolAgents(dt);if(mission){missionTime-=dt;updateMissionActivity(dt);if(missionTime<=0)failMission()}if(taxiJob)updateTaxiJob(dt);cityLife.update(dt,now);if(now-lastHudUpdate>100){lastHudUpdate=now;updateHUD()}updateCamera(dt);if(now-lastMapUpdate>95){lastMapUpdate=now;drawMap()}}else if(gameMode==='arrest'){animateArrest(dt);cityLife.update(dt,now)}else if(gameMode==='jail'){cityLife.update(dt,now)}else if(gameMode==='intro'){introTime+=dt;updateIntroCamera(dt);cityLife.update(dt,now)}else if(gameMode==='standing'){updateStanding(dt);cityLife.update(dt,now)}else if(gameMode==='takeover'){clockTime+=dt;updateVfx(dt);updateTakeover(dt);advanceTraffic(dt);cityLife.update(dt,now);updateCamera(dt);if(now-lastMapUpdate>95){lastMapUpdate=now;drawMap()}}else if(gameMode==='menu'){for(const home of homes)home.roof.visible=true;cityLife.update(dt,now);if(window.__mvtTitleStart!=null&&!matchMedia('(prefers-reduced-motion: reduce)').matches)liveTitleCamera(now,dt);else{restoreTitleAtmosphere();const a=now*.00007;camera.fov=65;camera.updateProjectionMatrix();camera.position.set(Math.sin(a)*210,160,Math.cos(a)*210);camera.lookAt(0,0,0)}}const storyPose=gameMode==='intro'||gameMode==='standing',showLuxie=activeLead()==='luxie'&&!storyPose,showPerson=person.visible&&!inCar;
 const motion={walking:walkBlend,running:runBlend,jumping,seatAmount:storyPose?storySeatAmount:null,gesture:gameMode==='play'?gestureTime:0};
 modelAssets.update(dt,{...motion,enabled:showPerson&&!showLuxie});
 luxieAssets.update(dt,{...motion,enabled:showPerson&&showLuxie});

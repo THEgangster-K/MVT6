@@ -237,7 +237,7 @@ function update(dt,now){
        else{n.root.position.x=nx;n.root.position.z=nz;walking=Math.abs(speed)>.0001}
      }
      const movedX=n.root.position.x-px,movedZ=n.root.position.z-pz;
-     const heading=walking?Math.atan2(movedX,movedZ):(n.pathAxis==='x'?(n.direction>0?Math.PI/2:-Math.PI/2):(n.direction>0?0:Math.PI));
+     const heading=chatting?Math.atan2(player.x-px,player.z-pz):walking?Math.atan2(movedX,movedZ):(n.pathAxis==='x'?(n.direction>0?Math.PI/2:-Math.PI/2):(n.direction>0?0:Math.PI));
      const turn=Math.atan2(Math.sin(heading-n.root.rotation.y),Math.cos(heading-n.root.rotation.y));
      n.root.rotation.y+=turn*Math.min(1,step*(dodging?12:7));
      if(!animateDetail){
@@ -274,7 +274,7 @@ function update(dt,now){
  if(!isPlaying()){pop.style.display='none';dialog.style.display='none';return}
  const n=nearest();
  pop.style.display=n?'block':'none';if(n)pop.textContent=n.role==='fixer'?'F  ·  Talk to '+currentPartner.name+' (story chapter)':'F  ·  Talk to '+n.name;
- if(!n||now>dialogUntil)dialog.style.display='none';
+ if(!active||now>dialogUntil||Math.hypot(getPlayer().x-active.root.position.x,getPlayer().z-active.root.position.z)>6){dialog.style.display='none';active=null;}
 }
 
 function reactToVehicle(x,z,force=1){
